@@ -385,6 +385,151 @@ For most workflows, you'll mainly use `response` to access the current step's re
 
 Roast provides extensive instrumentation capabilities using ActiveSupport::Notifications. You can monitor workflow execution, track AI model usage, measure performance, and integrate with external monitoring systems. [Read the full instrumentation documentation](docs/INSTRUMENTATION.md).
 
+### Built-in Tools
+
+Roast provides several built-in tools that you can use in your workflows:
+
+#### ReadFile
+
+Reads the contents of a file from the filesystem.
+
+```ruby
+# Basic usage
+read_file(path: "path/to/file.txt")
+
+# Reading a specific portion of a file
+read_file(path: "path/to/large_file.txt", offset: 100, limit: 50)
+```
+
+- The `path` can be absolute or relative to the current working directory
+- Use `offset` and `limit` for large files to read specific sections (line numbers)
+- Returns the file content as a string
+
+#### WriteFile
+
+Writes content to a file, creating the file if it doesn't exist or overwriting it if it does.
+
+```ruby
+# Basic usage
+write_file(path: "output.txt", content: "This is the file content")
+
+# With path restriction for security
+write_file(
+  path: "output.txt",
+  content: "Restricted content",
+  restrict: "/safe/directory" # Only allows writing to files under this path
+)
+```
+
+- Creates missing directories automatically
+- Can restrict file operations to specific directories for security
+- Returns a success message with the number of lines written
+
+#### UpdateFiles
+
+Applies a unified diff/patch to one or more files. Changes are applied atomically when possible.
+
+```ruby
+update_files(
+  diff: <<~DIFF,
+    --- a/file1.txt
+    +++ b/file1.txt
+    @@ -1,3 +1,4 @@
+     line1
+    +new line
+     line2
+     line3
+    
+    --- a/file2.txt
+    +++ b/file2.txt
+    @@ -5,7 +5,7 @@
+     line5
+     line6
+    -old line7
+    +updated line7
+     line8
+  DIFF
+  base_path: "/path/to/project", # Optional, defaults to current working directory
+  restrict_path: "/path/to/allowed", # Optional, restricts where files can be modified
+  create_files: true, # Optional, defaults to true
+)
+```
+
+- Accepts standard unified diff format from tools like `git diff`
+- Supports multiple file changes in a single operation
+- Handles file creation, deletion, and modification
+- Performs atomic operations with rollback on failure
+- Includes fuzzy matching to handle minor context differences
+- This tool is especially useful for making targeted changes to multiple files at once
+
+#### Grep
+
+Searches file contents for a specific pattern using regular expressions.
+
+```ruby
+# Basic usage
+grep(pattern: "function\\s+myFunction")
+
+# With file filtering
+grep(pattern: "class\\s+User", include: "*.rb")
+
+# With directory scope
+grep(pattern: "TODO:", path: "src/components")
+```
+
+- Uses regular expressions for powerful pattern matching
+- Can filter by file types using the `include` parameter
+- Can scope searches to specific directories with the `path` parameter
+- Returns a list of files containing matches
+
+#### SearchFile
+
+Provides advanced file search capabilities beyond basic pattern matching.
+
+```ruby
+search_file(query: "class User", file_path: "app/models")
+```
+
+- Combines pattern matching with contextual search
+- Useful for finding specific code structures or patterns
+- Returns matched lines with context
+
+#### Cmd
+
+Executes shell commands and returns their output.
+
+```ruby
+# Execute a simple command
+cmd(command: "ls -la")
+
+# With working directory specified
+cmd(command: "npm list", cwd: "/path/to/project")
+
+# With environment variables
+cmd(command: "deploy", env: { "NODE_ENV" => "production" })
+```
+
+- Provides access to shell commands for more complex operations
+- Can specify working directory and environment variables
+- Captures and returns command output
+- Useful for integrating with existing tools and scripts
+
+#### CodingAgent
+
+Creates a specialized agent for complex coding tasks or long-running operations.
+
+```ruby
+coding_agent(
+  task: "Refactor the authentication module to use JWT tokens",
+  language: "ruby",
+  files: ["app/models/user.rb", "app/controllers/auth_controller.rb"]
+)
+```
+
+- Delegates complex tasks to a specialized coding agent
+- Useful for tasks that require deep code understanding or multi-step changes
+- Can work across multiple files and languages
+
 ### Custom Tools
 
 You can create your own tools using the [Raix function dispatch pattern](https://github.com/OlympiaAI/raix-rails?tab=readme-ov-file#use-of-toolsfunctions). Custom tools should be placed in `.roast/initializers/` (subdirectories are supported):

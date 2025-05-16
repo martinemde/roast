@@ -200,3 +200,44 @@ roast execute test_instrumentation.yml some_file.rb
 ```
 
 Your instrumentation should capture the workflow start, step execution, and workflow completion events.
+
+## Available Tools
+
+Roast provides several built-in tools that you can use in your workflows:
+
+### WriteFile Tool
+
+Writes content to a file, creating the file if it doesn't exist or overwriting it if it does.
+
+```ruby
+# Example usage in a prompt
+write_file(path: "output.txt", content: "This is the file content")
+```
+
+### UpdateFiles Tool
+
+Applies a unified diff/patch to one or more files. Changes are applied atomically when possible.
+
+```ruby
+# Example usage in a prompt
+update_files(diff: <<~DIFF, base_path: "/path/to/project", create_files: true)
+  --- a/file1.txt
+  +++ b/file1.txt
+  @@ -1,3 +1,4 @@
+   line1
+  +new line
+   line2
+   line3
+  
+  --- a/file2.txt
+  +++ b/file2.txt
+  @@ -5,7 +5,7 @@
+   line5
+   line6
+  -old line7
+  +updated line7
+   line8
+DIFF
+```
+
+This tool is especially useful for making targeted changes to multiple files at once, without having to replace entire file contents.
