@@ -46,7 +46,7 @@ Each step can have its own prompt file (e.g., `analyze_coverage/prompt.md`) and 
 ```yaml
 steps:
   - prepare_data
-  - 
+  -
     - analyze_code_quality
     - check_test_coverage
     - verify_documentation
@@ -86,21 +86,21 @@ In Roast, workflows maintain a single conversation with the AI model throughout 
 
 Roast supports several types of steps:
 
-1. **Standard step**: References a directory containing at least a `prompt.md` and optional `output.txt` template. This is the most common type of step. 
+1. **Standard step**: References a directory containing at least a `prompt.md` and optional `output.txt` template. This is the most common type of step.
   ```yaml
   steps:
     - analyze_code
   ```
 
   As an alternative to a directory, you can also implement a custom step as a Ruby class, optionally extending `Roast::Workflow::BaseStep`.
-  
+
   In the example given above, the script would live at `workflow/analyze_code.rb` and should contain a class named `AnalyzeCode` with an initializer that takes a workflow object as context, and a `call` method that will be invoked to run the step. The result of the `call` method will be stored in the `workflow.output` hash.
 
 
 2. **Parallel steps**: Groups of steps executed concurrently
    ```yaml
    steps:
-     - 
+     -
        - analyze_code_quality
        - check_test_coverage
    ```
@@ -139,7 +139,7 @@ Roast handles data flow between steps in three primary ways:
      - Generate a summary for {{file}}
      - result_for_{{file}}: store_results
    ```
-   
+
    Interpolation supports:
    - Simple variable access: `{{file}}`, `{{resource.target}}`
    - Access to step outputs: `{{output['previous_step']}}`
@@ -150,7 +150,7 @@ For typical AI workflows, the continuous conversation history provides seamless 
 ### Command Line Options
 
 #### Basic Options
-- `-o, --output FILE`: Save results to a file instead of outputting to STDOUT 
+- `-o, --output FILE`: Save results to a file instead of outputting to STDOUT
 - `-c, --concise`: Use concise output templates (exposed as a boolean flag on `workflow`)
 - `-v, --verbose`: Show output from all steps as they execute
 - `-r, --replay STEP_NAME`: Resume a workflow from a specific step, optionally with a specific session timestamp
@@ -241,7 +241,7 @@ roast execute workflow.yml -t "$(find . -name '*.rb' -mtime -1)"
 # Process changed test files
 roast execute workflow.yml -t "$(git diff --name-only HEAD | grep _test.rb)"
 
-# Process staged files  
+# Process staged files
 roast execute workflow.yml -t "$(git diff --cached --name-only)"
 ```
 
@@ -255,7 +255,7 @@ name: API Integration Workflow
 tools:
   - Roast::Tools::ReadFile
   - Roast::Tools::WriteFile
-  
+
 # Dynamic API token using shell command
 api_token: $(cat ~/.my_token)
 
@@ -349,7 +349,9 @@ api_provider: openrouter
 api_token: $(echo $OPENROUTER_API_KEY)
 ```
 
-This makes it easy to use environment-specific tokens without hardcoding credentials, especially useful in development environments or CI/CD pipelines.
+
+This makes it easy to use environment-specific tokens without hardcoding credentials, especially useful in development environments or CI/CD pipelines. Alternatively, Roast will fall back to `OPENROUTER_API_KEY` or `OPENAI_API_KEY` environment variables based on the specified provider.
+
 
 ### Template Output with ERB
 
@@ -372,7 +374,7 @@ This is an example of where the `workflow.output` hash is useful - formatting ou
 
 Available in templates:
 - `response`: The AI's response for this step
-- `workflow`: Access to the workflow object 
+- `workflow`: Access to the workflow object
 - `workflow.output`: The shared hash containing results from all steps when you need programmatic access
 - `workflow.file`: Current file being processed (or `nil` for targetless workflows)
 - All workflow configuration options
@@ -439,7 +441,7 @@ update_files(
     +new line
      line2
      line3
-    
+
     --- a/file2.txt
     +++ b/file2.txt
     @@ -5,7 +5,7 @@
@@ -556,11 +558,11 @@ module MyProject
 
       def call(commit_sha, include_diff = false)
         Roast::Helpers::Logger.info("🔍 Analyzing commit: #{commit_sha}\n")
-        
+
         # Your implementation here
         commit_info = `git show #{commit_sha} --stat`
         commit_info += "\n\n" + `git show #{commit_sha}` if include_diff
-        
+
         commit_info
       rescue StandardError => e
         "Error analyzing commit: #{e.message}".tap do |error_message|
