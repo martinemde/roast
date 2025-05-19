@@ -35,7 +35,7 @@ module Roast
       protected
 
       def chat_completion(print_response: false, auto_loop: true, json: false, params: {})
-        workflow.chat_completion(openai: model, loop: auto_loop, json:, params:).then do |response|
+        workflow.chat_completion(openai: workflow.openai? && model, loop: auto_loop, model: model, json:, params:).then do |response|
           case response
           in Array
             response.map(&:presence).compact.join("\n")

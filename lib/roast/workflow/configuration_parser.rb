@@ -112,7 +112,7 @@ module Roast
             require "open_router"
 
             Raix.configure do |config|
-              config.openrouter_client = OpenRouter::Client.new(api_key: configuration.api_token)
+              config.openrouter_client = OpenRouter::Client.new(access_token: configuration.api_token)
             end
           else
             $stderr.puts "Configuring OpenAI client with token from workflow"

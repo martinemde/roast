@@ -22,7 +22,10 @@ module Roast
         :resource,
         :session_name,
         :session_timestamp,
-        :configuration
+        :configuration,
+        :model
+
+      delegate :api_provider, :openai?, to: :configuration
 
       def initialize(file = nil, name: nil, context_path: nil, resource: nil, session_name: nil, configuration: nil)
         @file = file
@@ -65,36 +68,46 @@ module Roast
         end
       end
 
+      def with_model(model)
+        previous_model = @model
+        @model = model
+        yield
+      ensure
+        @model = previous_model
+      end
+
       # Override chat_completion to add instrumentation
       def chat_completion(**kwargs)
         start_time = Time.now
-        model = kwargs[:openai] || "default"
 
-        ActiveSupport::Notifications.instrument("roast.chat_completion.start", {
-          model: model,
-          parameters: kwargs.except(:openai),
-        })
+        step_model = kwargs[:model]
+        with_model(step_model) do
+          ActiveSupport::Notifications.instrument("roast.chat_completion.start", {
+            model: model,
+            parameters: kwargs.except(:openai, :model),
+          })
 
-        result = super(**kwargs)
-        execution_time = Time.now - start_time
+          # skip model because it is read directly from the model method
+          result = super(**kwargs.except(:model))
+          execution_time = Time.now - start_time
 
-        ActiveSupport::Notifications.instrument("roast.chat_completion.complete", {
-          success: true,
-          model: model,
-          parameters: kwargs.except(:openai),
-          execution_time: execution_time,
-          response_size: result.to_s.length,
-        })
-
-        result
+          ActiveSupport::Notifications.instrument("roast.chat_completion.complete", {
+            success: true,
+            model: model,
+            parameters: kwargs.except(:openai, :model),
+            execution_time: execution_time,
+            response_size: result.to_s.length,
+          })
+          result
+        end
       rescue => e
         execution_time = Time.now - start_time
 
         ActiveSupport::Notifications.instrument("roast.chat_completion.error", {
           error: e.class.name,
           message: e.message,
-          model: model,
-          parameters: kwargs.except(:openai),
+          model: step_model,
+          parameters: kwargs.except(:openai, :model),
           execution_time: execution_time,
         })
         raise
