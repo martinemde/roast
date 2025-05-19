@@ -349,8 +349,9 @@ api_provider: openrouter
 api_token: $(echo $OPENROUTER_API_KEY)
 ```
 
-This makes it easy to use environment-specific tokens without hardcoding credentials, especially useful in development environments or CI/CD pipelines. You may also omit them and pass `OPENROUTER_API_KEY` or `OPENAI_API_KEY` as environment
-variables directly
+
+This makes it easy to use environment-specific tokens without hardcoding credentials, especially useful in development environments or CI/CD pipelines. Alternatively, Roast will fall back to `OPENROUTER_API_KEY` or `OPENAI_API_KEY` environment variables based on the specified provider.
+
 
 ### Template Output with ERB
 
