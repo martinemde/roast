@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Improved
 - Enhanced search file tool logging to show full expanded paths instead of relative paths
 
+## [0.1.7] - 2024-05-16
+
+### Added
+- `UpdateFiles` tool for applying diffs/patches to multiple files at once
+- Support for atomic file updates with rollback capability
+- Comprehensive documentation for all built-in tools
+- Enhanced README with detailed tool usage examples
+
 ## [0.1.6] - 2024-05-15
 
 ### Added
@@ -30,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved initializer loading and error handling
 - Fixed tests for nested .roast folders
 
+[0.1.7]: https://github.com/Shopify/roast/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/Shopify/roast/compare/v0.1.5...v0.1.6
 
 ## [0.1.5] - 2024-05-13
