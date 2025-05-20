@@ -34,7 +34,11 @@ module Roast
         @session_name = session_name || @name
         @session_timestamp = nil
         @configuration = configuration
-        transcript << { system: read_sidecar_prompt }
+        read_sidecar_prompt.then do |prompt|
+          next unless prompt
+
+          transcript << { system: prompt }
+        end
         Roast::Tools.setup_interrupt_handler(transcript)
         Roast::Tools.setup_exit_handler(self)
       end
