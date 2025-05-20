@@ -87,6 +87,53 @@
                 }
               },
               "required": ["proceed?"]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "repeat": {
+                  "type": "object",
+                  "properties": {
+                    "steps": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/properties/steps/items"
+                      }
+                    },
+                    "until": {
+                      "type": "string",
+                      "description": "Condition to evaluate after each iteration; loop stops when condition becomes true"
+                    },
+                    "max_iterations": {
+                      "type": "integer",
+                      "description": "Maximum number of iterations to prevent infinite loops",
+                      "minimum": 1
+                    }
+                  },
+                  "required": ["steps", "until"]
+                }
+              },
+              "required": ["repeat"]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "each": {
+                  "type": "string",
+                  "description": "Expression that resolves to a collection to iterate over"
+                },
+                "as": {
+                  "type": "string",
+                  "description": "Variable name to assign each item during iteration"
+                },
+                "steps": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/properties/steps/items"
+                  }
+                }
+              },
+              "required": ["each", "as", "steps"]
             }
           ]
         }
