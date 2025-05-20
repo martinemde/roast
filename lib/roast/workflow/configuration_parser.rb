@@ -22,8 +22,8 @@ module Roast
         @options = options
         @files = files
         @replay_processed = false # Initialize replay tracking
-        include_tools
         load_roast_initializers
+        include_tools
         configure_api_client
       end
 
