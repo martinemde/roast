@@ -48,6 +48,12 @@ module Roast
         # Determine API provider (defaults to OpenAI if not specified)
         @api_provider = determine_api_provider
 
+        if openai?
+          @api_token ||= ENV["OPENAI_API_KEY"]
+        elsif openrouter?
+          @api_token ||= ENV["OPENROUTER_API_KEY"]
+        end
+
         # Extract default model if provided
         @model = @config_hash["model"]
       end

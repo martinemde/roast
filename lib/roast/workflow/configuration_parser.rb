@@ -22,8 +22,8 @@ module Roast
         @options = options
         @files = files
         @replay_processed = false # Initialize replay tracking
-        include_tools
         load_roast_initializers
+        include_tools
         configure_api_client
       end
 
@@ -112,7 +112,7 @@ module Roast
             require "open_router"
 
             Raix.configure do |config|
-              config.openrouter_client = OpenRouter::Client.new(api_key: configuration.api_token)
+              config.openrouter_client = OpenRouter::Client.new(access_token: configuration.api_token)
             end
           else
             $stderr.puts "Configuring OpenAI client with token from workflow"

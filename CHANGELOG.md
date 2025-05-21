@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Automatically add `.gitignore` file to cache directory when created (completing issue #22)
+- Load initializers before trying to load tools in case custom tools are defined in initializers (thanks @palkan)
+- Fix loading of targetless workflows (thanks @palkan)
+- Fix OpenRouter support (thanks @xrendan)
+
+### Improved
+- Enhanced search file tool logging to show full expanded paths instead of relative paths
 
 ## [0.1.7] - 2024-05-16
 

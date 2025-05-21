@@ -142,6 +142,53 @@ module Roast
           assert_equal("src/", write_file_config["params"]["restrict"])
         end
       end
+
+      class ApiProviderEnvironmentTest < ActiveSupport::TestCase
+        FIXTURES = File.expand_path("../../../test/fixtures/files", __dir__)
+
+        def fixture_file(filename)
+          File.join(FIXTURES, filename)
+        end
+
+        def setup
+          @options = {}
+          @original_openai_key = ENV["OPENAI_API_KEY"]
+          @original_openrouter_key = ENV["OPENROUTER_API_KEY"]
+          ENV["OPENAI_API_KEY"] = "env-openai-key"
+          ENV["OPENROUTER_API_KEY"] = "env-openrouter-key"
+        end
+
+        def teardown
+          if @original_openai_key.nil?
+            ENV.delete("OPENAI_API_KEY")
+          else
+            ENV["OPENAI_API_KEY"] = @original_openai_key
+          end
+          if @original_openrouter_key.nil?
+            ENV.delete("OPENROUTER_API_KEY")
+          else
+            ENV["OPENROUTER_API_KEY"] = @original_openai_key
+          end
+        end
+
+        def test_uses_openai_env_var_when_provider_is_openai
+          configuration = Roast::Workflow::Configuration.new(fixture_file("openai_no_api_token_workflow.yml"), @options)
+          assert_equal("openai", configuration.api_provider.to_s)
+          assert_equal("env-openai-key", configuration.api_token)
+        end
+
+        def test_uses_openrouter_env_var_when_provider_is_openai
+          configuration = Roast::Workflow::Configuration.new(fixture_file("openrouter_no_api_token_workflow.yml"), @options)
+          assert_equal("openrouter", configuration.api_provider.to_s)
+          assert_equal("env-openrouter-key", configuration.api_token)
+        end
+
+        def test_uses_specified_api_token_when_provided
+          configuration = Roast::Workflow::Configuration.new(fixture_file("openrouter_workflow.yml"), @options)
+          assert_equal("openrouter", configuration.api_provider.to_s)
+          assert_equal("test_openrouter_token", configuration.api_token)
+        end
+      end
     end
   end
 end

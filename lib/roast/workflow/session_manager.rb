@@ -7,6 +7,8 @@ module Roast
   module Workflow
     # Manages session creation, timestamping, and directory management
     class SessionManager
+      TARGETLESS_FILE_PATH = "notarget"
+
       def initialize
         @session_mutex = Mutex.new
         @session_timestamps = {}
@@ -66,9 +68,11 @@ module Roast
       private
 
       def workflow_directory(session_name, file_path)
+        file_path ||= TARGETLESS_FILE_PATH
         workflow_dir_name = session_name.parameterize.underscore
-        file_id = Digest::MD5.hexdigest(file_path)
-        file_basename = File.basename(file_path).parameterize.underscore
+        # For targetless sessions we don't have a file_path
+        file_id = Digest::MD5.hexdigest(file_path || Dir.pwd)
+        file_basename = File.basename(file_path || Dir.pwd).parameterize.underscore
         human_readable_id = "#{file_basename}_#{file_id[0..7]}"
         File.join(Dir.pwd, ".roast", "sessions", workflow_dir_name, human_readable_id)
       end
