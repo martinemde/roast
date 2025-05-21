@@ -27,6 +27,7 @@ module Roast
             execute_parallel_steps(step)
           when String
             execute_string_step(step)
+            Kernel.binding.irb if workflow.pause_step_name == step # rubocop:disable Lint/Debugger
           else
             raise "Unknown step type: #{step.inspect}"
           end

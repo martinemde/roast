@@ -7,7 +7,7 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
   def setup
     @workflow = mock("workflow")
     @output = {}
-    @workflow.stubs(output: @output)
+    @workflow.stubs(output: @output, pause_step_name: nil)
     @config_hash = { "step1" => { "model" => "test-model" } }
     @context_path = "/tmp/test"
     @executor = Roast::Workflow::WorkflowExecutor.new(@workflow, @config_hash, @context_path)
@@ -16,6 +16,15 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
   # String steps tests
   test "executes string steps" do
     @executor.expects(:execute_step).with("step1")
+    @executor.execute_steps(["step1"])
+  end
+
+  test "execute with pause flag will pause on the matching step" do
+    @workflow.stubs(pause_step_name: "step1")
+    @executor.expects(:execute_step).with("step1")
+    mock_binding = mock("mock_binding")
+    Kernel.stubs(:binding).returns(mock_binding)
+    mock_binding.expects(:irb)
     @executor.execute_steps(["step1"])
   end
 
