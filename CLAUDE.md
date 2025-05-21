@@ -30,6 +30,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Add runtime dependencies to `roast.gemspec`.
 - Add development dependencies to `Gemfile`.
 - Don't ever test private methods directly. Specs should test behavior, not implementation.
+- I do not like test-specific code embedded in production code, don't ever do that
 
 ## Git Workflow Practices
 
@@ -141,3 +142,4 @@ gh pr diff {pr_number}
     - Avoid premature optimization outside of hot paths
     - Consider the tradeoff between readability and performance
     - Suggest optimizations that improve both clarity and performance
+```

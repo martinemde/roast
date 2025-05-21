@@ -1,10 +1,11 @@
-name: Grading current test changes
+name: Test Grading
 
 tools:
   - Roast::Tools::Grep
   - Roast::Tools::ReadFile
   - Roast::Tools::SearchFile
 
+# Uncomment this to run the workflow on modified tests automatically
 # each: '% cd $(git rev-parse --show-toplevel) && git status --porcelain | grep "_test\.rb" | cut -c4- | xargs realpath'
 
 steps:
@@ -35,3 +36,5 @@ generate_recommendations:
   json: true
   params:
     max_completion_tokens: 5_000
+
+
