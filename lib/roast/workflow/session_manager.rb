@@ -67,8 +67,9 @@ module Roast
 
       def workflow_directory(session_name, file_path)
         workflow_dir_name = session_name.parameterize.underscore
-        file_id = Digest::MD5.hexdigest(file_path)
-        file_basename = File.basename(file_path).parameterize.underscore
+        # For targetless sessions we don't have a file_path
+        file_id = Digest::MD5.hexdigest(file_path || Dir.pwd)
+        file_basename = File.basename(file_path || Dir.pwd).parameterize.underscore
         human_readable_id = "#{file_basename}_#{file_id[0..7]}"
         File.join(Dir.pwd, ".roast", "sessions", workflow_dir_name, human_readable_id)
       end

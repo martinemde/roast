@@ -14,7 +14,7 @@ module Roast
         setup_openrouter_constants
 
         mock_openrouter_client = mock
-        OpenRouter::Client.stubs(:new).with(api_key: "test_openrouter_token").returns(mock_openrouter_client)
+        OpenRouter::Client.stubs(:new).with(access_token: "test_openrouter_token").returns(mock_openrouter_client)
 
         ConfigurationParser.new(@workflow_path)
       end
