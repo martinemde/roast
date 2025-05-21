@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "active_support/cache"
-require "english"
+require "English"
 require "fileutils"
 
 require "roast/tools/grep"
