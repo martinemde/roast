@@ -13,7 +13,7 @@ steps:
       $(find {{resource.target}} -name "*.rb" -not -path "*/vendor/*" | grep -v "test")
 
   # Analyze each file and generate improvement recommendations
-  - each: "output['get_files_to_analyze'].split('\n')"
+  - each: "{{output['get_files_to_analyze'].split('\n')}}"
     as: "current_file"
     steps:
       - read_file:
@@ -35,7 +35,7 @@ steps:
         - implement_fix
         - verify_fix
         - update_fix_count
-      until: "output['update_fix_count']['fixes_applied'] >= 5 || output['select_next_issue']['no_issues_left'] == true"
+      until: "{{output['update_fix_count']['fixes_applied'] >= 5 || output['select_next_issue']['no_issues_left'] == true}}"
       max_iterations: 10
   
   # Generate a summary report of all changes made

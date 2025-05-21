@@ -13,8 +13,8 @@ module Roast
       end
 
       def call
-        # Resolve the collection expression
-        collection = resolve_collection
+        # Process the collection expression with appropriate type coercion
+        collection = process_iteration_input(@collection_expr, workflow, coerce_to: :iterable)
 
         unless collection.respond_to?(:each)
           $stderr.puts "Error: Collection '#{@collection_expr}' is not iterable"
@@ -45,28 +45,9 @@ module Roast
 
       private
 
+      # Keep for backward compatibility, deprecated
       def resolve_collection
-        # Remove surrounding {{ }} if present
-        expr = @collection_expr.strip
-        if expr.start_with?("{{") && expr.end_with?("}}")
-          expr = expr[2...-2].strip
-        end
-
-        begin
-          # Evaluate the expression in the workflow's context
-          result = workflow.instance_eval(expr)
-
-          # Convert to array if it's not already an enumerable
-          if !result.respond_to?(:each)
-            $stderr.puts "Warning: Collection '#{expr}' is not an enumerable, converting to array"
-            [result]
-          else
-            result
-          end
-        rescue => e
-          $stderr.puts "Error resolving collection '#{expr}': #{e.message}"
-          raise
-        end
+        process_iteration_input(@collection_expr, workflow, coerce_to: :iterable)
       end
 
       def define_iteration_variable(value)

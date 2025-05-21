@@ -15,7 +15,7 @@ steps:
       $(echo '{"files_analyzed": 0, "total_methods": 0, "results": []}')
 
   # Process each file found
-  - each: "output['find_ruby_files'].split('\n')"
+  - each: "{{output['find_ruby_files'].split('\n')}}"
     as: "current_file"
     steps:
       # Read the file content
@@ -46,7 +46,7 @@ steps:
             model: claude-3-haiku-20240307
             vars:
               report_data: "{{ output['initialize_report'] }}"
-      until: true
+      until: "{{true}}"
       max_iterations: 1
 
   # Write the report to a file

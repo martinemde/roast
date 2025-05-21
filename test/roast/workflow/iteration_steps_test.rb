@@ -20,7 +20,7 @@ module Roast
         repeat_step = RepeatStep.new(
           @workflow,
           steps: ["increment_counter", "check_counter"],
-          until_condition: "output['condition_met'] == true",
+          until_condition: "{{output['condition_met'] == true}}",
           max_iterations: 10,
           name: "repeat_until_condition_met",
           context_path: @context_path,
@@ -39,8 +39,8 @@ module Roast
         repeat_step = RepeatStep.new(
           @workflow,
           steps: ["infinite_step"],
-          until_condition: "false", # Never satisfied
-          max_iterations: 5,        # But limited to 5 iterations
+          until_condition: "{{false}}", # Never satisfied
+          max_iterations: 5,            # But limited to 5 iterations
           name: "repeat_with_limit",
           context_path: @context_path,
         )
@@ -64,7 +64,7 @@ module Roast
         # Create an each step
         each_step = EachStep.new(
           @workflow,
-          collection_expr: "output['test_items']",
+          collection_expr: "{{output['test_items']}}",
           variable_name: "current_item",
           steps: ["process_item"],
           name: "each_item",
@@ -100,7 +100,7 @@ module Roast
         # Create an each step with an empty collection
         each_step = EachStep.new(
           @workflow,
-          collection_expr: "output['empty_items']",
+          collection_expr: "{{output['empty_items']}}",
           variable_name: "current_item",
           steps: ["would_fail_if_executed"],
           name: "each_empty",

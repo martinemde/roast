@@ -102,7 +102,7 @@
                     },
                     "until": {
                       "type": "string",
-                      "description": "Condition to evaluate after each iteration; loop stops when condition becomes true"
+                      "description": "Condition to evaluate after each iteration; loop stops when condition becomes true. Can be a Ruby expression in {{...}}, a bash command in $(...), a step name, or prompt content. Result will be coerced to boolean."
                     },
                     "max_iterations": {
                       "type": "integer",
@@ -120,7 +120,7 @@
               "properties": {
                 "each": {
                   "type": "string",
-                  "description": "Expression that resolves to a collection to iterate over"
+                  "description": "Input that resolves to a collection to iterate over. Can be a Ruby expression in {{...}}, a bash command in $(...), a step name, or prompt content. Result will be coerced to an iterable collection."
                 },
                 "as": {
                   "type": "string",
