@@ -87,6 +87,7 @@ module Roast
           workflow.output_file = options[:output] if options[:output].present?
           workflow.verbose = options[:verbose] if options[:verbose].present?
           workflow.concise = options[:concise] if options[:concise].present?
+          workflow.pause_step_name = options[:pause] if options[:pause].present?
         end
       end
 

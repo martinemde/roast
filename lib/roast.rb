@@ -19,6 +19,8 @@ module Roast
     option :verbose, type: :boolean, aliases: "-v", desc: "Show output from all steps as they are executed"
     option :target, type: :string, aliases: "-t", desc: "Override target files. Can be file path, glob pattern, or $(shell command)"
     option :replay, type: :string, aliases: "-r", desc: "Resume workflow from a specific step. Format: step_name or session_timestamp:step_name"
+    option :pause, type: :string, aliases: "-p", desc: "Pause workflow after a specific step. Format: step_name"
+
     def execute(*paths)
       raise Thor::Error, "Workflow configuration file is required" if paths.empty?
 

@@ -16,6 +16,7 @@ module Roast
       attr_accessor :file,
         :concise,
         :output_file,
+        :pause_step_name,
         :verbose,
         :name,
         :context_path,

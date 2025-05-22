@@ -18,17 +18,18 @@ module Roast
         @context_path = context_path
       end
 
-      def execute_steps(steps)
-        steps.each do |step|
-          case step
+      def execute_steps(workflow_steps)
+        workflow_steps.each do |workflow_step|
+          case workflow_step
           when Hash
-            execute_hash_step(step)
+            execute_hash_step(workflow_step)
           when Array
-            execute_parallel_steps(step)
+            execute_parallel_steps(workflow_step)
           when String
-            execute_string_step(step)
+            execute_string_step(workflow_step)
+            Kernel.binding.irb if workflow.pause_step_name == workflow_step # rubocop:disable Lint/Debugger
           else
-            raise "Unknown step type: #{step.inspect}"
+            raise "Unknown step type: #{workflow_step.inspect}"
           end
         end
       end
