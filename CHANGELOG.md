@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - State persistence for loop iterations to enable resumption after failure
 - Standardized evaluation of Ruby expressions in iteration constructs using `{{}}` syntax
 - Support for using bash commands, step names, and Ruby expressions in iteration conditions and collections
+- Intelligent LLM response to boolean conversion with pattern-based recognition for natural language responses
 
 ### Fixed
 - Automatically add `.gitignore` file to cache directory when created (completing issue #22)

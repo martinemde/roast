@@ -228,6 +228,57 @@ module Roast
         # Restore original method
         @iteration_step.define_singleton_method(:process_step_or_prompt, original_method)
       end
+
+      def test_llm_boolean_coercion
+        # Test explicit boolean responses
+        assert_equal(true, @iteration_step.send(:coerce_to_llm_boolean, "yes"))
+        assert_equal(true, @iteration_step.send(:coerce_to_llm_boolean, "Yes"))
+        assert_equal(true, @iteration_step.send(:coerce_to_llm_boolean, "YES"))
+        assert_equal(true, @iteration_step.send(:coerce_to_llm_boolean, "y"))
+        assert_equal(true, @iteration_step.send(:coerce_to_llm_boolean, "true"))
+        assert_equal(true, @iteration_step.send(:coerce_to_llm_boolean, "t"))
+        assert_equal(true, @iteration_step.send(:coerce_to_llm_boolean, "1"))
+
+        assert_equal(false, @iteration_step.send(:coerce_to_llm_boolean, "no"))
+        assert_equal(false, @iteration_step.send(:coerce_to_llm_boolean, "No"))
+        assert_equal(false, @iteration_step.send(:coerce_to_llm_boolean, "NO"))
+        assert_equal(false, @iteration_step.send(:coerce_to_llm_boolean, "n"))
+        assert_equal(false, @iteration_step.send(:coerce_to_llm_boolean, "false"))
+        assert_equal(false, @iteration_step.send(:coerce_to_llm_boolean, "f"))
+        assert_equal(false, @iteration_step.send(:coerce_to_llm_boolean, "0"))
+
+        # Test boolean values
+        assert_equal(true, @iteration_step.send(:coerce_to_llm_boolean, true))
+        assert_equal(false, @iteration_step.send(:coerce_to_llm_boolean, false))
+        assert_equal(false, @iteration_step.send(:coerce_to_llm_boolean, nil))
+
+        # Test affirmative words in longer responses
+        assert_equal(true, @iteration_step.send(:coerce_to_llm_boolean, "I think the answer is yes"))
+        assert_equal(true, @iteration_step.send(:coerce_to_llm_boolean, "That is correct"))
+        assert_equal(true, @iteration_step.send(:coerce_to_llm_boolean, "Absolutely right"))
+        assert_equal(true, @iteration_step.send(:coerce_to_llm_boolean, "I agree with that"))
+        assert_equal(true, @iteration_step.send(:coerce_to_llm_boolean, "That is definitely true"))
+
+        # Test negative words in longer responses
+        assert_equal(false, @iteration_step.send(:coerce_to_llm_boolean, "I disagree with that statement"))
+        assert_equal(false, @iteration_step.send(:coerce_to_llm_boolean, "That is incorrect"))
+        assert_equal(false, @iteration_step.send(:coerce_to_llm_boolean, "I disagree"))
+        assert_equal(false, @iteration_step.send(:coerce_to_llm_boolean, "That's wrong"))
+        assert_equal(false, @iteration_step.send(:coerce_to_llm_boolean, "Never"))
+
+        # Test ambiguous responses (should default to false)
+        assert_output(nil, /Ambiguous LLM response.*contains both affirmative and negative/) do
+          assert_equal(false, @iteration_step.send(:coerce_to_llm_boolean, "Yes, but actually no"))
+        end
+
+        assert_output(nil, /Ambiguous LLM response.*no clear boolean indicators/) do
+          assert_equal(false, @iteration_step.send(:coerce_to_llm_boolean, "Maybe"))
+        end
+
+        assert_output(nil, /Ambiguous LLM response.*no clear boolean indicators/) do
+          assert_equal(false, @iteration_step.send(:coerce_to_llm_boolean, "I'm not sure"))
+        end
+      end
     end
   end
 end
