@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "fileutils"
+require "cli/ui"
 require "raix"
 require "thor"
 require "roast/version"
@@ -34,6 +36,76 @@ module Roast
     desc "version", "Display the current version of Roast"
     def version
       puts "Roast version #{Roast::VERSION}"
+    end
+
+    desc "init", "Initialize a new Roast workflow from an example"
+    option :example, type: :string, aliases: "-e", desc: "Name of the example to use directly (skips picker)"
+    def init
+      if options[:example]
+        copy_example(options[:example])
+      else
+        show_example_picker
+      end
+    end
+
+    private
+
+    def show_example_picker
+      examples = available_examples
+
+      if examples.empty?
+        puts "No examples found!"
+        return
+      end
+
+      puts "Select an option:"
+      choices = ["Pick from examples", "New from prompt (coming soon)"]
+
+      selected = run_picker(choices, "Select initialization method:")
+
+      case selected
+      when "Pick from examples"
+        example_choice = run_picker(examples, "Select an example:")
+        copy_example(example_choice) if example_choice
+      when "New from prompt (coming soon)"
+        puts "This feature is not yet implemented."
+      end
+    end
+
+    def available_examples
+      examples_dir = File.join(Roast::ROOT, "examples")
+      return [] unless File.directory?(examples_dir)
+
+      Dir.entries(examples_dir)
+        .select { |entry| File.directory?(File.join(examples_dir, entry)) && entry != "." && entry != ".." }
+        .sort
+    end
+
+    def run_picker(options, prompt)
+      return if options.empty?
+
+      ::CLI::UI::Prompt.ask(prompt) do |handler|
+        options.each { |option| handler.option(option) { |selection| selection } }
+      end
+    end
+
+    def copy_example(example_name)
+      examples_dir = File.join(Roast::ROOT, "examples")
+      source_path = File.join(examples_dir, example_name)
+      target_path = File.join(Dir.pwd, example_name)
+
+      unless File.directory?(source_path)
+        puts "Example '#{example_name}' not found!"
+        return
+      end
+
+      if File.exist?(target_path)
+        puts "Directory '#{example_name}' already exists in current directory!"
+        return
+      end
+
+      FileUtils.cp_r(source_path, target_path)
+      puts "Successfully copied example '#{example_name}' to current directory."
     end
 
     class << self
