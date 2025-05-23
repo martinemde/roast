@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "English"
 require "active_support"
 require "active_support/isolated_execution_state"
 require "active_support/notifications"
@@ -8,6 +9,33 @@ module Roast
   module Workflow
     # Handles the execution of workflow steps, including orchestration and threading
     class WorkflowExecutor
+      # Define custom exception classes for specific error scenarios
+      class WorkflowExecutorError < StandardError
+        attr_reader :step_name, :original_error
+
+        def initialize(message, step_name: nil, original_error: nil)
+          @step_name = step_name
+          @original_error = original_error
+          super(message)
+        end
+      end
+
+      class StepExecutionError < WorkflowExecutorError; end
+      class StepNotFoundError < WorkflowExecutorError; end
+      class InterpolationError < WorkflowExecutorError; end
+      class CommandExecutionError < WorkflowExecutorError; end
+      class StateError < WorkflowExecutorError; end
+      class ConfigurationError < WorkflowExecutorError; end
+
+      # Helper method for logging errors
+      def log_error(message)
+        $stderr.puts "ERROR: #{message}"
+      end
+
+      def log_warning(message)
+        $stderr.puts "WARNING: #{message}"
+      end
+
       DEFAULT_MODEL = "anthropic:claude-3-7-sonnet"
 
       attr_reader :workflow, :config_hash, :context_path
@@ -45,10 +73,10 @@ module Roast
             # Evaluate the expression in the workflow's context
             workflow.instance_eval(expression).to_s
           rescue => e
-            # If evaluation fails, provide a more detailed error message but preserve the original expression
-            error_msg = "Error interpolating {{#{expression}}}: #{e.message}. This variable is not defined in the workflow context. Please define it before using it in a step name."
-            $stderr.puts "ERROR: #{error_msg}"
-            match # Return the original match to preserve it in the string
+            # Provide a detailed error message but preserve the original expression
+            error_msg = "Error interpolating {{#{expression}}}: #{e.message}. This variable is not defined in the workflow context."
+            log_error(error_msg)
+            match # Preserve the original expression in the string
           end
         end
       end
@@ -83,7 +111,7 @@ module Roast
           # Save state after each step if the workflow supports it
           save_state(name, step_result) if workflow.respond_to?(:session_name) && workflow.session_name
 
-          step_result
+          step_result # Return the result
         end
 
         execution_time = Time.now - start_time
@@ -97,7 +125,7 @@ module Roast
         })
 
         result
-      rescue => e
+      rescue WorkflowExecutorError => e
         execution_time = Time.now - start_time
 
         ActiveSupport::Notifications.instrument("roast.step.error", {
@@ -108,6 +136,19 @@ module Roast
           execution_time: execution_time,
         })
         raise
+      rescue => e
+        execution_time = Time.now - start_time
+
+        ActiveSupport::Notifications.instrument("roast.step.error", {
+          step_name: name,
+          resource_type: resource_type,
+          error: e.class.name,
+          message: e.message,
+          execution_time: execution_time,
+        })
+
+        # Wrap the original error with context about which step failed
+        raise StepExecutionError.new("Failed to execute step '#{name}': #{e.message}", step_name: name, original_error: e)
       end
 
       private
@@ -119,12 +160,23 @@ module Roast
         # Interpolate variable name if it contains {{}}
         interpolated_name = interpolate(name)
 
-        if command.is_a?(Hash)
-          execute_steps([command])
+        case name
+        when "repeat"
+          execute_repeat_step(command)
+        when "each"
+          # For each steps, the structure is different
+          # This is handled in the parser, not here
+          raise ConfigurationError, "Invalid 'each' step format. 'as' and 'steps' must be at the same level as 'each'" unless step.key?("as") && step.key?("steps")
+
+          execute_each_step(step)
         else
-          # Interpolate command value
-          interpolated_command = interpolate(command)
-          workflow.output[interpolated_name] = execute_step(interpolated_command)
+          if command.is_a?(Hash)
+            execute_steps([command])
+          else
+            # Interpolate command value
+            interpolated_command = interpolate(command)
+            workflow.output[interpolated_name] = execute_step(interpolated_command)
+          end
         end
       end
 
@@ -162,7 +214,7 @@ module Roast
         # Continue with existing directory check logic
         step_path = File.join(context_path, step_name)
         step_path = File.expand_path(File.join(context_path, "..", "shared", step_name)) unless File.directory?(step_path)
-        raise "Step directory or file not found: #{step_path}" unless File.directory?(step_path)
+        raise StepNotFoundError.new("Step directory or file not found: #{step_path}", step_name: step_name) unless File.directory?(step_path)
 
         setup_step(Roast::Workflow::BaseStep, step_name, step_path)
       end
@@ -173,7 +225,13 @@ module Roast
 
       def load_ruby_step(file_path, step_name, context_path = File.dirname(file_path))
         $stderr.puts "Requiring step file: #{file_path}"
-        require file_path
+        begin
+          require file_path
+        rescue LoadError => e
+          raise StepNotFoundError.new("Failed to load step file: #{e.message}", step_name: step_name, original_error: e)
+        rescue SyntaxError => e
+          raise StepExecutionError.new("Syntax error in step file: #{e.message}", step_name: step_name, original_error: e)
+        end
         step_class = step_name.classify.constantize
         setup_step(step_class, step_name, context_path)
       end
@@ -205,10 +263,86 @@ module Roast
 
           # NOTE: We don't need to call interpolate here as it's already been done
           # in execute_string_step before this method is called
-          %x(#{command})
+          begin
+            output = %x(#{command})
+            raise CommandExecutionError.new("Command exited with non-zero status", step_name: command) unless $CHILD_STATUS.success?
+
+            output
+          rescue => e
+            raise CommandExecutionError.new("Failed to execute command '#{command}': #{e.message}", step_name: command, original_error: e)
+          end
         else
-          raise "Missing closing parentheses: #{step}"
+          raise ConfigurationError, "Missing closing parentheses in command: #{step}"
         end
+      end
+
+      def execute_repeat_step(repeat_config)
+        $stderr.puts "Executing repeat step: #{repeat_config.inspect}"
+
+        # Extract parameters from the repeat configuration
+        steps = repeat_config["steps"]
+        until_condition = repeat_config["until"]
+        max_iterations = repeat_config["max_iterations"] || BaseIterationStep::DEFAULT_MAX_ITERATIONS
+
+        # Verify required parameters
+        raise ConfigurationError, "Missing 'steps' in repeat configuration" unless steps
+        raise ConfigurationError, "Missing 'until' condition in repeat configuration" unless until_condition
+
+        # Create and execute a RepeatStep
+        repeat_step = RepeatStep.new(
+          workflow,
+          steps: steps,
+          until_condition: until_condition,
+          max_iterations: max_iterations,
+          name: "repeat_#{workflow.output.size}",
+          context_path: context_path,
+        )
+
+        results = repeat_step.call
+
+        # Store results in workflow output
+        step_name = "repeat_#{until_condition.gsub(/[^a-zA-Z0-9_]/, "_")}"
+        workflow.output[step_name] = results
+
+        # Save state
+        save_state(step_name, results) if workflow.respond_to?(:session_name) && workflow.session_name
+
+        results
+      end
+
+      def execute_each_step(each_config)
+        $stderr.puts "Executing each step: #{each_config.inspect}"
+
+        # Extract parameters from the each configuration
+        collection_expr = each_config["each"]
+        variable_name = each_config["as"]
+        steps = each_config["steps"]
+
+        # Verify required parameters
+        raise ConfigurationError, "Missing collection expression in each configuration" unless collection_expr
+        raise ConfigurationError, "Missing 'as' variable name in each configuration" unless variable_name
+        raise ConfigurationError, "Missing 'steps' in each configuration" unless steps
+
+        # Create and execute an EachStep
+        each_step = EachStep.new(
+          workflow,
+          collection_expr: collection_expr,
+          variable_name: variable_name,
+          steps: steps,
+          name: "each_#{variable_name}",
+          context_path: context_path,
+        )
+
+        results = each_step.call
+
+        # Store results in workflow output
+        step_name = "each_#{variable_name}"
+        workflow.output[step_name] = results
+
+        # Save state
+        save_state(step_name, results) if workflow.respond_to?(:session_name) && workflow.session_name
+
+        results
       end
 
       def save_state(step_name, step_result)
@@ -234,7 +368,7 @@ module Roast
         state_repository.save_state(workflow, step_name, state_data)
       rescue => e
         # Don't fail the workflow if state saving fails
-        $stderr.puts "Warning: Failed to save workflow state: #{e.message}"
+        log_warning("Failed to save workflow state: #{e.message}")
       end
     end
   end

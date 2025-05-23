@@ -5,7 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## Unreleased
+
+### Added
+- Iteration mechanisms for workflows with `repeat` and `each` constructs (resolving issue #48)
+- Support for conditional repetition with `until` condition and safety limits
+- Collection iteration with variable binding for processing lists of items
+- State persistence for loop iterations to enable resumption after failure
+- Standardized evaluation of Ruby expressions in iteration constructs using `{{}}` syntax
+- Support for using bash commands, step names, and Ruby expressions in iteration conditions and collections
+
+### Fixed
+- Automatically add `.gitignore` file to cache directory when created (completing issue #22)
+- Load initializers before trying to load tools in case custom tools are defined in initializers (thanks @palkan)
+- Fix loading of targetless workflows (thanks @palkan)
+- Fix OpenRouter support (thanks @xrendan)
 
 ### Improved
 - Enhanced search file tool logging to show full expanded paths instead of relative paths
@@ -17,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for atomic file updates with rollback capability
 - Comprehensive documentation for all built-in tools
 - Enhanced README with detailed tool usage examples
+
+``[0.1.7]: https://github.com/Shopify/roast/compare/v0.1.6...v0.1.7
 
 ## [0.1.6] - 2024-05-15
 
@@ -38,7 +54,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved initializer loading and error handling
 - Fixed tests for nested .roast folders
 
-[0.1.7]: https://github.com/Shopify/roast/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/Shopify/roast/compare/v0.1.5...v0.1.6
 
 ## [0.1.5] - 2024-05-13
