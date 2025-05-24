@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require_relative "step_finder"
-require_relative "file_state_repository"
+require "roast/workflow/step_finder"
+require "roast/workflow/file_state_repository"
 
 module Roast
   module Workflow

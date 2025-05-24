@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require_relative "resources/base_resource"
-require_relative "resources/file_resource"
-require_relative "resources/directory_resource"
-require_relative "resources/url_resource"
-require_relative "resources/api_resource"
-require_relative "resources/none_resource"
+require "roast/resources/base_resource"
+require "roast/resources/file_resource"
+require "roast/resources/directory_resource"
+require "roast/resources/url_resource"
+require "roast/resources/api_resource"
+require "roast/resources/none_resource"
 require "uri"
 
 module Roast

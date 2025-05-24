@@ -35,7 +35,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Add development dependencies to `Gemfile`.
 - Don't ever test private methods directly. Specs should test behavior, not implementation.
 - I do not like test-specific code embedded in production code, don't ever do that
-- Prefer `require` instead of `require_relative` unless the latter is absolutely necessary
+- **Do not use require_relative**
 - Require statements should always be in alphabetical order
 
 ## Git Workflow Practices

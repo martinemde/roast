@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require_relative "workflow_executor"
-require_relative "llm_boolean_coercer"
+require "roast/workflow/workflow_executor"
+require "roast/workflow/llm_boolean_coercer"
 
 module Roast
   module Workflow
