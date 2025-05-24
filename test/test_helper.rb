@@ -23,8 +23,8 @@ module Minitest
 end
 
 # Require test helpers
-require_relative "support/fixture_helpers"
-require_relative "support/improved_assertions"
+require "support/fixture_helpers"
+require "support/improved_assertions"
 
 require "webmock/minitest"
 # Block all real HTTP requests in tests

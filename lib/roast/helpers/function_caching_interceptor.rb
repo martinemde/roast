@@ -4,7 +4,7 @@ require "active_support"
 require "active_support/isolated_execution_state"
 require "active_support/cache"
 require "active_support/notifications"
-require_relative "logger"
+require "roast/helpers/logger"
 
 module Roast
   module Helpers
