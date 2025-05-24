@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "workflow_executor"
+require_relative "llm_boolean_coercer"
 
 module Roast
   module Workflow
@@ -168,39 +169,7 @@ module Roast
 
       # Convert LLM response to boolean
       def coerce_to_llm_boolean(result)
-        return true if result.is_a?(TrueClass)
-        return false if result.is_a?(FalseClass) || result.nil?
-
-        text = result.to_s.downcase.strip
-
-        # Check for explicit boolean-like responses first
-        return true if text =~ /\A(yes|y|true|t|1)\z/i
-        return false if text =~ /\A(no|n|false|f|0)\z/i
-
-        # Then check for these words within longer responses
-        affirmative_pattern = /\b(yes|true|correct|affirmative|confirmed|indeed|right|positive|agree|definitely|certainly|absolutely)\b/
-        negative_pattern = /\b(no|false|incorrect|negative|denied|wrong|disagree|never)\b/
-
-        has_affirmative = !!(text =~ affirmative_pattern)
-        has_negative = !!(text =~ negative_pattern)
-
-        # Handle conflicts
-        if has_affirmative && has_negative
-          warn_llm_boolean_ambiguity(result, "contains both affirmative and negative terms")
-          false
-        elsif has_affirmative
-          true
-        elsif has_negative
-          false
-        else
-          warn_llm_boolean_ambiguity(result, "no clear boolean indicators found")
-          false
-        end
-      end
-
-      # Log a warning for ambiguous LLM boolean responses
-      def warn_llm_boolean_ambiguity(result, reason)
-        $stderr.puts "Warning: Ambiguous LLM response for boolean conversion (#{reason}): '#{result.to_s.strip}'"
+        LlmBooleanCoercer.coerce(result)
       end
 
       # Log a warning for expression evaluation errors

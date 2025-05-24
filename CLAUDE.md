@@ -12,6 +12,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Run single test: `bundle exec ruby -Itest test/path/to/test_file.rb`
 - Lint: `bundle exec rubocop`
 - Lint (with autocorrect, preferred): `bundle exec rubocop -A`
+- Whenever you want to run the whole test suite just run `bundle exec rake` to also run linting, and note the linting errors too (most will auto correct but not all)
+- **Run roast locally**: Use `bin/roast` (not `bundle exec roast` which may use the installed gem)
+- Alternative: `bundle exec exe/roast`
 
 ## Tech stack
 - `thor` and `cli-ui` for the CLI tool
@@ -31,6 +34,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Add development dependencies to `Gemfile`.
 - Don't ever test private methods directly. Specs should test behavior, not implementation.
 - I do not like test-specific code embedded in production code, don't ever do that
+- Prefer `require` instead of `require_relative` unless the latter is absolutely necessary
+- Require statements should always be in alphabetical order
 
 ## Git Workflow Practices
 
@@ -142,4 +147,3 @@ gh pr diff {pr_number}
     - Avoid premature optimization outside of hot paths
     - Consider the tradeoff between readability and performance
     - Suggest optimizations that improve both clarity and performance
-```

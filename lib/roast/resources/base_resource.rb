@@ -19,6 +19,13 @@ module Roast
         target
       end
 
+      # Get the value of the resource (alias for target)
+      # Used for backward compatibility
+      # @return [String] The resource target value
+      def value
+        target
+      end
+
       # Check if the resource exists
       # @return [Boolean] true if the resource exists
       def exists?
