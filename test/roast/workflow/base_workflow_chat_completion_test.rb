@@ -22,29 +22,26 @@ module Roast
         end
       end
 
-      def test_chat_completion_module_not_included_in_base_workflow
+      def test_chat_completion_module_is_included_in_base_workflow
         workflow = TestWorkflow.new(nil, name: "test", configuration: MockConfiguration.new)
-        
-        # Verify that BaseWorkflow doesn't include Raix::ChatCompletion methods directly
-        refute(workflow.class.included_modules.include?(Raix::ChatCompletion))
+
+        # Verify that BaseWorkflow includes Raix::ChatCompletion
+        assert(workflow.class.included_modules.include?(Raix::ChatCompletion))
       end
 
-      def test_chat_completion_delegates_to_manager
-        workflow = TestWorkflow.new(nil, name: "test", configuration: MockConfiguration.new)
-        
-        # Mock the chat completion manager
-        manager = workflow.instance_variable_get(:@chat_completion_manager)
-        manager.expects(:chat_completion).with(messages: ["test"]).returns("result")
-        
-        result = workflow.chat_completion(messages: ["test"])
-        assert_equal("result", result)
+      def test_chat_completion_method_is_overridden
+        TestWorkflow.new(nil, name: "test", configuration: MockConfiguration.new)
+
+        # The chat_completion method should be defined on BaseWorkflow itself
+        # (not just inherited from the module)
+        assert(BaseWorkflow.instance_methods(false).include?(:chat_completion))
       end
 
-      def test_chat_completion_manager_includes_raix_module
+      def test_chat_completion_responds_to_method
         workflow = TestWorkflow.new(nil, name: "test", configuration: MockConfiguration.new)
-        manager = workflow.instance_variable_get(:@chat_completion_manager)
-        
-        assert(manager.class.included_modules.include?(Raix::ChatCompletion))
+
+        # Verify the workflow responds to chat_completion
+        assert(workflow.respond_to?(:chat_completion))
       end
     end
   end

@@ -7,12 +7,13 @@ require "active_support/isolated_execution_state"
 require "active_support/notifications"
 require "active_support/core_ext/hash/indifferent_access"
 require "roast/workflow/output_manager"
-require "roast/workflow/chat_completion_manager"
 require "roast/workflow/context_path_resolver"
 
 module Roast
   module Workflow
     class BaseWorkflow
+      include Raix::ChatCompletion
+
       attr_accessor :file,
         :concise,
         :output_file,
@@ -28,7 +29,6 @@ module Roast
 
       delegate :api_provider, :openai?, to: :configuration
       delegate :output, :output=, :append_to_final_output, :final_output, to: :output_manager
-      delegate :transcript, to: :@chat_completion_manager
 
       def initialize(file = nil, name: nil, context_path: nil, resource: nil, session_name: nil, configuration: nil)
         @file = file
@@ -41,7 +41,6 @@ module Roast
 
         # Initialize managers
         @output_manager = OutputManager.new
-        @chat_completion_manager = ChatCompletionManager.new(self)
 
         # Setup prompt and handlers
         read_sidecar_prompt.then do |prompt|
@@ -53,14 +52,50 @@ module Roast
         Roast::Tools.setup_exit_handler(self)
       end
 
-      # Delegate to chat completion manager with model handling
+      # Override chat_completion to add instrumentation
       def chat_completion(**kwargs)
-        @chat_completion_manager.chat_completion(**kwargs)
+        start_time = Time.now
+        step_model = kwargs[:model]
+
+        with_model(step_model) do
+          ActiveSupport::Notifications.instrument("roast.chat_completion.start", {
+            model: model,
+            parameters: kwargs.except(:openai, :model),
+          })
+
+          # Call the parent module's chat_completion
+          # skip model because it is read directly from the model method
+          result = super(**kwargs.except(:model))
+          execution_time = Time.now - start_time
+
+          ActiveSupport::Notifications.instrument("roast.chat_completion.complete", {
+            success: true,
+            model: model,
+            parameters: kwargs.except(:openai, :model),
+            execution_time: execution_time,
+            response_size: result.to_s.length,
+          })
+          result
+        end
+      rescue => e
+        execution_time = Time.now - start_time
+
+        ActiveSupport::Notifications.instrument("roast.chat_completion.error", {
+          error: e.class.name,
+          message: e.message,
+          model: step_model || model,
+          parameters: kwargs.except(:openai, :model),
+          execution_time: execution_time,
+        })
+        raise
       end
 
-      # For backward compatibility and internal use
-      def with_model(model, &block)
-        @chat_completion_manager.with_model(model, &block)
+      def with_model(model)
+        previous_model = @model
+        @model = model
+        yield
+      ensure
+        @model = previous_model
       end
 
       def workflow
