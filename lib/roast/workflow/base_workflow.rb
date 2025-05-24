@@ -13,11 +13,6 @@ require "roast/workflow/context_path_resolver"
 module Roast
   module Workflow
     class BaseWorkflow
-      include Raix::ChatCompletion
-
-      # Store reference to original chat_completion method before overriding
-      ORIGINAL_CHAT_COMPLETION = instance_method(:chat_completion)
-
       attr_accessor :file,
         :concise,
         :output_file,
@@ -33,6 +28,7 @@ module Roast
 
       delegate :api_provider, :openai?, to: :configuration
       delegate :output, :output=, :append_to_final_output, :final_output, to: :output_manager
+      delegate :transcript, to: :@chat_completion_manager
 
       def initialize(file = nil, name: nil, context_path: nil, resource: nil, session_name: nil, configuration: nil)
         @file = file
@@ -75,11 +71,6 @@ module Roast
       attr_reader :output_manager
 
       private
-
-      # Called by ChatCompletionManager to invoke the actual chat completion
-      def original_chat_completion(**kwargs)
-        ORIGINAL_CHAT_COMPLETION.bind(self).call(**kwargs)
-      end
 
       def read_sidecar_prompt
         Roast::Helpers::PromptLoader.load_prompt(self, file)

@@ -22,11 +22,11 @@ module Roast
         end
       end
 
-      def test_original_chat_completion_method_exists
+      def test_chat_completion_module_not_included_in_base_workflow
         workflow = TestWorkflow.new(nil, name: "test", configuration: MockConfiguration.new)
         
-        # Verify that original_chat_completion method exists and is private
-        assert(workflow.private_methods.include?(:original_chat_completion))
+        # Verify that BaseWorkflow doesn't include Raix::ChatCompletion methods directly
+        refute(workflow.class.included_modules.include?(Raix::ChatCompletion))
       end
 
       def test_chat_completion_delegates_to_manager
@@ -40,9 +40,11 @@ module Roast
         assert_equal("result", result)
       end
 
-      def test_original_chat_completion_constant_is_defined
-        assert(BaseWorkflow.const_defined?(:ORIGINAL_CHAT_COMPLETION))
-        assert_kind_of(UnboundMethod, BaseWorkflow::ORIGINAL_CHAT_COMPLETION)
+      def test_chat_completion_manager_includes_raix_module
+        workflow = TestWorkflow.new(nil, name: "test", configuration: MockConfiguration.new)
+        manager = workflow.instance_variable_get(:@chat_completion_manager)
+        
+        assert(manager.class.included_modules.include?(Raix::ChatCompletion))
       end
     end
   end

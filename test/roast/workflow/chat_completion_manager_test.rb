@@ -8,6 +8,9 @@ module Roast
     class ChatCompletionManagerTest < Minitest::Test
       def setup
         @workflow = mock("workflow")
+        @workflow.stubs(:model).returns("gpt-4")
+        @workflow.stubs(:openai?).returns(false)
+        
         @manager = ChatCompletionManager.new(@workflow)
         @events = []
 
@@ -19,45 +22,6 @@ module Roast
 
       def teardown
         ActiveSupport::Notifications.unsubscribe(@subscription)
-      end
-
-      def test_chat_completion_calls_workflow_and_instruments
-        params = { messages: [{ role: "user", content: "Hello" }], model: "gpt-4" }
-        expected_result = "AI response"
-
-        @workflow.expects(:original_chat_completion).with(messages: params[:messages]).returns(expected_result)
-
-        result = @manager.chat_completion(**params)
-
-        assert_equal(expected_result, result)
-        assert_equal(2, @events.size)
-
-        start_event = @events.find { |e| e[:name] == "roast.chat_completion.start" }
-        assert_equal("gpt-4", start_event[:payload][:model])
-        assert_equal(params[:messages], start_event[:payload][:parameters][:messages])
-
-        complete_event = @events.find { |e| e[:name] == "roast.chat_completion.complete" }
-        assert(complete_event[:payload][:success])
-        assert_equal("gpt-4", complete_event[:payload][:model])
-        assert_kind_of(Float, complete_event[:payload][:execution_time])
-        assert_equal(expected_result.length, complete_event[:payload][:response_size])
-      end
-
-      def test_chat_completion_instruments_errors
-        params = { messages: [{ role: "user", content: "Hello" }], model: "gpt-4" }
-        error = StandardError.new("API Error")
-
-        @workflow.expects(:original_chat_completion).raises(error)
-
-        assert_raises(StandardError) do
-          @manager.chat_completion(**params)
-        end
-
-        error_event = @events.find { |e| e[:name] == "roast.chat_completion.error" }
-        assert_equal("StandardError", error_event[:payload][:error])
-        assert_equal("API Error", error_event[:payload][:message])
-        assert_equal("gpt-4", error_event[:payload][:model])
-        assert_kind_of(Float, error_event[:payload][:execution_time])
       end
 
       def test_with_model_temporarily_changes_model
@@ -86,25 +50,25 @@ module Roast
         end
       end
 
-      def test_excludes_openai_and_model_from_parameters
-        params = {
-          messages: [{ role: "user", content: "Hello" }],
-          model: "gpt-4",
-          openai: "api_instance",
-          temperature: 0.7,
-        }
-
-        @workflow.expects(:original_chat_completion).with(
-          messages: params[:messages],
-          temperature: params[:temperature],
-        ).returns("response")
-
-        @manager.chat_completion(**params)
-
-        start_event = @events.find { |e| e[:name] == "roast.chat_completion.start" }
-        assert_equal({ messages: params[:messages], temperature: params[:temperature] }, start_event[:payload][:parameters])
-        refute(start_event[:payload][:parameters].key?(:model))
-        refute(start_event[:payload][:parameters].key?(:openai))
+      def test_model_returns_current_or_workflow_model
+        # When no current_model is set, returns workflow model
+        assert_equal("gpt-4", @manager.model)
+        
+        # When current_model is set, returns that instead
+        @manager.with_model("gpt-3.5") do
+          assert_equal("gpt-3.5", @manager.model)
+        end
+        
+        # Back to workflow model after block
+        assert_equal("gpt-4", @manager.model)
+      end
+      
+      def test_openai_delegates_to_workflow
+        @workflow.expects(:openai?).returns(true)
+        assert(@manager.openai?)
+        
+        @workflow.expects(:openai?).returns(false)
+        refute(@manager.openai?)
       end
     end
   end

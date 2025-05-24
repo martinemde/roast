@@ -2,11 +2,13 @@
 
 require "active_support"
 require "active_support/notifications"
+require "raix/chat_completion"
 
 module Roast
   module Workflow
     # Manages chat completion interactions with instrumentation
     class ChatCompletionManager
+      include Raix::ChatCompletion
       attr_reader :workflow, :current_model
 
       def initialize(workflow)
@@ -25,9 +27,9 @@ module Roast
             parameters: kwargs.except(:openai, :model),
           })
 
-          # Call the original chat_completion on the workflow
-          # Skip model and openai because they are handled by the workflow
-          result = workflow.send(:original_chat_completion, **kwargs.except(:model, :openai))
+          # Call the parent module's chat_completion with model set
+          # Skip model and openai from kwargs as they are handled here
+          result = super(**kwargs.except(:model, :openai))
           execution_time = Time.now - start_time
 
           ActiveSupport::Notifications.instrument("roast.chat_completion.complete", {
@@ -59,6 +61,16 @@ module Roast
         yield
       ensure
         @current_model = previous_model
+      end
+
+      # Override model accessor to use current_model or workflow's model
+      def model
+        @current_model || @workflow.model
+      end
+
+      # Delegate openai? to workflow for Raix compatibility
+      def openai?
+        @workflow.openai?
       end
     end
   end
