@@ -125,7 +125,60 @@ Roast supports several types of steps:
    ```
    When `exit_on_error: false`, the command output will include the exit status, allowing subsequent steps to process error information.
 
-4. **Raw prompt step**: Simple text prompts for the model without tools
+4. **Conditional steps**: Execute different steps based on conditions using `if/unless`
+   ```yaml
+   steps:
+     - check_environment:
+         if: "{{ENV['RAILS_ENV'] == 'production'}}"
+         then:
+           - run_production_checks
+           - notify_team
+         else:
+           - run_development_setup
+     
+     - verify_dependencies:
+         unless: "$(bundle check)"
+         then:
+           - bundle_install: "$(bundle install)"
+   ```
+   
+   Conditions can be:
+   - Ruby expressions: `if: "{{output['count'] > 5}}"`
+   - Bash commands: `if: "$(test -f config.yml && echo true)"` (exit code 0 = true)
+   - Step references: `if: "previous_step_name"` (uses the step's output)
+   - Direct values: `if: "true"` or `if: "false"`
+
+5. **Iteration steps**: Loop over collections or repeat steps with conditions
+   ```yaml
+   steps:
+     # Loop over a collection
+     - process_files:
+         each: "{{Dir.glob('**/*.rb')}}"
+         as: current_file
+         steps:
+           - analyze_file
+           - Generate a report for {{current_file}}
+     
+     # Repeat until a condition is met
+     - improve_code:
+         repeat:
+           until: "{{output['test_pass'] == true}}"
+           max_iterations: 5
+           steps:
+             - run_tests
+             - fix_issues
+   ```
+   
+   Each loops support:
+   - Collections from Ruby expressions: `each: "{{[1, 2, 3]}}"`
+   - Command output: `each: "$(ls *.rb)"`
+   - Step references: `each: "file_list"`
+   
+   Repeat loops support:
+   - Until conditions: `until: "{{condition}}"`
+   - Maximum iterations: `max_iterations: 10`
+
+6. **Raw prompt step**: Simple text prompts for the model without tools
    ```yaml
    steps:
      - Summarize the changes made to the codebase.
