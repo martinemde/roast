@@ -44,8 +44,11 @@ module Roast
             configure_openrouter_client
           when :openai
             configure_openai_client
+          when nil
+            # Skip configuration if no api_provider is set (e.g., in tests)
+            nil
           else
-            raise "Unsupported or missing api_provider in workflow configuration: #{@configuration.api_provider}"
+            raise "Unsupported api_provider in workflow configuration: #{@configuration.api_provider}"
           end
         rescue => e
           Roast::Helpers::Logger.error("Error configuring API client: #{e.message}")
