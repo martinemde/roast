@@ -1,0 +1,36 @@
+name: Linting with Error Recovery
+tools:
+  - Roast::Tools::ReadFile
+  - Roast::Tools::WriteFile
+  - Roast::Tools::CodingAgent
+
+steps:
+  # Run linter on the file - may fail if there are syntax errors
+  - lint_check: $(rubocop {{file}})
+  
+  # Analyze linter output and fix issues even if linter failed
+  - analyze_lint_output
+  
+  # Apply fixes based on the analysis
+  - apply_fixes
+
+# Step configuration
+lint_check:
+  exit_on_error: false  # Continue even if rubocop exits with non-zero status
+
+analyze_lint_output:
+  prompt: |
+    The linter output from the previous step shows issues with the code.
+    Please analyze the output and identify the specific problems that need to be fixed.
+    
+    Focus on:
+    - Syntax errors
+    - Style violations
+    - Best practice violations
+    
+    Provide a structured list of issues found.
+
+apply_fixes:
+  prompt: |
+    Based on the analysis, please generate the fixes for the identified issues.
+    Use the CodingAgent tool to apply the necessary changes to the file.

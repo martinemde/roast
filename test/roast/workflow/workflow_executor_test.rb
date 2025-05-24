@@ -15,13 +15,13 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
 
   # String steps tests
   test "executes string steps" do
-    @executor.expects(:execute_step).with("step1")
+    @executor.expects(:execute_step).with("step1", exit_on_error: true)
     @executor.execute_steps(["step1"])
   end
 
   test "execute with pause flag will pause on the matching step" do
     @workflow.stubs(pause_step_name: "step1")
-    @executor.expects(:execute_step).with("step1")
+    @executor.expects(:execute_step).with("step1", exit_on_error: true)
     mock_binding = mock("mock_binding")
     Kernel.stubs(:binding).returns(mock_binding)
     mock_binding.expects(:irb)
@@ -30,27 +30,27 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
 
   test "executes string steps with interpolation" do
     @workflow.expects(:instance_eval).with("file").returns("test.rb")
-    @executor.expects(:execute_step).with("step test.rb")
+    @executor.expects(:execute_step).with("step test.rb", exit_on_error: true)
     @executor.execute_steps(["step {{file}}"])
   end
 
   # Hash steps tests
   test "executes hash steps" do
-    @executor.expects(:execute_step).with("command1").returns("result")
+    @executor.expects(:execute_step).with("command1", exit_on_error: true).returns("result")
     @executor.execute_steps([{ "var1" => "command1" }])
     assert_equal "result", @output["var1"]
   end
 
   test "executes hash steps with interpolation in key" do
     @workflow.expects(:instance_eval).with("var_name").returns("test_var")
-    @executor.expects(:execute_step).with("command1").returns("result")
+    @executor.expects(:execute_step).with("command1", exit_on_error: true).returns("result")
     @executor.execute_steps([{ "{{var_name}}" => "command1" }])
     assert_equal "result", @output["test_var"]
   end
 
   test "executes hash steps with interpolation in value" do
     @workflow.expects(:instance_eval).with("cmd").returns("test_command")
-    @executor.expects(:execute_step).with("test_command").returns("result")
+    @executor.expects(:execute_step).with("test_command", exit_on_error: true).returns("result")
     @executor.execute_steps([{ "var1" => "{{cmd}}" }])
     assert_equal "result", @output["var1"]
   end
@@ -58,7 +58,7 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
   test "executes hash steps with interpolation in both key and value" do
     @workflow.expects(:instance_eval).with("var_name").returns("test_var")
     @workflow.expects(:instance_eval).with("cmd").returns("test_command")
-    @executor.expects(:execute_step).with("test_command").returns("result")
+    @executor.expects(:execute_step).with("test_command", exit_on_error: true).returns("result")
     @executor.execute_steps([{ "{{var_name}}" => "{{cmd}}" }])
     assert_equal "result", @output["test_var"]
   end
@@ -134,7 +134,7 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
 
   # Bash expression tests
   test "executes shell command for bash expression" do
-    @executor.expects(:strip_and_execute).with("$(ls)").returns("file1\nfile2")
+    @executor.expects(:strip_and_execute).with("$(ls)", exit_on_error: true).returns("file1\nfile2")
     @workflow.expects(:transcript).returns([]).twice
 
     result = @executor.execute_step("$(ls)")
@@ -175,7 +175,7 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
 
   test "interpolates expressions in shell commands" do
     @workflow.expects(:instance_eval).with("file").returns("test.rb")
-    @executor.expects(:strip_and_execute).with("$(rubocop -A test.rb)").returns("Shell output")
+    @executor.expects(:strip_and_execute).with("$(rubocop -A test.rb)", exit_on_error: true).returns("Shell output")
     @workflow.expects(:transcript).returns([]).at_least(1)
 
     # First interpolate is called in execute_string_step (via execute_steps),

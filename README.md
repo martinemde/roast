@@ -113,6 +113,18 @@ Roast supports several types of steps:
    ```
    This will execute the command and store the result in the workflow output hash. Explicit key name is optional (`rubocop` in the second line of the example).
 
+   By default, commands that exit with non-zero status will halt the workflow. You can configure steps to continue on error:
+   ```yaml
+   steps:
+     - lint_check: $(rubocop {{file}})
+     - fix_issues
+   
+   # Step configuration
+   lint_check:
+     exit_on_error: false  # Continue workflow even if command fails
+   ```
+   When `exit_on_error: false`, the command output will include the exit status, allowing subsequent steps to process error information.
+
 4. **Raw prompt step**: Simple text prompts for the model without tools
    ```yaml
    steps:
