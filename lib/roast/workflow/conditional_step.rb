@@ -74,7 +74,7 @@ module Roast
         cmd = command.strip[2...-1].strip
         executor = CommandExecutor.new(logger: Roast::Helpers::Logger)
         begin
-          result = executor.execute(command, exit_on_error: false)
+          result = executor.execute(cmd, exit_on_error: false)
           # For conditionals, we care about the exit status
           result[:success]
         rescue => e
