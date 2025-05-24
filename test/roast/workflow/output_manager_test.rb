@@ -2,6 +2,7 @@
 
 require "test_helper"
 require "roast/workflow/output_manager"
+require "roast/workflow/dot_access_hash"
 
 module Roast
   module Workflow
@@ -11,8 +12,8 @@ module Roast
       end
 
       def test_initializes_with_empty_output
-        assert_instance_of(ActiveSupport::HashWithIndifferentAccess, @manager.output)
-        assert_empty(@manager.output)
+        assert_instance_of(DotAccessHash, @manager.output)
+        assert_empty(@manager.raw_output)
       end
 
       def test_initializes_with_empty_final_output
@@ -23,7 +24,7 @@ module Roast
         regular_hash = { "key" => "value" }
         @manager.output = regular_hash
 
-        assert_instance_of(ActiveSupport::HashWithIndifferentAccess, @manager.output)
+        assert_instance_of(ActiveSupport::HashWithIndifferentAccess, @manager.raw_output)
         assert_equal("value", @manager.output[:key])
         assert_equal("value", @manager.output["key"])
       end
@@ -32,7 +33,35 @@ module Roast
         indifferent_hash = ActiveSupport::HashWithIndifferentAccess.new(key: "value")
         @manager.output = indifferent_hash
 
-        assert_same(indifferent_hash, @manager.output)
+        assert_same(indifferent_hash, @manager.raw_output)
+      end
+
+      def test_output_supports_dot_notation_access
+        @manager.output = {
+          simple: "value",
+          nested: {
+            level1: {
+              level2: "deep",
+            },
+          },
+        }
+
+        assert_equal("value", @manager.output.simple)
+        assert_equal("deep", @manager.output.nested.level1.level2)
+      end
+
+      def test_output_supports_predicate_methods
+        @manager.output = {
+          truthy: true,
+          falsy: false,
+          nil_val: nil,
+          present: "here",
+        }
+
+        assert_equal(true, @manager.output.truthy?)
+        assert_equal(false, @manager.output.falsy?)
+        assert_equal(false, @manager.output.nil_val?)
+        assert_equal(true, @manager.output.present?)
       end
 
       def test_append_to_final_output
