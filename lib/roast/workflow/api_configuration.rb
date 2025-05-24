@@ -1,0 +1,61 @@
+# frozen_string_literal: true
+
+require "roast/factories/api_provider_factory"
+require "roast/workflow/resource_resolver"
+
+module Roast
+  module Workflow
+    # Handles API-related configuration including tokens and providers
+    class ApiConfiguration
+      attr_reader :api_token, :api_provider
+
+      def initialize(config_hash)
+        @config_hash = config_hash
+        process_api_configuration
+      end
+
+      # Check if using OpenRouter
+      # @return [Boolean] true if using OpenRouter
+      def openrouter?
+        Roast::Factories::ApiProviderFactory.openrouter?(@api_provider)
+      end
+
+      # Check if using OpenAI
+      # @return [Boolean] true if using OpenAI
+      def openai?
+        Roast::Factories::ApiProviderFactory.openai?(@api_provider)
+      end
+
+      # Get the effective API token including environment variables
+      # @return [String, nil] The API token
+      def effective_token
+        @api_token || environment_token
+      end
+
+      private
+
+      def process_api_configuration
+        extract_api_token
+        extract_api_provider
+      end
+
+      def extract_api_token
+        if @config_hash["api_token"]
+          @api_token = ResourceResolver.process_shell_command(@config_hash["api_token"])
+        end
+      end
+
+      def extract_api_provider
+        @api_provider = Roast::Factories::ApiProviderFactory.from_config(@config_hash)
+      end
+
+      def environment_token
+        if openai?
+          ENV["OPENAI_API_KEY"]
+        elsif openrouter?
+          ENV["OPENROUTER_API_KEY"]
+        end
+      end
+    end
+  end
+end

@@ -34,10 +34,10 @@ class GlobalModelTest < ActiveSupport::TestCase
     config_hash = YAML.load_file(@workflow_path)
     context_path = File.dirname(@workflow_path)
 
-    executor = Roast::Workflow::WorkflowExecutor.new(@workflow, config_hash, context_path)
+    step_loader = Roast::Workflow::StepLoader.new(@workflow, config_hash, context_path)
 
     @step.expects(:model=).with("gpt-4o-mini").once
-    executor.send(:setup_step, @step_class, "test_step", context_path)
+    step_loader.send(:create_step_instance, @step_class, "test_step", context_path)
   end
 
   test "step-specific model overrides global model" do
@@ -50,9 +50,9 @@ class GlobalModelTest < ActiveSupport::TestCase
 
     context_path = File.dirname(@workflow_path)
 
-    executor = Roast::Workflow::WorkflowExecutor.new(@workflow, config_hash, context_path)
+    step_loader = Roast::Workflow::StepLoader.new(@workflow, config_hash, context_path)
 
     @step.expects(:model=).with("local-model").once
-    executor.send(:setup_step, @step_class, "test_step", context_path)
+    step_loader.send(:create_step_instance, @step_class, "test_step", context_path)
   end
 end

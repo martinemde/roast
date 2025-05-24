@@ -1,4 +1,5 @@
 name: Test Grading
+model: anthropic:claude-opus-4
 
 tools:
   - Roast::Tools::Grep

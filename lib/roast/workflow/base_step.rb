@@ -2,6 +2,7 @@
 
 require "erb"
 require "forwardable"
+require "roast/workflow/context_path_resolver"
 
 module Roast
   module Workflow
@@ -19,7 +20,7 @@ module Roast
         @workflow = workflow
         @model = model
         @name = name || self.class.name.underscore.split("/").last
-        @context_path = context_path || determine_context_path
+        @context_path = context_path || ContextPathResolver.resolve(self.class)
         @print_response = false
         @auto_loop = auto_loop
         @json = false
@@ -45,27 +46,6 @@ module Roast
         end.tap do |response|
           process_output(response, print_response:)
         end
-      end
-
-      # Determine the directory where the actual class is defined, not BaseWorkflow
-      def determine_context_path
-        # Get the actual class's source file
-        klass = self.class
-
-        # Try to get the file path where the class is defined
-        path = if klass.name.include?("::")
-          # For namespaced classes like Roast::Workflow::Grading::Workflow
-          # Convert the class name to a relative path
-          class_path = klass.name.underscore + ".rb"
-          # Look through load path to find the actual file
-          $LOAD_PATH.map { |p| File.join(p, class_path) }.find { |f| File.exist?(f) }
-        else
-          # Fall back to the current file if we can't find it
-          __FILE__
-        end
-
-        # Return directory containing the class definition
-        File.dirname(path || __FILE__)
       end
 
       def prompt(text)

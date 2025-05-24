@@ -89,9 +89,58 @@ module Roast
 
       def process_erb_if_needed(content)
         if content.include?("<%")
-          ERB.new(content, trim_mode: "-").result(context.instance_eval { binding })
+          begin
+            ERB.new(content, trim_mode: "-").result(context.instance_eval { binding })
+          rescue TypeError => e
+            if e.message.include?("no implicit conversion of nil into String")
+              # Try to find which variable is causing the issue
+              variable_hint = detect_nil_variable(content)
+
+              error_message = <<~ERROR
+                This workflow requires a file or target to be specified.
+                #{variable_hint}
+
+                Usage: roast execute <workflow.yml> <file_or_pattern>
+
+                Examples:
+                  roast execute #{context.respond_to?(:configuration) && context.configuration&.workflow_path || "workflow.yml"} test/my_test.rb
+                  roast execute #{context.respond_to?(:configuration) && context.configuration&.workflow_path || "workflow.yml"} "test/**/*_test.rb"
+              ERROR
+              raise error_message
+            else
+              raise e
+            end
+          rescue NoMethodError => e
+            if e.message.include?("undefined method") && e.message.include?("for nil")
+              variable_hint = detect_nil_variable(content)
+
+              error_message = <<~ERROR
+                Error processing prompt template: #{e.message}
+                #{variable_hint}
+
+                This may indicate that the workflow requires a file or target to be specified.
+
+                Usage: roast execute <workflow.yml> <file_or_pattern>
+              ERROR
+              raise error_message
+            else
+              raise e
+            end
+          end
         else
           content
+        end
+      end
+
+      def detect_nil_variable(content)
+        if content.include?("workflow.file")
+          "The prompt template references 'workflow.file' but no file was provided."
+        elsif content.include?("<%= file %>")
+          "The prompt template references 'file' but no file was provided."
+        elsif content.match(/<%= .*?\.(\w+) %>/)
+          "The prompt template is trying to access a property that doesn't exist."
+        else
+          "The prompt template contains an ERB expression that references a nil value."
         end
       end
     end

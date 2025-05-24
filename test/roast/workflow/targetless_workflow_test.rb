@@ -14,19 +14,27 @@ class RoastWorkflowTargetlessWorkflowTest < ActiveSupport::TestCase
   end
 
   class MockedExecution < RoastWorkflowTargetlessWorkflowTest
-    def setup
-      super
-      # Stub setup_workflow and parse on the parser instance
-      @workflow_double = mock("workflow")
-      @workflow_double.stubs(:output).returns({})
-      @parser.stubs(:setup_workflow).returns(@workflow_double)
-      @parser.stubs(:parse)
-    end
-
     def test_executes_workflow_without_a_target
-      @parser.expects(:setup_workflow).with(nil, has_entries(name: instance_of(String), context_path: instance_of(String)))
-      @parser.expects(:parse)
-      @parser.begin!
+      # The workflow should execute with nil file for targetless workflows
+      executor = mock("executor")
+      executor.expects(:execute_steps)
+      Roast::Workflow::WorkflowExecutor.stubs(:new).returns(executor)
+
+      workflow = mock("workflow")
+      workflow.stubs(:output_file).returns(nil)
+      workflow.stubs(:final_output).returns("")
+      workflow.stubs(:session_name).returns("targetless")
+      workflow.stubs(:file).returns(nil)
+      workflow.stubs(:session_timestamp).returns(nil)
+      workflow.stubs(:respond_to?).with(:session_name).returns(true)
+      workflow.stubs(:respond_to?).with(:final_output).returns(true)
+
+      Roast::Workflow::BaseWorkflow.expects(:new).with(
+        nil,
+        has_entries(name: instance_of(String), context_path: instance_of(String)),
+      ).returns(workflow)
+
+      capture_io { @parser.begin! }
     end
   end
 

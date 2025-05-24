@@ -6,13 +6,15 @@ require "active_support"
 require "active_support/isolated_execution_state"
 require "active_support/notifications"
 require "active_support/core_ext/hash/indifferent_access"
+require "roast/workflow/output_manager"
+require "roast/workflow/chat_completion_manager"
+require "roast/workflow/context_path_resolver"
 
 module Roast
   module Workflow
     class BaseWorkflow
       include Raix::ChatCompletion
 
-      attr_reader :output
       attr_accessor :file,
         :concise,
         :output_file,
@@ -27,17 +29,22 @@ module Roast
         :model
 
       delegate :api_provider, :openai?, to: :configuration
+      delegate :output, :output=, :append_to_final_output, :final_output, to: :output_manager
 
       def initialize(file = nil, name: nil, context_path: nil, resource: nil, session_name: nil, configuration: nil)
         @file = file
         @name = name || self.class.name.underscore.split("/").last
-        @context_path = context_path || determine_context_path
-        @final_output = []
-        @output = ActiveSupport::HashWithIndifferentAccess.new
+        @context_path = context_path || ContextPathResolver.resolve(self.class)
         @resource = resource || Roast::Resources.for(file)
         @session_name = session_name || @name
         @session_timestamp = nil
         @configuration = configuration
+
+        # Initialize managers
+        @output_manager = OutputManager.new
+        @chat_completion_manager = ChatCompletionManager.new(self)
+
+        # Setup prompt and handlers
         read_sidecar_prompt.then do |prompt|
           next unless prompt
 
@@ -47,102 +54,28 @@ module Roast
         Roast::Tools.setup_exit_handler(self)
       end
 
-      # Custom writer for output to ensure it's always a HashWithIndifferentAccess
-      def output=(value)
-        @output = if value.is_a?(ActiveSupport::HashWithIndifferentAccess)
-          value
-        else
-          ActiveSupport::HashWithIndifferentAccess.new(value)
-        end
-      end
-
-      def append_to_final_output(message)
-        @final_output << message
-      end
-
-      def final_output
-        return @final_output if @final_output.is_a?(String)
-        return "" if @final_output.nil?
-
-        # Handle array case (expected normal case)
-        if @final_output.respond_to?(:join)
-          @final_output.join("\n\n")
-        else
-          # Handle any other unexpected type by converting to string
-          @final_output.to_s
-        end
-      end
-
-      def with_model(model)
-        previous_model = @model
-        @model = model
-        yield
-      ensure
-        @model = previous_model
-      end
-
-      # Override chat_completion to add instrumentation
+      # Delegate to chat completion manager with model handling
       def chat_completion(**kwargs)
-        start_time = Time.now
+        @chat_completion_manager.chat_completion(**kwargs)
+      end
 
-        step_model = kwargs[:model]
-        with_model(step_model) do
-          ActiveSupport::Notifications.instrument("roast.chat_completion.start", {
-            model: model,
-            parameters: kwargs.except(:openai, :model),
-          })
-
-          # skip model because it is read directly from the model method
-          result = super(**kwargs.except(:model))
-          execution_time = Time.now - start_time
-
-          ActiveSupport::Notifications.instrument("roast.chat_completion.complete", {
-            success: true,
-            model: model,
-            parameters: kwargs.except(:openai, :model),
-            execution_time: execution_time,
-            response_size: result.to_s.length,
-          })
-          result
-        end
-      rescue => e
-        execution_time = Time.now - start_time
-
-        ActiveSupport::Notifications.instrument("roast.chat_completion.error", {
-          error: e.class.name,
-          message: e.message,
-          model: step_model,
-          parameters: kwargs.except(:openai, :model),
-          execution_time: execution_time,
-        })
-        raise
+      # For backward compatibility and internal use
+      def with_model(model, &block)
+        @chat_completion_manager.with_model(model, &block)
       end
 
       def workflow
         self
       end
 
+      # Expose output manager for state management
+      attr_reader :output_manager
+
       private
 
-      # Determine the directory where the actual class is defined, not BaseWorkflow
-      def determine_context_path
-        # Get the actual class's source file
-        klass = self.class
-
-        # Try to get the file path where the class is defined
-        path = if klass.name.include?("::")
-          # For namespaced classes like Roast::Workflow::Grading::Workflow
-          # Convert the class name to a relative path
-          class_path = klass.name.underscore + ".rb"
-          # Look through load path to find the actual file
-          $LOAD_PATH.map { |p| File.join(p, class_path) }.find { |f| File.exist?(f) }
-        else
-          # Fall back to the current file if we can't find it
-          __FILE__
-        end
-
-        # Return directory containing the class definition
-        File.dirname(path || __FILE__)
+      # Called by ChatCompletionManager to invoke the actual chat completion
+      def super_chat_completion(**kwargs)
+        super(**kwargs)
       end
 
       def read_sidecar_prompt
