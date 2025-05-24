@@ -72,6 +72,18 @@ module Roast
         @hash.each(&block)
       end
 
+      def to_s
+        @hash.to_s
+      end
+
+      def inspect
+        @hash.inspect
+      end
+
+      def to_json(*args)
+        @hash.to_json(*args)
+      end
+
       private
 
       def has_key?(key_name)
