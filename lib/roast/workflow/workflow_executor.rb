@@ -81,7 +81,7 @@ module Roast
         end
       end
 
-      def execute_step(name)
+      def execute_step(name, exit_on_error: true)
         start_time = Time.now
         # For tests, make sure that we handle this gracefully
         resource_type = workflow.respond_to?(:resource) ? workflow.resource&.type : nil
@@ -94,7 +94,7 @@ module Roast
         $stderr.puts "Executing: #{name} (Resource type: #{resource_type || "unknown"})"
 
         result = if name.starts_with?("$(")
-          strip_and_execute(name).tap do |output|
+          strip_and_execute(name, exit_on_error: exit_on_error).tap do |output|
             # Add the command and output to the transcript for reference in following steps
             workflow.transcript << { user: "I just executed the following command: ```\n#{name}\n```\n\nHere is the output:\n\n```\n#{output}\n```" }
             workflow.transcript << { assistant: "Noted, thank you." }
@@ -175,7 +175,12 @@ module Roast
           else
             # Interpolate command value
             interpolated_command = interpolate(command)
-            workflow.output[interpolated_name] = execute_step(interpolated_command)
+
+            # Check if this step has exit_on_error configuration
+            step_config = config_hash[interpolated_name]
+            exit_on_error = step_config.is_a?(Hash) ? step_config.fetch("exit_on_error", true) : true
+
+            workflow.output[interpolated_name] = execute_step(interpolated_command, exit_on_error: exit_on_error)
           end
         end
       end
@@ -190,7 +195,19 @@ module Roast
       def execute_string_step(step)
         # Interpolate any {{}} expressions before executing the step
         interpolated_step = interpolate(step)
-        execute_step(interpolated_step)
+
+        # For command steps, check if there's an exit_on_error configuration
+        # We need to extract the step name to look up configuration
+        if interpolated_step.starts_with?("$(")
+          # This is a direct command without a name, so exit_on_error defaults to true
+          execute_step(interpolated_step)
+        else
+          # Check if this step has exit_on_error configuration
+          step_config = config_hash[step]
+          exit_on_error = step_config.is_a?(Hash) ? step_config.fetch("exit_on_error", true) : true
+
+          execute_step(interpolated_step, exit_on_error: exit_on_error)
+        end
       end
 
       def find_and_load_step(step_name)
@@ -256,7 +273,7 @@ module Roast
         end
       end
 
-      def strip_and_execute(step)
+      def strip_and_execute(step, exit_on_error: true)
         if step.match?(/^\$\((.*)\)$/)
           # Extract the command from the $(command) syntax
           command = step.strip.match(/^\$\((.*)\)$/)[1]
@@ -265,11 +282,26 @@ module Roast
           # in execute_string_step before this method is called
           begin
             output = %x(#{command})
-            raise CommandExecutionError.new("Command exited with non-zero status", step_name: command) unless $CHILD_STATUS.success?
+            exit_status = $CHILD_STATUS.exitstatus
+
+            if !$CHILD_STATUS.success? && exit_on_error
+              raise CommandExecutionError.new("Command exited with non-zero status (#{exit_status})", step_name: command)
+            elsif !$CHILD_STATUS.success?
+              # When exit_on_error is false, include exit status info in the output
+              log_warning("Command '#{command}' exited with non-zero status (#{exit_status}), continuing execution")
+              output += "\n[Exit status: #{exit_status}]"
+            end
 
             output
           rescue => e
-            raise CommandExecutionError.new("Failed to execute command '#{command}': #{e.message}", step_name: command, original_error: e)
+            if exit_on_error
+              raise CommandExecutionError.new("Failed to execute command '#{command}': #{e.message}", step_name: command, original_error: e)
+            else
+              # Return error information as output when exit_on_error is false
+              error_output = "Error executing command: #{e.message}\n[Exit status: error]"
+              log_warning("Command '#{command}' failed with error: #{e.message}, continuing execution")
+              error_output
+            end
           end
         else
           raise ConfigurationError, "Missing closing parentheses in command: #{step}"
