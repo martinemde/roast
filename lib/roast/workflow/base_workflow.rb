@@ -15,6 +15,9 @@ module Roast
     class BaseWorkflow
       include Raix::ChatCompletion
 
+      # Store reference to original chat_completion method before overriding
+      ORIGINAL_CHAT_COMPLETION = instance_method(:chat_completion)
+
       attr_accessor :file,
         :concise,
         :output_file,
@@ -74,8 +77,8 @@ module Roast
       private
 
       # Called by ChatCompletionManager to invoke the actual chat completion
-      def super_chat_completion(**kwargs)
-        super(**kwargs)
+      def original_chat_completion(**kwargs)
+        ORIGINAL_CHAT_COMPLETION.bind(self).call(**kwargs)
       end
 
       def read_sidecar_prompt

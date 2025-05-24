@@ -25,7 +25,7 @@ module Roast
         params = { messages: [{ role: "user", content: "Hello" }], model: "gpt-4" }
         expected_result = "AI response"
 
-        @workflow.expects(:super_chat_completion).with(messages: params[:messages]).returns(expected_result)
+        @workflow.expects(:original_chat_completion).with(messages: params[:messages]).returns(expected_result)
 
         result = @manager.chat_completion(**params)
 
@@ -47,7 +47,7 @@ module Roast
         params = { messages: [{ role: "user", content: "Hello" }], model: "gpt-4" }
         error = StandardError.new("API Error")
 
-        @workflow.expects(:super_chat_completion).raises(error)
+        @workflow.expects(:original_chat_completion).raises(error)
 
         assert_raises(StandardError) do
           @manager.chat_completion(**params)
@@ -94,7 +94,7 @@ module Roast
           temperature: 0.7,
         }
 
-        @workflow.expects(:super_chat_completion).with(
+        @workflow.expects(:original_chat_completion).with(
           messages: params[:messages],
           temperature: params[:temperature],
         ).returns("response")

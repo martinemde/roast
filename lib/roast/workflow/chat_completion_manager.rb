@@ -27,7 +27,7 @@ module Roast
 
           # Call the original chat_completion on the workflow
           # Skip model and openai because they are handled by the workflow
-          result = workflow.send(:super_chat_completion, **kwargs.except(:model, :openai))
+          result = workflow.send(:original_chat_completion, **kwargs.except(:model, :openai))
           execution_time = Time.now - start_time
 
           ActiveSupport::Notifications.instrument("roast.chat_completion.complete", {
