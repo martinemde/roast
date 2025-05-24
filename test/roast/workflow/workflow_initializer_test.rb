@@ -39,75 +39,89 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
     @initializer.setup
   end
 
-  def test_skips_api_client_configuration_when_api_token_present
+  def test_configures_api_client_when_api_token_present_and_not_already_configured
     @configuration.stubs(:api_token).returns("test-token")
     @configuration.stubs(:api_provider).returns(:openai)
 
-    # With the new implementation, if api_token is present,
-    # it assumes it's already configured by an initializer
+    # Stub Raix configuration to indicate no client is configured yet
+    Raix.configuration.stubs(:openai_client).returns(nil)
+
+    # When api_token is present and no client configured, configure the client
+    OpenAI::Client.expects(:new).with(access_token: "test-token").returns(mock("OpenAI::Client"))
+
+    @initializer.setup
+  end
+
+  def test_skips_api_client_configuration_when_already_configured
+    @configuration.stubs(:api_token).returns("test-token")
+    @configuration.stubs(:api_provider).returns(:openai)
+
+    # Stub Raix configuration to indicate client is already configured
+    Raix.configuration.stubs(:openai_client).returns(mock("OpenAI::Client"))
+
+    # Should not try to create a new client when one already exists
     OpenAI::Client.expects(:new).never
 
     @initializer.setup
   end
 
-  def test_skips_openrouter_client_configuration_when_api_token_present
+  def test_configures_openrouter_client_when_api_token_present_and_not_already_configured
     # Skip this test if OpenRouter is not available
     if defined?(OpenRouter) && defined?(OpenRouter::Client)
       @configuration.stubs(:api_token).returns("test-token")
       @configuration.stubs(:api_provider).returns(:openrouter)
 
-      # With the new implementation, if api_token is present,
-      # it assumes it's already configured by an initializer
-      OpenRouter::Client.expects(:new).never
+      # Stub Raix configuration to indicate no client is configured yet
+      Raix.configuration.stubs(:openrouter_client).returns(nil)
+
+      # When api_token is present and no client configured, configure the client
+      OpenRouter::Client.expects(:new).with(access_token: "test-token").returns(mock("OpenRouter::Client"))
       @initializer.setup
     else
       skip("OpenRouter gem not available")
     end
   end
 
-  def test_handles_api_client_configuration_errors_gracefully
-    @configuration.stubs(:api_token).returns(nil) # No token, so it will try to configure
-    @configuration.stubs(:api_provider).returns(:openai)
-
-    # It will raise an error about missing api_token
-    Roast::Helpers::Logger.expects(:error).with("Error configuring API client: Missing api_token in workflow configuration")
-
-    # Should re-raise the error
-    assert_raises(RuntimeError) do
-      @initializer.setup
-    end
-  end
-
-  def test_raises_error_when_no_api_token
+  def test_skips_configuration_when_no_api_token
     @configuration.stubs(:api_token).returns(nil)
     @configuration.stubs(:api_provider).returns(:openai)
 
+    # When no token is provided, skip configuration (assume initializer handles it)
     OpenAI::Client.expects(:new).never
+    Roast::Helpers::Logger.expects(:error).never
 
-    # The new implementation raises an error when api_token is missing
-    assert_raises(RuntimeError, "Missing api_token in workflow configuration") do
-      @initializer.setup
-    end
+    @initializer.setup
   end
 
-  def test_raises_error_when_blank_api_token
+  def test_skips_configuration_when_blank_api_token
     @configuration.stubs(:api_token).returns("")
     @configuration.stubs(:api_provider).returns(:openai)
 
+    # When token is blank, skip configuration (assume initializer handles it)
     OpenAI::Client.expects(:new).never
+    Roast::Helpers::Logger.expects(:error).never
 
-    # The new implementation raises an error when api_token is blank
-    assert_raises(RuntimeError, "Missing api_token in workflow configuration") do
-      @initializer.setup
-    end
+    @initializer.setup
   end
 
-  def test_raises_error_for_unsupported_api_provider
-    @configuration.stubs(:api_token).returns(nil)
+  def test_raises_error_for_unsupported_api_provider_when_token_present
+    @configuration.stubs(:api_token).returns("test-token")
     @configuration.stubs(:api_provider).returns(:unsupported)
+
+    Roast::Helpers::Logger.expects(:error).with("Error configuring API client: Unsupported api_provider in workflow configuration: unsupported")
 
     assert_raises(RuntimeError) do
       @initializer.setup
     end
+  end
+
+  def test_skips_configuration_for_unsupported_api_provider_when_no_token
+    @configuration.stubs(:api_token).returns(nil)
+    @configuration.stubs(:api_provider).returns(:unsupported)
+
+    # When no token is provided, skip configuration even for unsupported providers
+    Roast::Helpers::Logger.expects(:error).never
+
+    @initializer.setup
   end
 end

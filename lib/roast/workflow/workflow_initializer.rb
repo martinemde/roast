@@ -35,8 +35,11 @@ module Roast
       end
 
       def configure_api_client
-        # assume that if the api_token is present, it's already configured by an initializer
-        return if @configuration.api_token.present?
+        # Skip if api client is already configured (e.g., by initializers)
+        return if api_client_already_configured?
+
+        # Skip if no api_token is provided in the workflow
+        return if @configuration.api_token.blank?
 
         begin
           case @configuration.api_provider
@@ -45,7 +48,7 @@ module Roast
           when :openai
             configure_openai_client
           when nil
-            # Skip configuration if no api_provider is set (e.g., in tests)
+            # Skip configuration if no api_provider is set
             nil
           else
             raise "Unsupported api_provider in workflow configuration: #{@configuration.api_provider}"
@@ -56,9 +59,18 @@ module Roast
         end
       end
 
-      def configure_openrouter_client
-        raise "Missing api_token in workflow configuration" if @configuration.api_token.blank?
+      def api_client_already_configured?
+        case @configuration.api_provider
+        when :openrouter
+          Raix.configuration.openrouter_client.present?
+        when :openai
+          Raix.configuration.openai_client.present?
+        else
+          false
+        end
+      end
 
+      def configure_openrouter_client
         $stderr.puts "Configuring OpenRouter client with token from workflow"
         require "open_router"
 
@@ -68,8 +80,6 @@ module Roast
       end
 
       def configure_openai_client
-        raise "Missing api_token in workflow configuration" if @configuration.api_token.blank?
-
         $stderr.puts "Configuring OpenAI client with token from workflow"
         require "openai"
 
