@@ -19,6 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Tech stack
 - `thor` and `cli-ui` for the CLI tool
 - Testing: Use Minitest, VCR for HTTP mocking, test files named with `_test.rb` suffix
+- Prefer using the more literate `test "this is a test description" do` type of testing that we get from extending ActiveSupport::TestCase over the primitive XUnit-style def test_description headings for tests
 
 ## Code Style Guidelines
 
