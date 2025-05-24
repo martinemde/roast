@@ -14,7 +14,7 @@ module Roast
       STANDARD_STEP = :standard
 
       # Special step names for iterations
-      ITERATION_STEPS = ["repeat", "each"].freeze
+      ITERATION_STEPS = ["repeat", "each", "if", "unless"].freeze
 
       class << self
         # Resolve the type of a step

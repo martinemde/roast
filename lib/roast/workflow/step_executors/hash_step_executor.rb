@@ -14,14 +14,10 @@ module Roast
           interpolated_name = workflow_executor.interpolate(name)
 
           case name
-          when "repeat"
-            workflow_executor.send(:execute_repeat_step, command)
-          when "each"
-            # For each steps, the structure is different
-            # This is handled in the parser, not here
-            raise WorkflowExecutor::ConfigurationError, "Invalid 'each' step format. 'as' and 'steps' must be at the same level as 'each'" unless step.key?("as") && step.key?("steps")
-
-            workflow_executor.send(:execute_each_step, step)
+          when "repeat", "each", "if", "unless"
+            # These are handled by StepExecutorCoordinator as iteration steps
+            # This code path should not be reached
+            workflow_executor.execute_steps([step])
           else
             if command.is_a?(Hash)
               workflow_executor.execute_steps([command])

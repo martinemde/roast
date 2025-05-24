@@ -99,6 +99,8 @@ module Roast
         when "each"
           validate_each_step!(step)
           iteration_executor.execute_each(step)
+        when "if", "unless"
+          iteration_executor.execute_conditional(step)
         end
       end
 
