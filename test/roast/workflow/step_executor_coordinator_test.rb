@@ -103,7 +103,12 @@ module Roast
 
       def test_executes_parallel_step
         steps = ["step1", "step2"]
-        ParallelExecutor.expects(:execute).with(steps, @dependencies[:workflow_executor])
+        # The new approach uses the factory, which will instantiate ParallelStepExecutor
+        # ParallelStepExecutor needs workflow_executor.workflow and workflow_executor.config_hash
+        @dependencies[:workflow_executor].stubs(:workflow).returns(@workflow)
+        @dependencies[:workflow_executor].stubs(:config_hash).returns({})
+        @dependencies[:workflow_executor].expects(:execute_steps).with(["step1"])
+        @dependencies[:workflow_executor].expects(:execute_steps).with(["step2"])
 
         @coordinator.execute(steps)
       end

@@ -6,6 +6,18 @@ module Roast
   module Workflow
     # Handles the orchestration of step execution, managing the flow and control
     # of individual steps without knowing how to execute them
+    #
+    # This class is specifically for executing CUSTOM steps defined in the workflow's
+    # step directory (e.g., steps/*.rb files). It loads and executes Ruby step files
+    # that define a `call` method.
+    #
+    # Note: The execute_steps method in this class appears to be dead code - it's only
+    # used in tests and creates a circular dependency with StepExecutorFactory.
+    # The primary method execute_step is used by StepExecutorCoordinator for
+    # executing custom Ruby steps.
+    #
+    # TODO: Consider renaming this class to CustomStepOrchestrator to clarify its purpose
+    # and remove the unused execute_steps method.
     class StepOrchestrator
       def initialize(workflow, step_loader, state_manager, error_handler, workflow_executor)
         @workflow = workflow
@@ -34,6 +46,9 @@ module Roast
         end
       end
 
+      # DEAD CODE: This method is only used in tests and creates a circular dependency
+      # with StepExecutorFactory. It should be removed in future refactoring.
+      # The functionality it provides is redundant with WorkflowExecutor.execute_steps
       def execute_steps(workflow_steps)
         workflow_steps.each do |workflow_step|
           executor = StepExecutorFactory.for(workflow_step, @workflow_executor)

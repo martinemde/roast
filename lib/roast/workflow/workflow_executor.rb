@@ -21,6 +21,25 @@ require "roast/workflow/workflow_context"
 module Roast
   module Workflow
     # Handles the execution of workflow steps, including orchestration and threading
+    #
+    # Current Architecture:
+    # This class has two parallel execution systems that need to be unified:
+    #
+    # 1. Direct execution path (execute_steps method):
+    #    - Used by WorkflowRunner and iteration steps
+    #    - Handles basic routing based on step type (Hash, Array, String)
+    #    - Directly executes steps without going through StepExecutorCoordinator
+    #
+    # 2. Coordinator-based execution path (execute_step method):
+    #    - Used for named steps
+    #    - Delegates to StepExecutorCoordinator for type resolution and execution
+    #    - More flexible and extensible design
+    #
+    # TODO: Future refactoring should:
+    # - Unify these two execution paths
+    # - Move all routing logic to StepExecutorCoordinator
+    # - Use StepExecutorFactory consistently for all step types
+    # - Remove the execute_hash_step, execute_parallel_steps, execute_string_step methods
     class WorkflowExecutor
       # Define custom exception classes for specific error scenarios
       class WorkflowExecutorError < StandardError
@@ -128,6 +147,8 @@ module Roast
       end
 
       # Methods moved to StepExecutorCoordinator but kept for backward compatibility
+      # These are only used by execute_steps and should be removed when we unify
+      # the execution paths to use StepExecutorCoordinator exclusively.
       private
 
       def execute_hash_step(step)
