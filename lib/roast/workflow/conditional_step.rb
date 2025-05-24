@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
-require "roast/workflow/base_iteration_step"
+require "roast/workflow/base_step"
+require "roast/workflow/command_executor"
+require "roast/workflow/interpolator"
 
 module Roast
   module Workflow
-    class ConditionalStep < BaseIterationStep
+    class ConditionalStep < BaseStep
       def initialize(workflow, config:, name:, context_path:, **kwargs)
-        # Extract steps for parent class (use then_steps as default)
-        steps = config["then"] || []
-        super(workflow, steps: steps, name: name, context_path: context_path, **kwargs)
+        super(workflow, name: name, context_path: context_path, **kwargs)
 
         @config = config
         @condition = config["if"] || config["unless"]
@@ -18,8 +18,8 @@ module Roast
       end
 
       def call
-        # Evaluate the condition using the inherited process_iteration_input method
-        condition_result = process_iteration_input(@condition, @workflow, coerce_to: :boolean)
+        # Evaluate the condition
+        condition_result = evaluate_condition(@condition)
 
         # Invert the result if this is an 'unless' condition
         condition_result = !condition_result if @is_unless
@@ -35,6 +35,66 @@ module Roast
 
         # Return a result indicating which branch was taken
         { condition_result: condition_result, branch_executed: condition_result ? "then" : "else" }
+      end
+
+      private
+
+      def evaluate_condition(condition)
+        return false unless condition.is_a?(String)
+
+        if ruby_expression?(condition)
+          evaluate_ruby_expression(condition)
+        elsif bash_command?(condition)
+          evaluate_bash_command(condition)
+        else
+          # Treat as a step name or direct boolean
+          evaluate_step_or_value(condition)
+        end
+      end
+
+      def ruby_expression?(input)
+        input.strip.start_with?("{{") && input.strip.end_with?("}}")
+      end
+
+      def bash_command?(input)
+        input.strip.start_with?("$(") && input.strip.end_with?(")")
+      end
+
+      def evaluate_ruby_expression(expression)
+        expr = expression.strip[2...-2].strip
+        begin
+          !!@workflow.instance_eval(expr)
+        rescue => e
+          $stderr.puts "Warning: Error evaluating expression '#{expr}': #{e.message}"
+          false
+        end
+      end
+
+      def evaluate_bash_command(command)
+        cmd = command.strip[2...-1].strip
+        executor = CommandExecutor.new(logger: Roast::Helpers::Logger)
+        begin
+          result = executor.execute(command, exit_on_error: false)
+          # For conditionals, we care about the exit status
+          result[:success]
+        rescue => e
+          $stderr.puts "Warning: Error executing command '#{cmd}': #{e.message}"
+          false
+        end
+      end
+
+      def evaluate_step_or_value(input)
+        # Check if it's a reference to a previous step output
+        if @workflow.output.key?(input)
+          result = @workflow.output[input]
+          # Coerce to boolean
+          return false if result.nil? || result == false || result == "" || result == "false"
+
+          return true
+        end
+
+        # Otherwise treat as a direct value
+        input.to_s.downcase == "true"
       end
     end
   end

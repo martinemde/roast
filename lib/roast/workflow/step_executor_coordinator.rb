@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "roast/workflow/conditional_executor"
 require "roast/workflow/step_type_resolver"
 
 module Roast
@@ -26,6 +27,8 @@ module Roast
           execute_glob_step(step)
         when StepTypeResolver::ITERATION_STEP
           execute_iteration_step(step)
+        when StepTypeResolver::CONDITIONAL_STEP
+          execute_conditional_step(step)
         when StepTypeResolver::HASH_STEP
           execute_hash_step(step)
         when StepTypeResolver::PARALLEL_STEP
@@ -55,6 +58,10 @@ module Roast
 
       def iteration_executor
         dependencies[:iteration_executor]
+      end
+
+      def conditional_executor
+        dependencies[:conditional_executor]
       end
 
       def step_orchestrator
@@ -99,9 +106,11 @@ module Roast
         when "each"
           validate_each_step!(step)
           iteration_executor.execute_each(step)
-        when "if", "unless"
-          iteration_executor.execute_conditional(step)
         end
+      end
+
+      def execute_conditional_step(step)
+        conditional_executor.execute_conditional(step)
       end
 
       def execute_hash_step(step)

@@ -5,6 +5,7 @@ require "active_support"
 require "active_support/isolated_execution_state"
 require "active_support/notifications"
 require "roast/workflow/command_executor"
+require "roast/workflow/conditional_executor"
 require "roast/workflow/error_handler"
 require "roast/workflow/interpolator"
 require "roast/workflow/iteration_executor"
@@ -45,7 +46,7 @@ module Roast
       def initialize(workflow, config_hash, context_path,
         error_handler: nil, step_loader: nil, command_executor: nil,
         interpolator: nil, state_manager: nil, iteration_executor: nil,
-        step_orchestrator: nil, step_executor_coordinator: nil)
+        conditional_executor: nil, step_orchestrator: nil, step_executor_coordinator: nil)
         # Create context object to reduce data clump
         @context = WorkflowContext.new(
           workflow: workflow,
@@ -60,6 +61,7 @@ module Roast
         @interpolator = interpolator || Interpolator.new(workflow, logger: @error_handler)
         @state_manager = state_manager || StateManager.new(workflow, logger: @error_handler)
         @iteration_executor = iteration_executor || IterationExecutor.new(workflow, context_path, @state_manager)
+        @conditional_executor = conditional_executor || ConditionalExecutor.new(workflow, context_path, @state_manager)
         @step_orchestrator = step_orchestrator || StepOrchestrator.new(workflow, @step_loader, @state_manager, @error_handler, self)
 
         # Initialize coordinator with dependencies
@@ -70,6 +72,7 @@ module Roast
             interpolator: @interpolator,
             command_executor: @command_executor,
             iteration_executor: @iteration_executor,
+            conditional_executor: @conditional_executor,
             step_orchestrator: @step_orchestrator,
             error_handler: @error_handler,
           },
