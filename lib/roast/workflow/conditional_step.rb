@@ -2,11 +2,13 @@
 
 require "roast/workflow/base_step"
 require "roast/workflow/command_executor"
+require "roast/workflow/expression_utils"
 require "roast/workflow/interpolator"
 
 module Roast
   module Workflow
     class ConditionalStep < BaseStep
+      include ExpressionUtils
       def initialize(workflow, config:, name:, context_path:, **kwargs)
         super(workflow, name: name, context_path: context_path, **kwargs)
 
@@ -52,16 +54,8 @@ module Roast
         end
       end
 
-      def ruby_expression?(input)
-        input.strip.start_with?("{{") && input.strip.end_with?("}}")
-      end
-
-      def bash_command?(input)
-        input.strip.start_with?("$(") && input.strip.end_with?(")")
-      end
-
       def evaluate_ruby_expression(expression)
-        expr = expression.strip[2...-2].strip
+        expr = extract_expression(expression)
         begin
           !!@workflow.instance_eval(expr)
         rescue => e
@@ -71,7 +65,7 @@ module Roast
       end
 
       def evaluate_bash_command(command)
-        cmd = command.strip[2...-1].strip
+        cmd = extract_command(command)
         executor = CommandExecutor.new(logger: Roast::Helpers::Logger)
         begin
           result = executor.execute(cmd, exit_on_error: false)
