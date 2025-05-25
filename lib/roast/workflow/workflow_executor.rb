@@ -5,6 +5,7 @@ require "active_support"
 require "active_support/isolated_execution_state"
 require "active_support/notifications"
 require "roast/workflow/command_executor"
+require "roast/workflow/conditional_executor"
 require "roast/workflow/error_handler"
 require "roast/workflow/interpolator"
 require "roast/workflow/iteration_executor"
@@ -20,6 +21,25 @@ require "roast/workflow/workflow_context"
 module Roast
   module Workflow
     # Handles the execution of workflow steps, including orchestration and threading
+    #
+    # Current Architecture:
+    # This class has two parallel execution systems that need to be unified:
+    #
+    # 1. Direct execution path (execute_steps method):
+    #    - Used by WorkflowRunner and iteration steps
+    #    - Handles basic routing based on step type (Hash, Array, String)
+    #    - Directly executes steps without going through StepExecutorCoordinator
+    #
+    # 2. Coordinator-based execution path (execute_step method):
+    #    - Used for named steps
+    #    - Delegates to StepExecutorCoordinator for type resolution and execution
+    #    - More flexible and extensible design
+    #
+    # TODO: Future refactoring should:
+    # - Unify these two execution paths
+    # - Move all routing logic to StepExecutorCoordinator
+    # - Use StepExecutorFactory consistently for all step types
+    # - Remove the execute_hash_step, execute_parallel_steps, execute_string_step methods
     class WorkflowExecutor
       # Define custom exception classes for specific error scenarios
       class WorkflowExecutorError < StandardError
@@ -45,7 +65,7 @@ module Roast
       def initialize(workflow, config_hash, context_path,
         error_handler: nil, step_loader: nil, command_executor: nil,
         interpolator: nil, state_manager: nil, iteration_executor: nil,
-        step_orchestrator: nil, step_executor_coordinator: nil)
+        conditional_executor: nil, step_orchestrator: nil, step_executor_coordinator: nil)
         # Create context object to reduce data clump
         @context = WorkflowContext.new(
           workflow: workflow,
@@ -60,6 +80,7 @@ module Roast
         @interpolator = interpolator || Interpolator.new(workflow, logger: @error_handler)
         @state_manager = state_manager || StateManager.new(workflow, logger: @error_handler)
         @iteration_executor = iteration_executor || IterationExecutor.new(workflow, context_path, @state_manager)
+        @conditional_executor = conditional_executor || ConditionalExecutor.new(workflow, context_path, @state_manager)
         @step_orchestrator = step_orchestrator || StepOrchestrator.new(workflow, @step_loader, @state_manager, @error_handler, self)
 
         # Initialize coordinator with dependencies
@@ -70,6 +91,7 @@ module Roast
             interpolator: @interpolator,
             command_executor: @command_executor,
             iteration_executor: @iteration_executor,
+            conditional_executor: @conditional_executor,
             step_orchestrator: @step_orchestrator,
             error_handler: @error_handler,
           },
@@ -125,6 +147,8 @@ module Roast
       end
 
       # Methods moved to StepExecutorCoordinator but kept for backward compatibility
+      # These are only used by execute_steps and should be removed when we unify
+      # the execution paths to use StepExecutorCoordinator exclusively.
       private
 
       def execute_hash_step(step)

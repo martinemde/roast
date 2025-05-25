@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "file_state_repository"
+require "roast/workflow/file_state_repository"
 
 module Roast
   module Workflow

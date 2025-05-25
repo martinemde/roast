@@ -134,6 +134,44 @@
                 }
               },
               "required": ["each", "as", "steps"]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "if": {
+                  "type": "string",
+                  "description": "Condition to evaluate. Can be a Ruby expression in {{...}}, a bash command in $(...), a step name, or prompt content. Result will be coerced to boolean."
+                },
+                "then": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/properties/steps/items"
+                  }
+                },
+                "else": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/properties/steps/items"
+                  }
+                }
+              },
+              "required": ["if", "then"]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "unless": {
+                  "type": "string",
+                  "description": "Condition to evaluate (inverted). Can be a Ruby expression in {{...}}, a bash command in $(...), a step name, or prompt content. Result will be coerced to boolean."
+                },
+                "then": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/properties/steps/items"
+                  }
+                }
+              },
+              "required": ["unless", "then"]
             }
           ]
         }

@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
-require_relative "workflow_executor"
-require_relative "llm_boolean_coercer"
+require "roast/workflow/expression_utils"
+require "roast/workflow/llm_boolean_coercer"
+require "roast/workflow/workflow_executor"
 
 module Roast
   module Workflow
     # Base class for iteration steps (RepeatStep and EachStep)
     class BaseIterationStep < BaseStep
+      include ExpressionUtils
       DEFAULT_MAX_ITERATIONS = 100
 
       attr_reader :steps
@@ -72,30 +74,6 @@ module Roast
       end
 
       private
-
-      # Check if the input is a Ruby expression in {{...}}
-      def ruby_expression?(input)
-        input.strip.start_with?("{{") && input.strip.end_with?("}}")
-      end
-
-      # Check if the input is a Bash command in $(...)
-      def bash_command?(input)
-        input.strip.start_with?("$(") && input.strip.end_with?(")")
-      end
-
-      # Extract the expression from {{...}}
-      def extract_expression(input)
-        if ruby_expression?(input)
-          input.strip[2...-2].strip
-        else
-          input.strip
-        end
-      end
-
-      # Extract the command from $(...)
-      def extract_command(input)
-        input.strip[2...-1].strip
-      end
 
       # Process a Ruby expression
       def process_ruby_expression(input, context, coerce_to)

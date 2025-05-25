@@ -1,10 +1,25 @@
 # frozen_string_literal: true
 
+require "roast/workflow/conditional_executor"
+require "roast/workflow/step_executor_factory"
 require "roast/workflow/step_type_resolver"
 
 module Roast
   module Workflow
     # Coordinates the execution of different types of steps
+    #
+    # This class is responsible for routing steps to their appropriate executors
+    # based on the step type. It acts as a central dispatcher that determines
+    # which execution strategy to use for each step.
+    #
+    # Current Architecture:
+    # - WorkflowExecutor.execute_steps still handles basic routing for backward compatibility
+    # - This coordinator is used by WorkflowExecutor.execute_step for named steps
+    # - Some step types (parallel) use the StepExecutorFactory pattern
+    # - Other step types use direct execution methods
+    #
+    # TODO: Future refactoring should move all execution logic from WorkflowExecutor
+    # to this coordinator and use the factory pattern consistently for all step types.
     class StepExecutorCoordinator
       def initialize(context:, dependencies:)
         @context = context
@@ -26,10 +41,14 @@ module Roast
           execute_glob_step(step)
         when StepTypeResolver::ITERATION_STEP
           execute_iteration_step(step)
+        when StepTypeResolver::CONDITIONAL_STEP
+          execute_conditional_step(step)
         when StepTypeResolver::HASH_STEP
           execute_hash_step(step)
         when StepTypeResolver::PARALLEL_STEP
-          execute_parallel_step(step)
+          # Use factory for parallel steps
+          executor = StepExecutorFactory.for(step, workflow_executor)
+          executor.execute(step)
         when StepTypeResolver::STRING_STEP
           execute_string_step(step, options)
         else
@@ -55,6 +74,10 @@ module Roast
 
       def iteration_executor
         dependencies[:iteration_executor]
+      end
+
+      def conditional_executor
+        dependencies[:conditional_executor]
       end
 
       def step_orchestrator
@@ -102,6 +125,10 @@ module Roast
         end
       end
 
+      def execute_conditional_step(step)
+        conditional_executor.execute_conditional(step)
+      end
+
       def execute_hash_step(step)
         name, command = step.to_a.flatten
         interpolated_name = interpolator.interpolate(name)
@@ -117,10 +144,6 @@ module Roast
           context.workflow.output[interpolated_name] = result
           result
         end
-      end
-
-      def execute_parallel_step(steps)
-        ParallelExecutor.execute(steps, workflow_executor)
       end
 
       def execute_string_step(step, options = {})

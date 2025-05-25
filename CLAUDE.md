@@ -35,8 +35,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Add development dependencies to `Gemfile`.
 - Don't ever test private methods directly. Specs should test behavior, not implementation.
 - I do not like test-specific code embedded in production code, don't ever do that
-- Prefer `require` instead of `require_relative` unless the latter is absolutely necessary
+- **Do not use require_relative**
 - Require statements should always be in alphabetical order
+
+## Architecture Guidelines
+
+- **Maintain proper separation of concerns**: Don't mix unrelated concepts in the same class or module
+  - Example: Conditional execution (if/unless) should NOT be mixed with iteration execution (each/repeat)
+  - Each concept should have its own executor class and be handled separately
+- **Use appropriate inheritance**: Only inherit from a base class if the child truly "is-a" type of the parent
+  - Don't inherit just to reuse some methods - use composition instead
+- **Follow Single Responsibility Principle**: Each class should have one reason to change
+  - IterationExecutor handles iterations (each, repeat)
+  - ConditionalExecutor handles conditionals (if, unless)
+  - Don't combine different responsibilities in one class
 
 ## Git Workflow Practices
 

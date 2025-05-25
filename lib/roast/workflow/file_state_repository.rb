@@ -2,8 +2,8 @@
 
 require "json"
 require "fileutils"
-require_relative "session_manager"
-require_relative "state_repository"
+require "roast/workflow/session_manager"
+require "roast/workflow/state_repository"
 
 module Roast
   module Workflow

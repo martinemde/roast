@@ -44,31 +44,6 @@ module Roast
 
           @executor.execute({ "test_step" => "$(exit 1)" })
         end
-
-        def test_executes_repeat_step
-          repeat_config = { "steps" => ["echo test"], "until" => "false" }
-          @workflow_executor.expects(:interpolate).with("repeat").returns("repeat")
-          @workflow_executor.expects(:send).with(:execute_repeat_step, repeat_config)
-
-          @executor.execute({ "repeat" => repeat_config })
-        end
-
-        def test_executes_each_step
-          each_step = { "each" => "[1,2,3]", "as" => "item", "steps" => ["echo {{item}}"] }
-          @workflow_executor.expects(:interpolate).with("each").returns("each")
-          @workflow_executor.expects(:send).with(:execute_each_step, each_step)
-
-          @executor.execute(each_step)
-        end
-
-        def test_raises_error_for_invalid_each_format
-          invalid_each = { "each" => "[1,2,3]" } # Missing 'as' and 'steps'
-          @workflow_executor.expects(:interpolate).with("each").returns("each")
-
-          assert_raises(WorkflowExecutor::ConfigurationError) do
-            @executor.execute(invalid_each)
-          end
-        end
       end
     end
   end

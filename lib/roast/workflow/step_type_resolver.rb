@@ -8,6 +8,7 @@ module Roast
       COMMAND_STEP = :command
       GLOB_STEP = :glob
       ITERATION_STEP = :iteration
+      CONDITIONAL_STEP = :conditional
       HASH_STEP = :hash
       PARALLEL_STEP = :parallel
       STRING_STEP = :string
@@ -15,6 +16,9 @@ module Roast
 
       # Special step names for iterations
       ITERATION_STEPS = ["repeat", "each"].freeze
+
+      # Special step names for conditionals
+      CONDITIONAL_STEPS = ["if", "unless"].freeze
 
       class << self
         # Resolve the type of a step
@@ -62,6 +66,16 @@ module Roast
           ITERATION_STEPS.include?(step_name)
         end
 
+        # Check if a step is a conditional step
+        # @param step [Hash] The step to check
+        # @return [Boolean] true if it's a conditional step
+        def conditional_step?(step)
+          return false unless step.is_a?(Hash)
+
+          step_name = step.keys.first
+          CONDITIONAL_STEPS.include?(step_name)
+        end
+
         # Extract the step name from various step formats
         # @param step [String, Hash, Array] The step
         # @return [String, nil] The step name or nil
@@ -91,6 +105,8 @@ module Roast
         def resolve_hash_step(step)
           if iteration_step?(step)
             ITERATION_STEP
+          elsif conditional_step?(step)
+            CONDITIONAL_STEP
           else
             HASH_STEP
           end
