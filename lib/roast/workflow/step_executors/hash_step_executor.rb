@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "roast/workflow/step_executors/base_step_executor"
+require "roast/workflow/step_runner"
 
 module Roast
   module Workflow
@@ -14,7 +15,7 @@ module Roast
           interpolated_name = workflow_executor.interpolate(name)
 
           if command.is_a?(Hash)
-            workflow_executor.execute_steps([command])
+            step_runner.execute_steps([command])
           else
             # Interpolate command value
             interpolated_command = workflow_executor.interpolate(command)
@@ -23,8 +24,18 @@ module Roast
             step_config = config_hash[interpolated_name]
             exit_on_error = step_config.is_a?(Hash) ? step_config.fetch("exit_on_error", true) : true
 
-            workflow.output[interpolated_name] = workflow_executor.execute_step(interpolated_command, exit_on_error: exit_on_error)
+            workflow.output[interpolated_name] = step_runner.execute_step(interpolated_command, exit_on_error: exit_on_error)
           end
+        end
+
+        private
+
+        def step_runner
+          @step_runner ||= StepRunner.new(coordinator)
+        end
+
+        def coordinator
+          workflow_executor.step_executor_coordinator
         end
       end
     end

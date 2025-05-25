@@ -9,6 +9,7 @@ module Roast
   module Workflow
     class ConditionalStep < BaseStep
       include ExpressionUtils
+
       def initialize(workflow, config:, name:, context_path:, **kwargs)
         super(workflow, name: name, context_path: context_path, **kwargs)
 
