@@ -96,15 +96,15 @@ module Roast
       end
 
       def key?(key)
-        has_key?(key)
+        has_key?(key) # rubocop:disable Style/PreferredHashMethods
       end
 
       def include?(key)
-        has_key?(key)
+        has_key?(key) # rubocop:disable Style/PreferredHashMethods
       end
 
       def fetch(key, *args)
-        if has_key?(key)
+        if has_key?(key) # rubocop:disable Style/PreferredHashMethods
           self[key]
         elsif block_given?
           yield(key)
@@ -152,7 +152,7 @@ module Roast
       def slice(*keys)
         sliced = {}
         keys.each do |key|
-          if has_key?(key)
+          if has_key?(key) # rubocop:disable Style/PreferredHashMethods
             sliced[key.to_sym] = @hash[key.to_sym] || @hash[key.to_s]
           end
         end
