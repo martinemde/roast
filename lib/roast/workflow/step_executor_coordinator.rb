@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "roast/workflow/case_executor"
 require "roast/workflow/conditional_executor"
 require "roast/workflow/step_executor_factory"
 require "roast/workflow/step_type_resolver"
@@ -68,6 +69,8 @@ module Roast
           execute_iteration_step(step)
         when StepTypeResolver::CONDITIONAL_STEP
           execute_conditional_step(step)
+        when StepTypeResolver::CASE_STEP
+          execute_case_step(step)
         when StepTypeResolver::HASH_STEP
           execute_hash_step(step)
         when StepTypeResolver::PARALLEL_STEP
@@ -103,6 +106,15 @@ module Roast
 
       def conditional_executor
         dependencies[:conditional_executor]
+      end
+
+      def case_executor
+        @case_executor ||= dependencies[:case_executor] || CaseExecutor.new(
+          context.workflow,
+          context.context_path,
+          dependencies[:state_manager] || dependencies[:workflow_executor].state_manager,
+          workflow_executor,
+        )
       end
 
       def step_orchestrator
@@ -152,6 +164,10 @@ module Roast
 
       def execute_conditional_step(step)
         conditional_executor.execute_conditional(step)
+      end
+
+      def execute_case_step(step)
+        case_executor.execute_case(step)
       end
 
       def execute_hash_step(step)
