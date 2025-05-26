@@ -28,7 +28,7 @@ module Roast
         case_step = CaseStep.new(
           @workflow,
           config: case_config,
-          name: "case_#{case_expr.to_s.gsub(/[^a-zA-Z0-9_]/, "_")[0..20]}",
+          name: "case_#{case_expr.to_s.gsub(/[^a-zA-Z0-9_]/, "_")[0..30]}",
           context_path: @context_path,
           workflow_executor: @workflow_executor,
         )
