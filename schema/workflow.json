@@ -41,6 +41,13 @@
           ]
         }
       },
+      "pre_processing": {
+        "type": "array",
+        "description": "Steps executed once before any targets are processed",
+        "items": {
+          "$ref": "#/properties/steps/items"
+        }
+      },
       "steps": {
         "type": "array",
         "items": {
@@ -201,6 +208,13 @@
               "required": ["case", "when"]
             }
           ]
+        }
+      },
+      "post_processing": {
+        "type": "array",
+        "description": "Steps executed once after all targets have been processed",
+        "items": {
+          "$ref": "#/properties/steps/items"
         }
       },
       "proceed?": {

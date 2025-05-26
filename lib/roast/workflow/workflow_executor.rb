@@ -51,7 +51,8 @@ module Roast
       def initialize(workflow, config_hash, context_path,
         error_handler: nil, step_loader: nil, command_executor: nil,
         interpolator: nil, state_manager: nil, iteration_executor: nil,
-        conditional_executor: nil, step_orchestrator: nil, step_executor_coordinator: nil)
+        conditional_executor: nil, step_orchestrator: nil, step_executor_coordinator: nil,
+        phase: :steps)
         # Create context object to reduce data clump
         @context = WorkflowContext.new(
           workflow: workflow,
@@ -61,7 +62,7 @@ module Roast
 
         # Dependencies with defaults
         @error_handler = error_handler || ErrorHandler.new
-        @step_loader = step_loader || StepLoader.new(workflow, config_hash, context_path)
+        @step_loader = step_loader || StepLoader.new(workflow, config_hash, context_path, phase: phase)
         @command_executor = command_executor || CommandExecutor.new(logger: @error_handler)
         @interpolator = interpolator || Interpolator.new(workflow, logger: @error_handler)
         @state_manager = state_manager || StateManager.new(workflow, logger: @error_handler)

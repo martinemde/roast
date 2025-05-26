@@ -698,6 +698,104 @@ your-project/
   └── ...
 ```
 
+### Pre/Post Processing Framework
+
+Roast supports pre-processing and post-processing phases for workflows that operate on multiple targets. This enables powerful workflows that need setup/teardown or result aggregation across all processed files.
+
+#### Overview
+
+- **Pre-processing**: Steps executed once before any targets are processed
+- **Post-processing**: Steps executed once after all targets have been processed
+- **Shared state**: Pre-processing results are available to all subsequent steps
+- **Result aggregation**: Post-processing has access to all workflow execution results
+
+#### Configuration
+
+```yaml
+name: optimize_tests
+model: gpt-4o
+target: "test/**/*_test.rb"
+
+# Pre-processing steps run once before any test files
+pre_processing:
+  - gather_baseline_metrics
+  - setup_environment
+
+# Main workflow steps run for each test file
+steps:
+  - analyze_test
+  - improve_coverage
+  - optimize_performance
+
+# Post-processing steps run once after all test files
+post_processing:
+  - aggregate_results
+  - generate_report
+  - cleanup_environment
+```
+
+#### Directory Structure
+
+Pre and post-processing steps follow the same conventions as regular steps but are organized in their own directories:
+
+```
+workflow.yml
+pre_processing/
+  ├── gather_baseline_metrics/
+  │   └── prompt.md
+  └── setup_environment/
+      └── prompt.md
+analyze_test/
+  └── prompt.md
+improve_coverage/
+  └── prompt.md
+optimize_performance/
+  └── prompt.md
+post_processing/
+  ├── aggregate_results/
+  │   └── prompt.md
+  ├── generate_report/
+  │   └── prompt.md
+  └── cleanup_environment/
+      └── prompt.md
+```
+
+#### Data Access in Post-Processing
+
+Post-processing steps have access to special variables containing all workflow results:
+
+- `{{pre_processing_results}}`: Results from pre-processing steps
+- `{{all_workflow_results}}`: Array of results from each target's workflow execution
+
+Example post-processing prompt:
+```markdown
+# Generate Summary Report
+
+Based on the baseline metrics:
+{{pre_processing_results.gather_baseline_metrics}}
+
+And the results from processing all files:
+{{all_workflow_results}}
+
+Please generate a comprehensive summary report showing:
+1. Overall improvements achieved
+2. Files with the most significant changes
+3. Recommendations for further optimization
+```
+
+#### Use Cases
+
+This pattern is ideal for:
+
+- **Code migrations**: Setup migration tools, process files, generate migration report
+- **Test optimization**: Baseline metrics, optimize tests, aggregate improvements
+- **Documentation generation**: Analyze codebase, generate docs per module, create index
+- **Dependency updates**: Check versions, update files, verify compatibility
+- **Security audits**: Setup scanners, check each file, generate security report
+- **Performance analysis**: Establish baselines, analyze components, summarize findings
+
+See the [pre/post processing example](examples/pre_post_processing) for a complete working demonstration.
+
 ## Installation
 
 ```bash

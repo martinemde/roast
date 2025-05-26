@@ -34,6 +34,8 @@ class RoastWorkflowConfigurationParserTest < ActiveSupport::TestCase
     workflow.stubs(:output).returns({})
     workflow.stubs(:final_output).returns("")
     workflow.stubs(:output_file).returns(nil)
+    workflow.stubs(:state).returns({})
+    workflow.stubs(:transcript).returns([])
     Roast::Workflow::BaseWorkflow.stubs(:new).returns(workflow)
     workflow.stubs(:output_file=)
     workflow.stubs(:verbose=)

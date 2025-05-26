@@ -14,6 +14,8 @@ class RoastWorkflowRunnerTest < ActiveSupport::TestCase
     @configuration.stubs(:name).returns("test_session")
     @configuration.stubs(:steps).returns(["step1", "step2"])
     @configuration.stubs(:config_hash).returns({})
+    @configuration.stubs(:pre_processing).returns([])
+    @configuration.stubs(:post_processing).returns([])
 
     @options = { output: "/tmp/output.txt", verbose: true }
     @runner = Roast::Workflow::WorkflowRunner.new(@configuration, @options)
@@ -150,6 +152,8 @@ class RoastWorkflowRunnerTest < ActiveSupport::TestCase
       workflow.stubs(:session_timestamp).returns(nil)
       workflow.stubs(:respond_to?).with(:session_name).returns(true)
       workflow.stubs(:respond_to?).with(:final_output).returns(true)
+      workflow.stubs(:state).returns({})
+      workflow.stubs(:transcript).returns([])
     end
   end
 end

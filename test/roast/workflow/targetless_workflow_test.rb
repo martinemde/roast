@@ -28,6 +28,8 @@ class RoastWorkflowTargetlessWorkflowTest < ActiveSupport::TestCase
       workflow.stubs(:session_timestamp).returns(nil)
       workflow.stubs(:respond_to?).with(:session_name).returns(true)
       workflow.stubs(:respond_to?).with(:final_output).returns(true)
+      workflow.stubs(:state).returns({})
+      workflow.stubs(:transcript).returns([])
 
       Roast::Workflow::BaseWorkflow.expects(:new).with(
         nil,
@@ -47,6 +49,8 @@ class RoastWorkflowTargetlessWorkflowTest < ActiveSupport::TestCase
       @workflow.stubs(:output_file).returns(nil)
       @workflow.stubs(:output_file=)
       @workflow.stubs(:verbose=)
+      @workflow.stubs(:state).returns({})
+      @workflow.stubs(:transcript).returns([])
       # Stub execute_steps to return the workflow
       Roast::Workflow::WorkflowExecutor.any_instance.stubs(:execute_steps).returns(@workflow)
     end

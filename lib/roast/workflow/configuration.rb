@@ -11,7 +11,7 @@ module Roast
     # Encapsulates workflow configuration data and provides structured access
     # to the configuration settings
     class Configuration
-      attr_reader :config_hash, :workflow_path, :name, :steps, :tools, :function_configs, :model, :resource
+      attr_reader :config_hash, :workflow_path, :name, :steps, :pre_processing, :post_processing, :tools, :function_configs, :model, :resource
       attr_accessor :target
 
       delegate :api_provider, :openrouter?, :openai?, to: :api_configuration
@@ -30,6 +30,8 @@ module Roast
         # Extract basic configuration values
         @name = ConfigurationLoader.extract_name(@config_hash, workflow_path)
         @steps = ConfigurationLoader.extract_steps(@config_hash)
+        @pre_processing = ConfigurationLoader.extract_pre_processing(@config_hash)
+        @post_processing = ConfigurationLoader.extract_post_processing(@config_hash)
         @tools = ConfigurationLoader.extract_tools(@config_hash)
         @function_configs = ConfigurationLoader.extract_functions(@config_hash)
         @model = ConfigurationLoader.extract_model(@config_hash)
