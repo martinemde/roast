@@ -14,7 +14,7 @@ module Roast
       attr_reader :config_hash, :workflow_path, :name, :steps, :tools, :function_configs, :model, :resource
       attr_accessor :target
 
-      delegate :api_provider, :openrouter?, :openai?, to: :api_configuration
+      delegate :api_provider, :openrouter?, :openai?, :uri_base, to: :api_configuration
 
       # Delegate api_token to effective_token for backward compatibility
       def api_token

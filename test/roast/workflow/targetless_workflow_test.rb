@@ -9,8 +9,13 @@ require "roast/workflow/workflow_executor"
 
 class RoastWorkflowTargetlessWorkflowTest < ActiveSupport::TestCase
   def setup
+    @original_openai_key = ENV.delete("OPENAI_API_KEY")
     @workflow_path = fixture_file_path("targetless_workflow.yml")
     @parser = Roast::Workflow::ConfigurationParser.new(@workflow_path)
+  end
+
+  def teardown
+    ENV["OPENAI_API_KEY"] = @original_openai_key
   end
 
   class MockedExecution < RoastWorkflowTargetlessWorkflowTest

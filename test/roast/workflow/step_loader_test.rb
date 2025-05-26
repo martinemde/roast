@@ -9,11 +9,16 @@ module Roast
       include FixtureHelpers
 
       def setup
+        @original_openai_key = ENV.delete("OPENAI_API_KEY")
         @workflow = BaseWorkflow.new(nil, name: "test_workflow")
         @workflow.output = {}
         @context_path = File.expand_path("../../fixtures/steps", __dir__)
         @config_hash = {}
         @step_loader = StepLoader.new(@workflow, @config_hash, @context_path)
+      end
+
+      def teardown
+        ENV["OPENAI_API_KEY"] = @original_openai_key
       end
 
       def test_loads_prompt_step_when_name_contains_spaces

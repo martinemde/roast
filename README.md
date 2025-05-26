@@ -398,9 +398,9 @@ Benefits of using OpenRouter:
 
 When using OpenRouter, specify fully qualified model names including the provider prefix (e.g., `anthropic/claude-3-opus-20240229`).
 
-#### Dynamic API Tokens
+#### Dynamic API Tokens and URIs
 
-Roast allows you to dynamically fetch API tokens using shell commands directly in your workflow configuration:
+Roast allows you to dynamically fetch attributes such as API token and URI base (to use with a proxy) via shell commands directly in your workflow configuration:
 
 ```yaml
 # This will execute the shell command and use the result as the API token
@@ -412,8 +412,13 @@ api_token: $(echo $OPENAI_API_KEY)
 # For OpenRouter (requires api_provider setting)
 api_provider: openrouter
 api_token: $(echo $OPENROUTER_API_KEY)
-```
 
+# Static Proxy URI
+uri_base: https://proxy.example.com/v1
+
+# Dynamic Proxy URI
+uri_base: $(echo $AI_PROXY_URI_BASE)
+```
 
 This makes it easy to use environment-specific tokens without hardcoding credentials, especially useful in development environments or CI/CD pipelines. Alternatively, Roast will fall back to `OPENROUTER_API_KEY` or `OPENAI_API_KEY` environment variables based on the specified provider.
 
