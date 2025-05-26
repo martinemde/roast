@@ -8,6 +8,7 @@ module Roast
     class ConditionalStepTest < ActiveSupport::TestCase
       setup do
         @workflow = mock("workflow")
+        @workflow_executor = mock("workflow_executor")
         @output = {}
         @workflow.stubs(:output).returns(@output)
         @context_path = "/path/to/workflow.yml"
@@ -25,9 +26,10 @@ module Roast
           config: config,
           name: "test_conditional",
           context_path: @context_path,
+          workflow_executor: @workflow_executor,
         )
 
-        @workflow.expects(:execute_steps).with(["step1", "step2"]).once
+        @workflow_executor.expects(:execute_steps).with(["step1", "step2"]).once
 
         result = step.call
         assert_equal({ condition_result: true, branch_executed: "then" }, result)
@@ -45,9 +47,10 @@ module Roast
           config: config,
           name: "test_conditional",
           context_path: @context_path,
+          workflow_executor: @workflow_executor,
         )
 
-        @workflow.expects(:execute_steps).with(["step2", "step3"]).once
+        @workflow_executor.expects(:execute_steps).with(["step2", "step3"]).once
 
         result = step.call
         assert_equal({ condition_result: false, branch_executed: "else" }, result)
@@ -64,9 +67,10 @@ module Roast
           config: config,
           name: "test_conditional",
           context_path: @context_path,
+          workflow_executor: @workflow_executor,
         )
 
-        @workflow.expects(:execute_steps).with(["step1", "step2"]).once
+        @workflow_executor.expects(:execute_steps).with(["step1", "step2"]).once
 
         result = step.call
         assert_equal({ condition_result: true, branch_executed: "then" }, result)
@@ -83,9 +87,10 @@ module Roast
           config: config,
           name: "test_conditional",
           context_path: @context_path,
+          workflow_executor: @workflow_executor,
         )
 
-        @workflow.expects(:execute_steps).never
+        @workflow_executor.expects(:execute_steps).never
 
         result = step.call
         assert_equal({ condition_result: false, branch_executed: "else" }, result)
@@ -113,9 +118,10 @@ module Roast
           config: config,
           name: "test_conditional",
           context_path: @context_path,
+          workflow_executor: @workflow_executor,
         )
 
-        @workflow.expects(:execute_steps).with(["handle_success"]).once
+        @workflow_executor.expects(:execute_steps).with(["handle_success"]).once
 
         result = step.call
         assert_equal({ condition_result: true, branch_executed: "then" }, result)
@@ -132,9 +138,10 @@ module Roast
           config: config,
           name: "test_conditional",
           context_path: @context_path,
+          workflow_executor: @workflow_executor,
         )
 
-        @workflow.expects(:execute_steps).never
+        @workflow_executor.expects(:execute_steps).never
 
         result = step.call
         assert_equal({ condition_result: false, branch_executed: "else" }, result)

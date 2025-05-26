@@ -26,6 +26,31 @@ module Roast
         @dependencies = dependencies
       end
 
+      # Execute a list of steps
+      def execute_steps(workflow_steps)
+        workflow_steps.each do |step|
+          case step
+          when Hash
+            execute(step)
+          when Array
+            execute(step)
+          when String
+            execute(step)
+            # Handle pause after string steps
+            if @context.workflow.pause_step_name == step
+              Kernel.binding.irb # rubocop:disable Lint/Debugger
+            end
+          else
+            step_orchestrator.execute_step(step)
+          end
+        end
+      end
+
+      # Execute a single step (alias for compatibility)
+      def execute_step(step, options = {})
+        execute(step, options)
+      end
+
       # Execute a step based on its type
       # @param step [String, Hash, Array] The step to execute
       # @param options [Hash] Execution options
@@ -134,7 +159,7 @@ module Roast
         interpolated_name = interpolator.interpolate(name)
 
         if command.is_a?(Hash)
-          workflow_executor.execute_steps([command])
+          execute_steps([command])
         else
           interpolated_command = interpolator.interpolate(command)
           exit_on_error = context.exit_on_error?(interpolated_name)

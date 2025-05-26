@@ -9,7 +9,8 @@ module Roast
   module Workflow
     class ConditionalStep < BaseStep
       include ExpressionUtils
-      def initialize(workflow, config:, name:, context_path:, **kwargs)
+
+      def initialize(workflow, config:, name:, context_path:, workflow_executor:, **kwargs)
         super(workflow, name: name, context_path: context_path, **kwargs)
 
         @config = config
@@ -17,6 +18,7 @@ module Roast
         @is_unless = config.key?("unless")
         @then_steps = config["then"] || []
         @else_steps = config["else"] || []
+        @workflow_executor = workflow_executor
       end
 
       def call
@@ -31,8 +33,7 @@ module Roast
 
         # Execute the selected steps
         unless steps_to_execute.empty?
-          # Execute the steps using the workflow's execute_steps method
-          @workflow.execute_steps(steps_to_execute)
+          @workflow_executor.execute_steps(steps_to_execute)
         end
 
         # Return a result indicating which branch was taken
