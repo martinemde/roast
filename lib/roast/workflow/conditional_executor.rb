@@ -4,10 +4,11 @@ module Roast
   module Workflow
     # Handles execution of conditional steps (if and unless)
     class ConditionalExecutor
-      def initialize(workflow, context_path, state_manager)
+      def initialize(workflow, context_path, state_manager, workflow_executor = nil)
         @workflow = workflow
         @context_path = context_path
         @state_manager = state_manager
+        @workflow_executor = workflow_executor
       end
 
       def execute_conditional(conditional_config)
@@ -29,6 +30,7 @@ module Roast
           config: conditional_config,
           name: "conditional_#{condition_expr.gsub(/[^a-zA-Z0-9_]/, "_")[0..20]}",
           context_path: @context_path,
+          workflow_executor: @workflow_executor,
         )
 
         result = conditional_step.call

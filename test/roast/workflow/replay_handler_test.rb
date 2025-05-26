@@ -125,9 +125,14 @@ class RoastWorkflowReplayHandlerTest < ActiveSupport::TestCase
     @workflow.expects(:respond_to?).with(:output=).returns(true)
     @workflow.expects(:output=).with(state_data[:output])
 
-    # Test transcript restoration
-    @workflow.expects(:respond_to?).with(:transcript=).returns(true)
-    @workflow.expects(:transcript=).with(state_data[:transcript])
+    # Test transcript restoration - now uses clear and append
+    transcript_mock = mock("transcript")
+    @workflow.expects(:respond_to?).with(:transcript).returns(true)
+    @workflow.expects(:transcript).returns(transcript_mock).at_least_once
+    transcript_mock.expects(:respond_to?).with(:clear).returns(true)
+    transcript_mock.expects(:respond_to?).with(:<<).returns(true)
+    transcript_mock.expects(:clear)
+    transcript_mock.expects(:<<).with({ "user" => "test" })
 
     # Test final_output restoration
     @workflow.expects(:respond_to?).with(:final_output=).returns(true)
@@ -168,7 +173,6 @@ class RoastWorkflowReplayHandlerTest < ActiveSupport::TestCase
 
     transcript = mock("transcript")
     # Only transcript should be restored since others are not in state_data
-    @workflow.expects(:respond_to?).with(:transcript=).returns(false)
     @workflow.expects(:respond_to?).with(:transcript).returns(true)
     @workflow.expects(:transcript).returns(transcript).at_least_once
     transcript.expects(:respond_to?).with(:clear).returns(true)
