@@ -178,7 +178,37 @@ Roast supports several types of steps:
    - Until conditions: `until: "{{condition}}"`
    - Maximum iterations: `max_iterations: 10`
 
-6. **Raw prompt step**: Simple text prompts for the model without tools
+6. **Case/when/else steps**: Select different execution paths based on a value (similar to Ruby's case statement)
+   ```yaml
+   steps:
+     - detect_language
+     
+     - case: "{{ workflow.output.detect_language }}"
+       when:
+         ruby:
+           - lint_with_rubocop
+           - test_with_rspec
+         javascript:
+           - lint_with_eslint
+           - test_with_jest
+         python:
+           - lint_with_pylint
+           - test_with_pytest
+       else:
+         - analyze_generic
+         - generate_basic_report
+   ```
+   
+   Case expressions can be:
+   - Workflow outputs: `case: "{{ workflow.output.variable }}"`
+   - Ruby expressions: `case: "{{ count > 10 ? 'high' : 'low' }}"`
+   - Bash commands: `case: "$(echo $ENVIRONMENT)"`
+   - Direct values: `case: "production"`
+   
+   The value is compared against each key in the `when` clause, and matching steps are executed.
+   If no match is found, the `else` steps are executed (if provided).
+
+7. **Raw prompt step**: Simple text prompts for the model without tools
    ```yaml
    steps:
      - Summarize the changes made to the codebase.
