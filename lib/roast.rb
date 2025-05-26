@@ -2,12 +2,13 @@
 
 require "raix"
 require "thor"
-require "roast/version"
-require "roast/tools"
+require "roast/errors"
 require "roast/helpers"
-require "roast/resources"
-require "roast/workflow"
 require "roast/initializers"
+require "roast/resources"
+require "roast/tools"
+require "roast/version"
+require "roast/workflow"
 
 module Roast
   ROOT = File.expand_path("../..", __FILE__)
