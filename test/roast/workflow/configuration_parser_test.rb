@@ -36,6 +36,12 @@ class RoastWorkflowConfigurationParserTest < ActiveSupport::TestCase
     workflow.stubs(:output_file).returns(nil)
     workflow.stubs(:state).returns({})
     workflow.stubs(:transcript).returns([])
+
+    # Mock output_manager for execution context
+    mock_output_manager = mock("output_manager")
+    mock_output_manager.stubs(:to_h).returns({ output: {}, final_output: [] })
+    workflow.stubs(:output_manager).returns(mock_output_manager)
+
     Roast::Workflow::BaseWorkflow.stubs(:new).returns(workflow)
     workflow.stubs(:output_file=)
     workflow.stubs(:verbose=)

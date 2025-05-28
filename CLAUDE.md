@@ -50,6 +50,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - IterationExecutor handles iterations (each, repeat)
   - ConditionalExecutor handles conditionals (if, unless)
   - Don't combine different responsibilities in one class
+- **Do not implement prompts "inline" using a prompt: attribute nested under step names, that violates the primary design architecture of Roast**
 
 ## Git Workflow Practices
 

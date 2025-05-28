@@ -31,6 +31,11 @@ class RoastWorkflowTargetlessWorkflowTest < ActiveSupport::TestCase
       workflow.stubs(:state).returns({})
       workflow.stubs(:transcript).returns([])
 
+      # Mock output_manager for execution context
+      mock_output_manager = mock("output_manager")
+      mock_output_manager.stubs(:to_h).returns({ output: {}, final_output: [] })
+      workflow.stubs(:output_manager).returns(mock_output_manager)
+
       Roast::Workflow::BaseWorkflow.expects(:new).with(
         nil,
         has_entries(name: instance_of(String), context_path: instance_of(String)),
@@ -51,6 +56,11 @@ class RoastWorkflowTargetlessWorkflowTest < ActiveSupport::TestCase
       @workflow.stubs(:verbose=)
       @workflow.stubs(:state).returns({})
       @workflow.stubs(:transcript).returns([])
+
+      # Mock output_manager for execution context
+      mock_output_manager = mock("output_manager")
+      mock_output_manager.stubs(:to_h).returns({ output: {}, final_output: [] })
+      @workflow.stubs(:output_manager).returns(mock_output_manager)
       # Stub execute_steps to return the workflow
       Roast::Workflow::WorkflowExecutor.any_instance.stubs(:execute_steps).returns(@workflow)
     end

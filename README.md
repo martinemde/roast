@@ -760,22 +760,47 @@ post_processing/
       └── prompt.md
 ```
 
-#### Data Access in Post-Processing
+#### Data Access
 
-Post-processing steps have access to special variables containing all workflow results:
+**Pre-processing results in target workflows:**
 
-- `{{pre_processing_results}}`: Results from pre-processing steps
-- `{{all_workflow_results}}`: Array of results from each target's workflow execution
+Target workflows have access to pre-processing results through the `pre_processing_data` variable with dot notation:
+
+```erb
+# In a target workflow step prompt
+The baseline metrics from pre-processing:
+<%= pre_processing_data.gather_baseline_metrics %>
+
+Environment setup details:
+<%= pre_processing_data.setup_environment %>
+
+# Or access the final output
+<%= pre_processing_data.final_output %>
+```
+
+**Post-processing data access:**
+
+Post-processing steps have access to:
+
+- `pre_processing`: Direct access to pre-processing results with dot notation
+- `output.targets`: Hash of all target workflow results, keyed by parameterized file paths
 
 Example post-processing prompt:
 ```markdown
 # Generate Summary Report
 
 Based on the baseline metrics:
-{{pre_processing_results.gather_baseline_metrics}}
+<%= pre_processing.gather_baseline_metrics %>
+
+Environment configuration:
+<%= pre_processing.setup_environment %>
 
 And the results from processing all files:
-{{all_workflow_results}}
+<% output.targets.each do |target_key, target_data| %>
+Target: <%= target_key %>
+Results: <%= target_data['output'] %>
+Final output: <%= target_data['final_output'] %>
+<% end %>
 
 Please generate a comprehensive summary report showing:
 1. Overall improvements achieved

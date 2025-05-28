@@ -5,6 +5,7 @@ require "roast/workflow/replay_handler"
 require "roast/workflow/workflow_executor"
 require "roast/workflow/output_handler"
 require "roast/workflow/base_workflow"
+require "roast/workflow/dot_access_hash"
 
 module Roast
   module Workflow
@@ -14,7 +15,8 @@ module Roast
         @configuration = configuration
         @options = options
         @output_handler = OutputHandler.new
-        @workflow_results = []
+        @execution_context = WorkflowExecutionContext.new
+        @workflow_results = [] # For backward compatibility
       end
 
       def run_for_files(files)
@@ -104,13 +106,21 @@ module Roast
       private
 
       def run_single_workflow(file)
-        workflow = create_workflow(file)
+        # Pass pre-processing data to target workflows
+        # Flatten the structure to remove the 'output' intermediary
+        pre_processing_data = @execution_context.pre_processing_output.raw_output.merge(
+          final_output: @execution_context.pre_processing_output.final_output,
+        )
+        workflow = create_workflow(file, pre_processing_data: pre_processing_data)
         execute_workflow(workflow)
 
-        # Store workflow results for post-processing
+        # Store workflow output in execution context
+        @execution_context.add_target_output(file, workflow.output_manager)
+
+        # Store workflow results for backward compatibility
         @workflow_results << {
           file: file,
-          state: workflow.state.dup,
+          state: workflow.output_manager.to_h,
           final_output: workflow.final_output,
           transcript: workflow.transcript.dup,
         }
@@ -124,17 +134,25 @@ module Roast
         executor = WorkflowExecutor.new(workflow, @configuration.config_hash, @configuration.context_path, phase: :pre_processing)
         executor.execute_steps(@configuration.pre_processing)
 
-        # Store pre-processing results in shared state
-        @pre_processing_results = workflow.state
+        # Store pre-processing output in execution context
+        @execution_context.pre_processing_output.output = workflow.output_manager.raw_output
+        @execution_context.pre_processing_output.final_output = workflow.output_manager.final_output
       end
 
       def run_post_processing
         # Create a workflow for post-processing with access to all results
         workflow = create_workflow(nil)
 
-        # Make pre-processing results and all workflow results available
-        workflow.state[:pre_processing_results] = @pre_processing_results if @pre_processing_results
-        workflow.state[:all_workflow_results] = collect_all_workflow_results
+        # Pass execution context data to post-processing workflow
+        # Make pre_processing available as a top-level DotNotationHash with flattened structure
+        pre_processing_data = @execution_context.pre_processing_output.raw_output.merge(
+          final_output: @execution_context.pre_processing_output.final_output,
+        )
+        workflow.instance_variable_set(:@pre_processing, DotAccessHash.new(pre_processing_data))
+        workflow.define_singleton_method(:pre_processing) { @pre_processing }
+
+        # Keep targets in output for now
+        workflow.output[:targets] = @execution_context.target_outputs.transform_values(&:to_h)
 
         # Execute post-processing steps
         executor = WorkflowExecutor.new(workflow, @configuration.config_hash, @configuration.context_path, phase: :post_processing)
@@ -146,10 +164,12 @@ module Roast
       end
 
       def collect_all_workflow_results
-        @workflow_results
+        # Deprecated method kept for backward compatibility with tests
+        # In new architecture, use @execution_context.target_outputs instead
+        @workflow_results || []
       end
 
-      def create_workflow(file)
+      def create_workflow(file, pre_processing_data: nil)
         BaseWorkflow.new(
           file,
           name: @configuration.basename,
@@ -157,6 +177,7 @@ module Roast
           resource: @configuration.resource,
           session_name: @configuration.name,
           configuration: @configuration,
+          pre_processing_data:,
         ).tap do |workflow|
           workflow.output_file = @options[:output] if @options[:output].present?
           workflow.verbose = @options[:verbose] if @options[:verbose].present?

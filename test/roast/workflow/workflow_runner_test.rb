@@ -31,20 +31,24 @@ class RoastWorkflowRunnerTest < ActiveSupport::TestCase
 
     Roast::Workflow::BaseWorkflow.expects(:new).with(
       "file1.rb",
-      name: "test_workflow",
-      context_path: "/test/path",
-      resource: nil,
-      session_name: "test_session",
-      configuration: @configuration,
+      has_entries(
+        name: "test_workflow",
+        context_path: "/test/path",
+        resource: nil,
+        session_name: "test_session",
+        configuration: @configuration,
+      ),
     ).returns(mock_workflow1)
 
     Roast::Workflow::BaseWorkflow.expects(:new).with(
       "file2.rb",
-      name: "test_workflow",
-      context_path: "/test/path",
-      resource: nil,
-      session_name: "test_session",
-      configuration: @configuration,
+      has_entries(
+        name: "test_workflow",
+        context_path: "/test/path",
+        resource: nil,
+        session_name: "test_session",
+        configuration: @configuration,
+      ),
     ).returns(mock_workflow2)
 
     mock_executor = mock("executor")
@@ -103,11 +107,13 @@ class RoastWorkflowRunnerTest < ActiveSupport::TestCase
 
     Roast::Workflow::BaseWorkflow.expects(:new).with(
       nil,
-      name: "test_workflow",
-      context_path: "/test/path",
-      resource: nil,
-      session_name: "test_session",
-      configuration: @configuration,
+      has_entries(
+        name: "test_workflow",
+        context_path: "/test/path",
+        resource: nil,
+        session_name: "test_session",
+        configuration: @configuration,
+      ),
     ).returns(mock_workflow)
 
     mock_executor = mock("executor")
@@ -154,6 +160,11 @@ class RoastWorkflowRunnerTest < ActiveSupport::TestCase
       workflow.stubs(:respond_to?).with(:final_output).returns(true)
       workflow.stubs(:state).returns({})
       workflow.stubs(:transcript).returns([])
+
+      # Mock output_manager for execution context
+      mock_output_manager = mock("output_manager")
+      mock_output_manager.stubs(:to_h).returns({ output: {}, final_output: [] })
+      workflow.stubs(:output_manager).returns(mock_output_manager)
     end
   end
 end
