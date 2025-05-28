@@ -21,7 +21,7 @@ module Roast
 
         assert_instance_of(PromptStep, step)
         assert_equal("analyze the code", step.name)
-        refute(step.auto_loop)
+        assert(step.auto_loop)
       end
 
       def test_loads_ruby_step_from_context_path

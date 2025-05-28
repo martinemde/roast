@@ -26,14 +26,21 @@ module Roast
       def process_iteration_input(input, context, coerce_to: nil)
         if input.is_a?(String)
           if ruby_expression?(input)
+            # Default to regular boolean for ruby expressions
+            coerce_to ||= :boolean
             process_ruby_expression(input, context, coerce_to)
           elsif bash_command?(input)
+            # Default to boolean (which will interpret exit code) for bash commands
+            coerce_to ||= :boolean
             process_bash_command(input, coerce_to)
           else
+            # For prompts/steps, default to llm_boolean
+            coerce_to ||= :llm_boolean
             process_step_or_prompt(input, context, coerce_to)
           end
         else
-          # Non-string inputs are coerced as-is
+          # Non-string inputs default to regular boolean
+          coerce_to ||= :boolean
           coerce_result(input, coerce_to)
         end
       end
@@ -109,8 +116,20 @@ module Roast
         result = Roast::Tools::Cmd.call(command)
 
         if coerce_to == :boolean
-          # For boolean coercion, use exit status (assume success unless error message)
-          !result.to_s.start_with?("Error")
+          # For boolean coercion, check if command was allowed and exit status was 0
+          if result.to_s.start_with?("Error: Command not allowed")
+            return false
+          end
+
+          # Parse exit status from the output
+          # The Cmd tool returns output in format: "Command: X\nExit status: Y\nOutput:\nZ"
+          if result =~ /Exit status: (\d+)/
+            exit_status = ::Regexp.last_match(1).to_i
+            exit_status == 0
+          else
+            # If we can't parse exit status, assume success if no error
+            !result.to_s.start_with?("Error")
+          end
         else
           # For other uses, return the output
           result

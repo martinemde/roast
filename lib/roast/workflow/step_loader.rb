@@ -51,7 +51,7 @@ module Roast
 
         # First check for a prompt step (contains spaces)
         if name.plain_text?
-          step = Roast::Workflow::PromptStep.new(workflow, name: name.to_s, auto_loop: false)
+          step = Roast::Workflow::PromptStep.new(workflow, name: name.to_s, auto_loop: true)
           configure_step(step, name.to_s)
           return step
         end
@@ -144,10 +144,11 @@ module Roast
 
       # Apply configuration settings to a step
       def apply_step_configuration(step, step_config)
-        step.print_response = step_config["print_response"] if step_config["print_response"].present?
-        step.auto_loop = step_config["loop"] if step_config["loop"].present?
-        step.json = step_config["json"] if step_config["json"].present?
-        step.params = step_config["params"] if step_config["params"].present?
+        step.print_response = step_config["print_response"] if step_config.key?("print_response")
+        step.auto_loop = step_config["loop"] if step_config.key?("loop")
+        step.json = step_config["json"] if step_config.key?("json")
+        step.params = step_config["params"] if step_config.key?("params")
+        step.coerce_to = step_config["coerce_to"].to_sym if step_config.key?("coerce_to")
       end
     end
   end
