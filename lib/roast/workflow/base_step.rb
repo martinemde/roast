@@ -48,7 +48,10 @@ module Roast
 
         workflow.chat_completion(openai: workflow.openai? && model, loop: auto_loop, model: model, json:, params:).then do |response|
           case response
+          in Array if json
+            response.flatten.first
           in Array
+            # For non-JSON responses, join array elements
             response.map(&:presence).compact.join("\n")
           else
             response
