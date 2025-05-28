@@ -33,6 +33,9 @@ module Roast
           context_path: @context_path,
         )
 
+        # Apply configuration if provided
+        apply_step_configuration(repeat_step, repeat_config)
+
         results = repeat_step.call
 
         # Store results in workflow output
@@ -69,6 +72,9 @@ module Roast
           context_path: @context_path,
         )
 
+        # Apply configuration if provided
+        apply_step_configuration(each_step, each_config)
+
         results = each_step.call
 
         # Store results in workflow output
@@ -79,6 +85,30 @@ module Roast
         @state_manager.save_state(step_name, results)
 
         results
+      end
+
+      private
+
+      # Apply configuration settings to a step
+      def apply_step_configuration(step, step_config)
+        # Apply from config block first (if exists)
+        if step_config["config"]
+          config = step_config["config"]
+          step.print_response = config["print_response"] if config.key?("print_response")
+          step.auto_loop = config["loop"] if config.key?("loop")
+          step.json = config["json"] if config.key?("json")
+          step.params = config["params"] if config.key?("params")
+          step.model = config["model"] if config.key?("model")
+          step.coerce_to = config["coerce_to"].to_sym if config.key?("coerce_to")
+        end
+
+        # Then apply direct properties (these override config block)
+        step.print_response = step_config["print_response"] if step_config.key?("print_response")
+        step.auto_loop = step_config["loop"] if step_config.key?("loop")
+        step.json = step_config["json"] if step_config.key?("json")
+        step.params = step_config["params"] if step_config.key?("params")
+        step.model = step_config["model"] if step_config.key?("model")
+        step.coerce_to = step_config["coerce_to"].to_sym if step_config.key?("coerce_to")
       end
     end
   end
