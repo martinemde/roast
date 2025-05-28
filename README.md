@@ -4,6 +4,18 @@
 
 A convention-oriented framework for creating structured AI workflows, maintained by the Augmented Engineering team at Shopify.
 
+## Installation
+
+```bash
+$ gem install roast-ai
+```
+
+Or add to your Gemfile:
+
+```ruby
+gem 'roast-ai'
+```
+
 ## Why you should use Roast
 
 Roast provides a structured, declarative approach to building AI workflows with:
@@ -696,18 +708,6 @@ your-project/
   │       ├── logging.rb
   │       └── custom_tools.rb
   └── ...
-```
-
-## Installation
-
-```bash
-$ gem install roast-ai
-```
-
-Or add to your Gemfile:
-
-```ruby
-gem 'roast-ai'
 ```
 
 ## Development
