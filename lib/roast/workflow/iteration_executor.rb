@@ -91,18 +91,6 @@ module Roast
 
       # Apply configuration settings to a step
       def apply_step_configuration(step, step_config)
-        # Apply from config block first (if exists)
-        if step_config["config"]
-          config = step_config["config"]
-          step.print_response = config["print_response"] if config.key?("print_response")
-          step.auto_loop = config["loop"] if config.key?("loop")
-          step.json = config["json"] if config.key?("json")
-          step.params = config["params"] if config.key?("params")
-          step.model = config["model"] if config.key?("model")
-          step.coerce_to = config["coerce_to"].to_sym if config.key?("coerce_to")
-        end
-
-        # Then apply direct properties (these override config block)
         step.print_response = step_config["print_response"] if step_config.key?("print_response")
         step.auto_loop = step_config["loop"] if step_config.key?("loop")
         step.json = step_config["json"] if step_config.key?("json")

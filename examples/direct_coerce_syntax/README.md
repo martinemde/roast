@@ -1,29 +1,25 @@
 # Direct Coerce Syntax
 
-This example demonstrates the simplified syntax for specifying `coerce_to` and other configuration options directly on iteration steps, without needing a `config` block.
+This example demonstrates the simplified syntax for specifying `coerce_to` and other configuration options directly on iteration steps.
 
 ## Direct Syntax
 
-Instead of:
-```yaml
-- repeat:
-    until: "condition"
-    config:
-      coerce_to: boolean
-```
+Configuration options are specified directly on the step:
 
-You can now write:
 ```yaml
 - repeat:
     until: "condition"
     coerce_to: boolean
+    print_response: true
+    model: "claude-3-haiku"
+    steps: [...]
 ```
 
 ## Benefits
 
-1. **Cleaner YAML** - Less nesting, easier to read
+1. **Cleaner YAML** - No unnecessary nesting
 2. **More intuitive** - Configuration options are at the same level as other step properties
-3. **Backward compatible** - Old `config` block syntax still works
+3. **Consistent** - Matches how other step properties are specified
 
 ## Supported Options
 
@@ -34,14 +30,3 @@ All step configuration options can be specified directly:
 - `json` - JSON response mode
 - `params` - Additional parameters
 - `model` - Model override
-
-## Precedence
-
-If both syntaxes are present, direct properties take precedence:
-```yaml
-- repeat:
-    until: "condition"
-    coerce_to: llm_boolean  # This wins
-    config:
-      coerce_to: boolean    # This is ignored
-```

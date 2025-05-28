@@ -68,33 +68,10 @@ module Roast
         assert_equal :iterable, each_step.coerce_to
       end
 
-      test "config block still works for backward compatibility" do
-        workflow = TestWorkflow.new
-        context_path = "test"
-        state_manager = StateManager.new(workflow)
-        executor = IterationExecutor.new(workflow, context_path, state_manager)
-
-        # Old syntax with config block
-        repeat_config = {
-          "repeat" => true,
-          "until" => "{{true}}",
-          "config" => {
-            "coerce_to" => "boolean",
-          },
-          "steps" => [{ "log" => "processing..." }],
-          "max_iterations" => 1,
-        }
-
-        result = executor.execute_repeat(repeat_config)
-
-        # Should still work
-        assert_not_nil result
-      end
-
-      test "direct syntax takes precedence over config block" do
+      test "direct syntax works properly" do
         workflow = TestWorkflow.new
 
-        # Create a repeat step to test coerce_to precedence
+        # Create a repeat step to test coerce_to
         repeat_step = RepeatStep.new(
           workflow,
           steps: [{ "log" => "processing" }],
@@ -102,12 +79,11 @@ module Roast
           max_iterations: 1,
         )
 
-        # Apply config with both syntaxes
+        # Apply config with direct syntax
         config = {
-          "coerce_to" => "llm_boolean", # Direct property
-          "config" => {
-            "coerce_to" => "boolean", # This should be ignored
-          },
+          "coerce_to" => "llm_boolean",
+          "print_response" => true,
+          "model" => "claude-3-haiku",
         }
 
         context_path = "test"
@@ -117,8 +93,10 @@ module Roast
         # Apply the configuration
         executor.send(:apply_step_configuration, repeat_step, config)
 
-        # Direct syntax should win
+        # Direct syntax should work
         assert_equal :llm_boolean, repeat_step.coerce_to
+        assert_equal true, repeat_step.print_response
+        assert_equal "claude-3-haiku", repeat_step.model
       end
     end
   end

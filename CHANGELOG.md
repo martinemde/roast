@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Ruby expressions (`{{expr}}`) default to regular boolean coercion
   - Bash commands (`$(cmd)`) default to exit code interpretation
   - Inline prompts and regular steps default to "smart" LLM-powered interpretation (looks for truthy or falsy language)
-- Direct syntax for step configuration - `coerce_to` and other options can now be specified directly on iteration steps without a `config` block
+- Direct syntax for step configuration - `coerce_to` and other options are now specified directly on iteration steps
 
 ## [0.2.0] - 2025-05-26
 
