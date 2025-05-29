@@ -124,6 +124,9 @@ roast execute workflow.yml target_file.rb
 
 # Or for a targetless workflow (API calls, data generation, etc.)
 roast execute workflow.yml
+
+# Roast will automatically search in `project_root/roast/workflow_name` if the path is incomplete.
+roast execute my_cool_workflow # Equivalent to `roast execute roast/my_cool_workflow/workflow.yml
 ```
 
 ### Understanding Workflows
