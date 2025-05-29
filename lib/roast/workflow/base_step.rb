@@ -16,6 +16,7 @@ module Roast
       def_delegator :workflow, :chat_completion
       def_delegator :workflow, :transcript
 
+      # TODO: is this really the model we want to default to, and is this the right place to set it?
       def initialize(workflow, model: "anthropic:claude-opus-4", name: nil, context_path: nil, auto_loop: true)
         @workflow = workflow
         @model = model
