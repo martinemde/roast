@@ -1,43 +1,27 @@
 === Code Analysis Report ===
 Generated: <%= Time.now.strftime("%Y-%m-%d %H:%M:%S") %>
 
-<% if defined?(pre_processing) && pre_processing[:gather_dependencies] %>
 ## Dependencies & Context
-<%= pre_processing[:gather_dependencies] %>
-<% end %>
+<%= pre_processing.gather_dependencies %>
 
-<% if defined?(targets) && targets && !targets.empty? %>
 ## Target File Analysis
-<% targets.each do |file, data| %>
+<% targets.each do |file, target| %>
 File: <%= file %>
 
-<% if data[:output]["analyze_code_quality"] %>
 ### Code Quality
-<%= data[:output]["analyze_code_quality"] %>
-<% end %>
+<%= target.output.analyze_code_quality %>
 
-<% if data[:output]["identify_improvements"] %>
 ### Identified Improvements
-<%= data[:output]["identify_improvements"] %>
-<% end %>
+<%= target.output.identify_improvements %>
 
-<% if data[:output]["generate_recommendations"] %>
 ### Recommendations
-<%= data[:output]["generate_recommendations"] %>
-<% end %>
-<% end %>
+<%= target.output.generate_recommendations %>
 <% end %>
 
-<% if defined?(output) %>
 ## Summary
-<% if output["summarize_findings"] %>
-<%= output["summarize_findings"] %>
-<% end %>
+<%= output.summarize_findings %>
 
-<% if output["create_action_items"] %>
 ## Action Items
-<%= output["create_action_items"] %>
-<% end %>
-<% end %>
+<%= output.create_action_items %>
 
 === End of Report ===
