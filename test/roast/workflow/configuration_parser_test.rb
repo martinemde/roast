@@ -7,8 +7,13 @@ require "active_support/notifications"
 
 class RoastWorkflowConfigurationParserTest < ActiveSupport::TestCase
   def setup
+    @original_openai_key = ENV.delete("OPENAI_API_KEY")
     @workflow_path = fixture_file("workflow/workflow.yml")
     @parser = Roast::Workflow::ConfigurationParser.new(@workflow_path)
+  end
+
+  def teardown
+    ENV["OPENAI_API_KEY"] = @original_openai_key
   end
 
   def capture_stderr

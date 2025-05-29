@@ -5,9 +5,14 @@ require "roast/helpers/prompt_loader"
 
 class RoastHelpersPromptLoaderTest < ActiveSupport::TestCase
   def setup
+    @original_openai_key = ENV.delete("OPENAI_API_KEY")
     @workflow_file = fixture_file("workflow/workflow.yml")
     @test_file = fixture_file("test.rb")
     @workflow = build_workflow(@workflow_file, @test_file)
+  end
+
+  def teardown
+    ENV["OPENAI_API_KEY"] = @original_openai_key
   end
 
   def build_workflow(workflow_file, test_file)
