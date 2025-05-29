@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2025-05-29
+
+### Fixed
+- Model inheritance for nested steps in iteration steps (#105)
+  - Nested steps within `repeat` and `each` blocks now properly inherit model configuration
+  - Configuration hierarchy works correctly: step-specific → workflow-level → default model
+  - Previously, nested steps always used the default model regardless of configuration
+
 ## [0.2.2] - 2025-05-29
 
 ### Added
