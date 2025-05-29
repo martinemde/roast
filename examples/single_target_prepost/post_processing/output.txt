@@ -1,0 +1,43 @@
+=== Code Analysis Report ===
+Generated: <%= Time.now.strftime("%Y-%m-%d %H:%M:%S") %>
+
+<% if defined?(pre_processing) && pre_processing[:gather_dependencies] %>
+## Dependencies & Context
+<%= pre_processing[:gather_dependencies] %>
+<% end %>
+
+<% if defined?(targets) && targets && !targets.empty? %>
+## Target File Analysis
+<% targets.each do |file, data| %>
+File: <%= file %>
+
+<% if data[:output]["analyze_code_quality"] %>
+### Code Quality
+<%= data[:output]["analyze_code_quality"] %>
+<% end %>
+
+<% if data[:output]["identify_improvements"] %>
+### Identified Improvements
+<%= data[:output]["identify_improvements"] %>
+<% end %>
+
+<% if data[:output]["generate_recommendations"] %>
+### Recommendations
+<%= data[:output]["generate_recommendations"] %>
+<% end %>
+<% end %>
+<% end %>
+
+<% if defined?(output) %>
+## Summary
+<% if output["summarize_findings"] %>
+<%= output["summarize_findings"] %>
+<% end %>
+
+<% if output["create_action_items"] %>
+## Action Items
+<%= output["create_action_items"] %>
+<% end %>
+<% end %>
+
+=== End of Report ===

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "active_support/notifications"
+require "erb"
 require "roast/workflow/replay_handler"
 require "roast/workflow/workflow_executor"
 require "roast/workflow/output_handler"
@@ -44,6 +45,9 @@ module Roast
       end
 
       def run_for_targets
+        # Split targets by line and clean up
+        target_lines = @configuration.target.lines.map(&:strip).reject(&:empty?)
+
         # Execute pre-processing steps once before any targets
         if @configuration.pre_processing.any?
           $stderr.puts "Running pre-processing steps..."
@@ -51,9 +55,9 @@ module Roast
         end
 
         # Execute main workflow for each target
-        @configuration.target.lines.each do |file|
-          $stderr.puts "Running workflow for file: #{file.strip}"
-          run_single_workflow(file.strip)
+        target_lines.each do |file|
+          $stderr.puts "Running workflow for file: #{file}"
+          run_single_workflow(file)
         end
 
         # Execute post-processing steps once after all targets
@@ -158,6 +162,9 @@ module Roast
         executor = WorkflowExecutor.new(workflow, @configuration.config_hash, @configuration.context_path, phase: :post_processing)
         executor.execute_steps(@configuration.post_processing)
 
+        # Apply output.txt template if it exists
+        apply_post_processing_template(workflow)
+
         # Save post-processing outputs
         @output_handler.save_final_output(workflow)
         @output_handler.write_results(workflow)
@@ -178,6 +185,33 @@ module Roast
           workflow.concise = @options[:concise] if @options[:concise].present?
           workflow.pause_step_name = @options[:pause] if @options[:pause].present?
         end
+      end
+
+      def apply_post_processing_template(workflow)
+        # Check for output.txt template in post_processing directory
+        template_path = File.join(@configuration.context_path, "post_processing", "output.txt")
+        return unless File.exist?(template_path)
+
+        # Prepare data for template
+        template_data = {
+          pre_processing: DotAccessHash.new(@execution_context.pre_processing_output.to_h),
+          targets: @execution_context.target_outputs.transform_values { |v| DotAccessHash.new(v.to_h) },
+          output: DotAccessHash.new(workflow.output_manager.raw_output),
+          final_output: workflow.final_output,
+        }
+
+        # Create binding for ERB template with access to template data
+        template_binding = binding
+        template_data.each do |key, value|
+          template_binding.local_variable_set(key, value)
+        end
+
+        # Apply template and append to final output
+        template_content = File.read(template_path)
+        rendered_output = ERB.new(template_content, trim_mode: "-").result(template_binding)
+        workflow.append_to_final_output(rendered_output)
+      rescue => e
+        $stderr.puts "Warning: Failed to apply post-processing output template: #{e.message}"
       end
     end
   end

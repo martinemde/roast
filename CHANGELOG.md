@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2025-05-28
+
+### Added
+- Pre/post processing framework for workflows with `pre_processing` and `post_processing` sections
+- Support for `output.txt` ERB templates in post-processing phase for custom output formatting
+- Pre/post processing support for single-target workflows (not just multi-target)
+- Simplified access to pre-processing data in target workflows (removed `output` intermediary level)
+
 ## [0.2.0] - 2025-05-26
 
 ### Added

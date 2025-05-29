@@ -186,6 +186,125 @@ module Roast
         post_executor = WorkflowExecutor.new(workflow, config_hash, @temp_dir, phase: :post_processing)
         assert_equal :post_processing, post_executor.step_loader.phase
       end
+
+      test "post-processing applies output.txt template when present" do
+        # Create workflow configuration with post-processing
+        File.write(@workflow_path, <<~YAML)
+          name: test_workflow
+          tools: []
+          target: "#{File.join(@temp_dir, "test.txt")}"
+          steps:
+            - process
+          post_processing:
+            - finalize
+        YAML
+
+        # Create test file
+        File.write(File.join(@temp_dir, "test.txt"), "test content")
+
+        # Create step directory
+        process_dir = File.join(@steps_dir, "process")
+        FileUtils.mkdir_p(process_dir)
+        File.write(File.join(process_dir, "prompt.md"), "Process the file")
+
+        # Create post-processing step
+        finalize_dir = File.join(@post_processing_dir, "finalize")
+        FileUtils.mkdir_p(finalize_dir)
+        File.write(File.join(finalize_dir, "prompt.md"), "Finalize results")
+
+        # Create output.txt template in post_processing directory
+        File.write(File.join(@post_processing_dir, "output.txt"), <<~ERB)
+          === Post-Processing Summary ===
+          <% if defined?(targets) && targets %>
+          Processed <%= targets.size %> file(s)
+          <% end %>
+
+          <% if defined?(output) && output["finalize"] %>
+          Finalization output: <%= output["finalize"] %>
+          <% end %>
+          ==============================
+        ERB
+
+        configuration = Configuration.new(@workflow_path)
+        runner = WorkflowRunner.new(configuration)
+
+        # Mock the workflow execution
+        WorkflowExecutor.stub(:new, ->(workflow, _config_hash, _context_path, **options) {
+          mock_executor = mock("executor")
+          mock_executor.stubs(:execute_steps)
+
+          # Simulate post-processing step output
+          if options[:phase] == :post_processing
+            workflow.output_manager.output["finalize"] = "All tasks completed"
+          end
+
+          mock_executor
+        }) do
+          output = capture_io { runner.run_for_targets }
+
+          # Check that the template was applied
+          assert_match(/=== Post-Processing Summary ===/, output[0])
+          assert_match(/Processed 1 file\(s\)/, output[0])
+          assert_match(/Finalization output: All tasks completed/, output[0])
+        end
+      end
+
+      test "single-target workflows support pre and post processing" do
+        # Create workflow configuration with single target
+        File.write(@workflow_path, <<~YAML)
+          name: single_target_workflow
+          tools: []
+          target: "#{File.join(@temp_dir, "single_file.txt")}"
+          pre_processing:
+            - prepare
+          steps:
+            - analyze
+          post_processing:
+            - report
+        YAML
+
+        # Create target file
+        File.write(File.join(@temp_dir, "single_file.txt"), "content")
+
+        # Create step directories
+        prepare_dir = File.join(@pre_processing_dir, "prepare")
+        FileUtils.mkdir_p(prepare_dir)
+        File.write(File.join(prepare_dir, "prompt.md"), "Prepare environment")
+
+        analyze_dir = File.join(@steps_dir, "analyze")
+        FileUtils.mkdir_p(analyze_dir)
+        File.write(File.join(analyze_dir, "prompt.md"), "Analyze file")
+
+        report_dir = File.join(@post_processing_dir, "report")
+        FileUtils.mkdir_p(report_dir)
+        File.write(File.join(report_dir, "prompt.md"), "Generate report")
+
+        configuration = Configuration.new(@workflow_path)
+        runner = WorkflowRunner.new(configuration)
+
+        # Track execution order
+        execution_phases = []
+
+        WorkflowExecutor.stub(:new, ->(_workflow, _config_hash, _context_path, **options) {
+          execution_phases << options[:phase]
+          mock_executor = mock("executor")
+          mock_executor.stubs(:execute_steps)
+          mock_executor
+        }) do
+          output = capture_io { runner.run_for_targets }
+
+          # Verify all phases were executed in order
+          assert_equal 3, execution_phases.size
+          assert_equal :pre_processing, execution_phases[0]
+          assert_nil execution_phases[1] # Main workflow has no phase
+          assert_equal :post_processing, execution_phases[2]
+
+          # Verify output messages
+          assert_match(/Running pre-processing steps/, output[1])
+          assert_match(/Running workflow for file/, output[1])
+          assert_match(/Running post-processing steps/, output[1])
+        end
+      end
     end
   end
 end

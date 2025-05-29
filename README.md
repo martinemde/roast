@@ -700,7 +700,7 @@ your-project/
 
 ### Pre/Post Processing Framework
 
-Roast supports pre-processing and post-processing phases for workflows that operate on multiple targets. This enables powerful workflows that need setup/teardown or result aggregation across all processed files.
+Roast supports pre-processing and post-processing phases for workflows. This enables powerful workflows that need setup/teardown or result aggregation across all processed files.
 
 #### Overview
 
@@ -708,6 +708,8 @@ Roast supports pre-processing and post-processing phases for workflows that oper
 - **Post-processing**: Steps executed once after all targets have been processed
 - **Shared state**: Pre-processing results are available to all subsequent steps
 - **Result aggregation**: Post-processing has access to all workflow execution results
+- **Single-target support**: Pre/post processing works with single-target workflows too
+- **Output templates**: Post-processing supports `output.txt` templates for custom formatting
 
 #### Configuration
 
@@ -752,6 +754,7 @@ improve_coverage/
 optimize_performance/
   └── prompt.md
 post_processing/
+  ├── output.txt
   ├── aggregate_results/
   │   └── prompt.md
   ├── generate_report/
@@ -773,9 +776,6 @@ The baseline metrics from pre-processing:
 
 Environment setup details:
 <%= pre_processing_data.setup_environment %>
-
-# Or access the final output
-<%= pre_processing_data.final_output %>
 ```
 
 **Post-processing data access:**
@@ -807,6 +807,32 @@ Please generate a comprehensive summary report showing:
 2. Files with the most significant changes
 3. Recommendations for further optimization
 ```
+
+#### Output Templates
+
+Post-processing supports custom output formatting using ERB templates. Create an `output.txt` file in your `post_processing` directory to format the final workflow output:
+
+```erb
+# post_processing/output.txt
+=== Workflow Summary Report ===
+Generated at: <%= Time.now.strftime("%Y-%m-%d %H:%M:%S") %>
+
+Environment: <%= pre_processing.setup_environment %>
+
+Files Processed: <%= targets.size %>
+
+<% targets.each do |file, target| %>
+- <%= file %>: <%= target.output.analyze_test %>
+<% end %>
+
+<%= output.generate_report %>
+===============================
+```
+
+The template has access to:
+- `pre_processing`: All pre-processing step outputs with dot notation
+- `targets`: Hash of all target workflow results with dot notation (each target has `.output` and `.final_output`)
+- `output`: Post-processing step outputs with dot notation
 
 #### Use Cases
 
