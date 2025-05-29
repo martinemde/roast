@@ -15,7 +15,7 @@ module Roast
               :search_for_file,
               "Search for a file in the project using a glob pattern.",
               glob_pattern: { type: "string", description: "A glob pattern to search for. Example: 'test/**/*_test.rb'" },
-              path: { type: "string", description: "path to search from" },
+              path: { type: "string", description: "path to search from", default: "." },
             ) do |params|
               Roast::Tools::SearchFile.call(params[:glob_pattern], params[:path]).tap do |result|
                 Roast::Helpers::Logger.debug(result) if ENV["DEBUG"]
