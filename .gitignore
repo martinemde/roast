@@ -12,6 +12,8 @@
 
 **/CLAUDE.local.md
 .roast/
+
+bin/_guard-core
 bin/bundle
 bin/coderay
 bin/dotenv
@@ -36,6 +38,5 @@ bin/ruby-lsp-test-exec
 bin/ruby-parse
 bin/ruby-rewrite
 bin/thor
-bin/_guard-core
 
 gemfiles/*.lock

@@ -27,10 +27,12 @@ module Roast
         :configuration,
         :model
 
+      attr_reader :pre_processing_data
+
       delegate :api_provider, :openai?, to: :configuration
       delegate :output, :output=, :append_to_final_output, :final_output, to: :output_manager
 
-      def initialize(file = nil, name: nil, context_path: nil, resource: nil, session_name: nil, configuration: nil)
+      def initialize(file = nil, name: nil, context_path: nil, resource: nil, session_name: nil, configuration: nil, pre_processing_data: nil)
         @file = file
         @name = name || self.class.name.underscore.split("/").last
         @context_path = context_path || ContextPathResolver.resolve(self.class)
@@ -38,6 +40,7 @@ module Roast
         @session_name = session_name || @name
         @session_timestamp = nil
         @configuration = configuration
+        @pre_processing_data = pre_processing_data ? DotAccessHash.new(pre_processing_data).freeze : nil
 
         # Initialize managers
         @output_manager = OutputManager.new

@@ -4,6 +4,7 @@ require "test_helper"
 require "roast/tools/grep"
 require "tempfile"
 require "fileutils"
+require "open3"
 
 class RoastToolsGrepTest < ActiveSupport::TestCase
   def setup
@@ -29,74 +30,44 @@ class RoastToolsGrepTest < ActiveSupport::TestCase
     FileUtils.remove_entry(@temp_dir) if File.exist?(@temp_dir)
   end
 
-  test "executes ripgrep command with correct format" do
-    expected_command = "rg -C 4 " \
-      "--trim --color=never --heading -F -- \"searchable\" . | head -n #{Roast::Tools::Grep::MAX_RESULT_LINES}"
-    actual_command = nil
-
-    # Stub Kernel backtick operator for this test only
-    Roast::Tools::Grep.singleton_class.class_eval do
-      alias_method(:orig_backtick, :`)
-      define_method(:`, ->(cmd) {
-        actual_command = cmd
-        "mock search results"
-      })
-    end
-
+  test "searches for string using ripgrep" do
     result = Roast::Tools::Grep.call("searchable")
-    assert_equal(expected_command, actual_command)
-    assert_equal("mock search results", result)
-  ensure
-    # Restore original backtick
-    Roast::Tools::Grep.singleton_class.class_eval do
-      remove_method(:`)
-      alias_method(:`, :orig_backtick)
-      remove_method(:orig_backtick)
-    end
+
+    # Should find the string in both test files
+    assert_match(/test_file1\.txt/, result)
+    assert_match(/test_file2\.txt/, result)
+    assert_match(/searchable/, result)
   end
 
   test "handles errors gracefully" do
-    # Stub Kernel backtick operator to raise error
-    Roast::Tools::Grep.singleton_class.class_eval do
-      alias_method(:orig_backtick, :`)
-      define_method(:`, ->(_cmd) { raise StandardError, "Command failed" })
-    end
-
-    result = Roast::Tools::Grep.call("searchable")
-    assert_equal("Error grepping for string: Command failed", result)
-  ensure
-    # Restore original backtick
-    Roast::Tools::Grep.singleton_class.class_eval do
-      remove_method(:`)
-      alias_method(:`, :orig_backtick)
-      remove_method(:orig_backtick)
+    # Mock Open3 to simulate a command failure
+    Open3.stub(:capture3, ->(*_args) { raise StandardError, "Command failed" }) do
+      result = Roast::Tools::Grep.call("searchable")
+      assert_equal("Error grepping for string: Command failed", result)
     end
   end
 
-  test "escapes curly braces properly" do
-    search_string = "import {render}"
-    expected_escaped = "import \\{render\\}"
-    expected_command = "rg -C 4 " \
-      "--trim --color=never --heading -F -- \"#{expected_escaped}\" . | head -n #{Roast::Tools::Grep::MAX_RESULT_LINES}"
-    actual_command = nil
+  test "handles curly braces in search string" do
+    # Create a file with curly braces in content
+    File.write(File.join(@temp_dir, "react_file.js"), "import {render} from 'react'")
 
-    Roast::Tools::Grep.singleton_class.class_eval do
-      alias_method(:orig_backtick, :`)
-      define_method(:`, ->(cmd) {
-        actual_command = cmd
-        "mock search results"
-      })
+    result = Roast::Tools::Grep.call("import {render}")
+
+    # Should find the string without issues (no escaping needed with -F flag)
+    assert_match(/react_file\.js/, result)
+    assert_match(/import {render}/, result)
+  end
+
+  test "limits output to MAX_RESULT_LINES" do
+    # Create many files to exceed the line limit
+    100.times do |i|
+      File.write(File.join(@temp_dir, "file#{i}.txt"), "searchable content\nmore lines\n")
     end
 
-    result = Roast::Tools::Grep.call(search_string)
-    assert_equal(expected_command, actual_command)
-    assert_equal("mock search results", result)
-  ensure
-    Roast::Tools::Grep.singleton_class.class_eval do
-      remove_method(:`)
-      alias_method(:`, :orig_backtick)
-      remove_method(:orig_backtick)
-    end
+    result = Roast::Tools::Grep.call("searchable")
+
+    # Should be truncated
+    assert_match(/truncated to 100 lines/, result)
   end
 
   test ".included adds function to the base class" do

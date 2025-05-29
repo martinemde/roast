@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.2] - 2025-05-29
 
 ### Added
+- Pre/post processing framework for workflows with `pre_processing` and `post_processing` sections (#86)
+  - Support for `output.txt` ERB templates in post-processing phase for custom output formatting
+  - Pre/post processing support for single-target workflows (not just multi-target)
+  - Simplified access to pre-processing data in target workflows (removed `output` intermediary level)
 - Verbose mode improvements for better debugging experience (#98)
   - Command outputs are now displayed when using the `--verbose` flag
   - Commands executed within conditional branches also show output in verbose mode

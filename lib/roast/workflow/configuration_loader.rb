@@ -32,6 +32,20 @@ module Roast
           config_hash["steps"] || []
         end
 
+        # Extract pre-processing steps from the configuration
+        # @param config_hash [Hash] The configuration hash
+        # @return [Array] The pre_processing array or empty array
+        def extract_pre_processing(config_hash)
+          config_hash["pre_processing"] || []
+        end
+
+        # Extract post-processing steps from the configuration
+        # @param config_hash [Hash] The configuration hash
+        # @return [Array] The post_processing array or empty array
+        def extract_post_processing(config_hash)
+          config_hash["post_processing"] || []
+        end
+
         # Extract tools from the configuration
         # @param config_hash [Hash] The configuration hash
         # @return [Array] The tools array or empty array

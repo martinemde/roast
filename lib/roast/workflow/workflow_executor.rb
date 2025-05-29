@@ -48,10 +48,30 @@ module Roast
 
       delegate :workflow, :config_hash, :context_path, to: :context
 
+      # Initialize a new WorkflowExecutor
+      #
+      # @param workflow [BaseWorkflow] The workflow instance to execute
+      # @param config_hash [Hash] The workflow configuration
+      # @param context_path [String] The base path for the workflow
+      # @param error_handler [ErrorHandler] Optional custom error handler
+      # @param step_loader [StepLoader] Optional custom step loader
+      # @param command_executor [CommandExecutor] Optional custom command executor
+      # @param interpolator [Interpolator] Optional custom interpolator
+      # @param state_manager [StateManager] Optional custom state manager
+      # @param iteration_executor [IterationExecutor] Optional custom iteration executor
+      # @param conditional_executor [ConditionalExecutor] Optional custom conditional executor
+      # @param step_orchestrator [StepOrchestrator] Optional custom step orchestrator
+      # @param step_executor_coordinator [StepExecutorCoordinator] Optional custom step executor coordinator
+      # @param phase [Symbol] The execution phase - determines where to load steps from
+      #   Valid values:
+      #   - :steps (default) - Load steps from the main steps directory
+      #   - :pre_processing - Load steps from the pre_processing directory
+      #   - :post_processing - Load steps from the post_processing directory
       def initialize(workflow, config_hash, context_path,
         error_handler: nil, step_loader: nil, command_executor: nil,
         interpolator: nil, state_manager: nil, iteration_executor: nil,
-        conditional_executor: nil, step_orchestrator: nil, step_executor_coordinator: nil)
+        conditional_executor: nil, step_orchestrator: nil, step_executor_coordinator: nil,
+        phase: :steps)
         # Create context object to reduce data clump
         @context = WorkflowContext.new(
           workflow: workflow,
@@ -61,7 +81,7 @@ module Roast
 
         # Dependencies with defaults
         @error_handler = error_handler || ErrorHandler.new
-        @step_loader = step_loader || StepLoader.new(workflow, config_hash, context_path)
+        @step_loader = step_loader || StepLoader.new(workflow, config_hash, context_path, phase: phase)
         @command_executor = command_executor || CommandExecutor.new(logger: @error_handler)
         @interpolator = interpolator || Interpolator.new(workflow, logger: @error_handler)
         @state_manager = state_manager || StateManager.new(workflow, logger: @error_handler)

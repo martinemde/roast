@@ -754,6 +754,157 @@ your-project/
   └── ...
 ```
 
+### Pre/Post Processing Framework
+
+Roast supports pre-processing and post-processing phases for workflows. This enables powerful workflows that need setup/teardown or result aggregation across all processed files.
+
+#### Overview
+
+- **Pre-processing**: Steps executed once before any targets are processed
+- **Post-processing**: Steps executed once after all targets have been processed
+- **Shared state**: Pre-processing results are available to all subsequent steps
+- **Result aggregation**: Post-processing has access to all workflow execution results
+- **Single-target support**: Pre/post processing works with single-target workflows too
+- **Output templates**: Post-processing supports `output.txt` templates for custom formatting
+
+#### Configuration
+
+```yaml
+name: optimize_tests
+model: gpt-4o
+target: "test/**/*_test.rb"
+
+# Pre-processing steps run once before any test files
+pre_processing:
+  - gather_baseline_metrics
+  - setup_test_environment
+
+# Main workflow steps run for each test file
+steps:
+  - analyze_test
+  - improve_coverage
+  - optimize_performance
+
+# Post-processing steps run once after all test files
+post_processing:
+  - aggregate_results
+  - generate_report
+  - cleanup_environment
+```
+
+#### Directory Structure
+
+Pre and post-processing steps follow the same conventions as regular steps but are organized in their own directories:
+
+```
+workflow.yml
+pre_processing/
+  ├── gather_baseline_metrics/
+  │   └── prompt.md
+  └── setup_test_environment/
+      └── prompt.md
+analyze_test/
+  └── prompt.md
+improve_coverage/
+  └── prompt.md
+optimize_performance/
+  └── prompt.md
+post_processing/
+  ├── output.txt
+  ├── aggregate_results/
+  │   └── prompt.md
+  ├── generate_report/
+  │   └── prompt.md
+  └── cleanup_environment/
+      └── prompt.md
+```
+
+#### Data Access
+
+**Pre-processing results in target workflows:**
+
+Target workflows have access to pre-processing results through the `pre_processing_data` variable with dot notation:
+
+```erb
+# In a target workflow step prompt
+The baseline metrics from pre-processing:
+<%= pre_processing_data.gather_baseline_metrics %>
+
+Environment setup details:
+<%= pre_processing_data.setup_test_environment %>
+```
+
+**Post-processing data access:**
+
+Post-processing steps have access to:
+
+- `pre_processing`: Direct access to pre-processing results with dot notation
+- `targets`: Hash of all target workflow results, keyed by file paths
+
+Example post-processing prompt:
+```markdown
+# Generate Summary Report
+
+Based on the baseline metrics:
+<%= pre_processing.gather_baseline_metrics %>
+
+Environment configuration:
+<%= pre_processing.setup_test_environment %>
+
+And the results from processing all files:
+<% targets.each do |file, target| %>
+File: <%= file %>
+Analysis results: <%= target.output.analyze_test %>
+Coverage improvements: <%= target.output.improve_coverage %>
+Performance optimizations: <%= target.output.optimize_performance %>
+<% end %>
+
+Please generate a comprehensive summary report showing:
+1. Overall improvements achieved
+2. Files with the most significant changes
+3. Recommendations for further optimization
+```
+
+#### Output Templates
+
+Post-processing supports custom output formatting using ERB templates. Create an `output.txt` file in your `post_processing` directory to format the final workflow output:
+
+```erb
+# post_processing/output.txt
+=== Workflow Summary Report ===
+Generated at: <%= Time.now.strftime("%Y-%m-%d %H:%M:%S") %>
+
+Environment: <%= pre_processing.setup_test_environment %>
+
+Files Processed: <%= targets.size %>
+
+<% targets.each do |file, target| %>
+- <%= file %>: <%= target.output.analyze_test %>
+<% end %>
+
+<%= output.generate_report %>
+===============================
+```
+
+The template has access to:
+- `pre_processing`: All pre-processing step outputs with dot notation
+- `targets`: Hash of all target workflow results with dot notation (each target has `.output` and `.final_output`)
+- `output`: Post-processing step outputs with dot notation
+
+#### Use Cases
+
+This pattern is ideal for:
+
+- **Code migrations**: Setup migration tools, process files, generate migration report
+- **Test optimization**: Baseline metrics, optimize tests, aggregate improvements
+- **Documentation generation**: Analyze codebase, generate docs per module, create index
+- **Dependency updates**: Check versions, update files, verify compatibility
+- **Security audits**: Setup scanners, check each file, generate security report
+- **Performance analysis**: Establish baselines, analyze components, summarize findings
+
+See the [pre/post processing example](examples/pre_post_processing) for a complete working demonstration.
+
+
 ## Development
 
 After checking out the repo, run `bundle install` to install dependencies. Then, run `bundle exec rake` to run the tests and linter. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
