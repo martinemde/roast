@@ -120,7 +120,7 @@ module Roast
         assert_equal [:pre_processing, :main_workflow, :post_processing], execution_order
       end
 
-      test "workflow runner stores results from each workflow execution" do
+      test "workflow runner executes workflows for each target file" do
         # Create workflow configuration
         File.write(@workflow_path, <<~YAML)
           name: test_workflow
@@ -136,32 +136,38 @@ module Roast
         File.write(File.join(@temp_dir, "file1.txt"), "content1")
         File.write(File.join(@temp_dir, "file2.txt"), "content2")
 
+        # Create step directory with prompt to make workflow valid
+        process_dir = File.join(@steps_dir, "process")
+        FileUtils.mkdir_p(process_dir)
+        File.write(File.join(process_dir, "prompt.md"), "Process the file")
+
+        aggregate_dir = File.join(@post_processing_dir, "aggregate")
+        FileUtils.mkdir_p(aggregate_dir)
+        File.write(File.join(aggregate_dir, "prompt.md"), "Aggregate results")
+
         configuration = Configuration.new(@workflow_path)
         runner = WorkflowRunner.new(configuration)
 
-        # Mock execute_workflow to prevent actual API calls
-        workflow_count = 0
-        runner.stub(:execute_workflow, ->(workflow) {
-          workflow_count += 1
-          # Initialize state if needed
-          workflow.instance_variable_set(:@state, {}) unless workflow.state
-          workflow.state[:test_result] = "Result #{workflow_count}" if workflow.state
-        }) do
-          # Also stub pre/post processing to avoid execution
-          runner.stub(:run_pre_processing, -> {}) do
-            runner.stub(:run_post_processing, -> {}) do
-              runner.run_for_targets
-            end
+        # Track execution by stubbing the workflow executor
+        executed_files = []
+
+        WorkflowExecutor.stub(:new, ->(workflow, _config_hash, _context_path, **options) {
+          # Only track main workflow executions (not pre/post processing)
+          if options[:phase].nil?
+            executed_files << workflow.file
           end
+          # Return a mock executor that does nothing
+          mock_executor = mock("executor")
+          mock_executor.stubs(:execute_steps)
+          mock_executor
+        }) do
+          runner.run_for_targets
         end
 
         # Verify workflows were executed for each file
-        assert_equal 2, workflow_count
-
-        # Verify results are collected
-        results = runner.send(:collect_all_workflow_results)
-        assert_kind_of Array, results
-        assert_equal 2, results.length
+        assert_equal 2, executed_files.length
+        assert_includes executed_files, File.join(@temp_dir, "file1.txt")
+        assert_includes executed_files, File.join(@temp_dir, "file2.txt")
       end
 
       test "workflow executor creates correct phase-specific loader" do

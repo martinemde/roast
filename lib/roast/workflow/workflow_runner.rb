@@ -163,12 +163,6 @@ module Roast
         @output_handler.write_results(workflow)
       end
 
-      def collect_all_workflow_results
-        # Deprecated method kept for backward compatibility with tests
-        # In new architecture, use @execution_context.target_outputs instead
-        @workflow_results || []
-      end
-
       def create_workflow(file, pre_processing_data: nil)
         BaseWorkflow.new(
           file,
