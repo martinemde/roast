@@ -11,6 +11,7 @@ module Roast
       def setup
         @workflow = mock("workflow")
         @workflow.stubs(:output).returns({})
+        @workflow.stubs(:verbose).returns(false)
         @config_hash = {}
         @context_path = "/test/path"
         @context = WorkflowContext.new(workflow: @workflow, config_hash: @config_hash, context_path: @context_path)
