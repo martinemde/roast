@@ -44,6 +44,10 @@ class RoastWorkflowTargetlessWorkflowTest < ActiveSupport::TestCase
       workflow.stubs(:respond_to?).with(:session_name).returns(true)
       workflow.stubs(:respond_to?).with(:final_output).returns(true)
 
+      # Stub output_manager for the pre/post processing code
+      output_manager = mock("output_manager")
+      workflow.stubs(:output_manager).returns(output_manager)
+
       Roast::Workflow::BaseWorkflow.expects(:new).with(
         nil,
         has_entries(name: instance_of(String), context_path: instance_of(String)),
