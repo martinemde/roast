@@ -17,8 +17,10 @@ jobs:
       matrix:
         os: [ubuntu]
         ruby: ['3.2', '3.3', '3.4']
+        gemfile: ['activesupport7', 'activesupport8']
     runs-on: ${{ matrix.os }}-latest
-    continue-on-error: ${{ matrix.ruby == 'ruby-head' }}
+    env:
+      BUNDLE_GEMFILE: ${{ github.workspace }}/gemfiles/${{ matrix.gemfile }}.gemfile
     steps:
       - uses: actions/checkout@v4
       - uses: ruby/setup-ruby@v1
