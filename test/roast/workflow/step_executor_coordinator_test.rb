@@ -12,12 +12,17 @@ module Roast
         @workflow = mock("workflow")
         @workflow.stubs(:output).returns({})
         @workflow.stubs(:verbose).returns(false)
+
         @config_hash = {}
-        @context_path = "/test/path"
-        @context = WorkflowContext.new(workflow: @workflow, config_hash: @config_hash, context_path: @context_path)
+
+        @context = mock("context")
         @context.stubs(:workflow).returns(@workflow)
         @context.stubs(:has_resource?).returns(false)
-        @context.stubs(:resource_type).returns(:file)
+        @context.stubs(:resource_type).returns(nil) # Changed from :file to nil
+        @context.stubs(:config_hash).returns(@config_hash)
+        @context.stubs(:context_path).returns("/test/path")
+        # Default behavior for exit_on_error?
+        @context.stubs(:exit_on_error?).returns(true)
 
         @dependencies = {
           workflow_executor: mock("workflow_executor"),
@@ -81,16 +86,17 @@ module Roast
 
       def test_executes_hash_step_with_hash_command
         step = { "var1" => { "nested" => "command" } }
+        # Configure exit_on_error? to return true for both step names
+        @context.stubs(:exit_on_error?).with("nested").returns(true)
+        @context.stubs(:exit_on_error?).with("command").returns(true)
+
         @dependencies[:interpolator].expects(:interpolate).with("var1").returns("var1")
         # Now the coordinator handles this internally by calling execute_steps
         # Which will call execute on the nested hash
         @dependencies[:interpolator].expects(:interpolate).with("nested").returns("nested")
         @dependencies[:interpolator].expects(:interpolate).with("command").returns("command")
-        # Set config_hash to control exit_on_error behavior
-        @config_hash["nested"] = { "exit_on_error" => true }
         # And then the string step handler will also interpolate
         @dependencies[:interpolator].expects(:interpolate).with("command").returns("command")
-        @config_hash["command"] = { "exit_on_error" => true }
         @dependencies[:step_orchestrator].expects(:execute_step).with("command", exit_on_error: true).returns("result")
         @workflow.output.expects(:[]=).with("nested", "result")
 
@@ -99,13 +105,14 @@ module Roast
 
       def test_executes_hash_step_with_string_command
         step = { "var1" => "command1" }
+        # Configure exit_on_error? to return true for both step names
+        @context.stubs(:exit_on_error?).with("var1").returns(true)
+        @context.stubs(:exit_on_error?).with("command1").returns(true)
+
         @dependencies[:interpolator].expects(:interpolate).with("var1").returns("var1")
         @dependencies[:interpolator].expects(:interpolate).with("command1").returns("command1")
-        # Set config_hash to control exit_on_error behavior
-        @config_hash["var1"] = { "exit_on_error" => true }
         # The string step handler will also try to interpolate, so expect it twice
         @dependencies[:interpolator].expects(:interpolate).with("command1").returns("command1")
-        @config_hash["command1"] = { "exit_on_error" => true }
         @dependencies[:step_orchestrator].expects(:execute_step).with("command1", exit_on_error: true).returns("result")
 
         @workflow.output.expects(:[]=).with("var1", "result")
@@ -116,6 +123,10 @@ module Roast
 
       def test_executes_parallel_step
         steps = ["step1", "step2"]
+        # Configure exit_on_error? to return true for both step names
+        @context.stubs(:exit_on_error?).with("step1").returns(true)
+        @context.stubs(:exit_on_error?).with("step2").returns(true)
+
         # The new approach uses the factory, which will instantiate ParallelStepExecutor
         # ParallelStepExecutor needs workflow_executor.workflow and workflow_executor.config_hash
         @dependencies[:workflow_executor].stubs(:workflow).returns(@workflow)
@@ -126,9 +137,6 @@ module Roast
         @workflow.stubs(:pause_step_name).returns(nil)
         @dependencies[:interpolator].expects(:interpolate).with("step1").returns("step1")
         @dependencies[:interpolator].expects(:interpolate).with("step2").returns("step2")
-        # Set config_hash to control exit_on_error behavior
-        @config_hash["step1"] = { "exit_on_error" => true }
-        @config_hash["step2"] = { "exit_on_error" => true }
         @dependencies[:step_orchestrator].expects(:execute_step).with("step1", exit_on_error: true)
         @dependencies[:step_orchestrator].expects(:execute_step).with("step2", exit_on_error: true)
 
@@ -150,9 +158,10 @@ module Roast
 
       def test_executes_string_step_regular
         step = "regular_step"
+        # Configure exit_on_error? to return false for this step
+        @context.stubs(:exit_on_error?).with("regular_step").returns(false)
+
         @dependencies[:interpolator].expects(:interpolate).with(step).returns(step)
-        # Set config_hash to control exit_on_error behavior
-        @config_hash["regular_step"] = { "exit_on_error" => false }
         @dependencies[:step_orchestrator].expects(:execute_step).with(step, exit_on_error: false)
 
         @coordinator.execute(step)
