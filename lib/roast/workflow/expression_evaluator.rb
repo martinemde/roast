@@ -33,6 +33,14 @@ module Roast
         begin
           output = executor.execute(cmd, exit_on_error: false)
 
+          # Print command output in verbose mode
+          if @workflow.verbose
+            $stderr.puts "Evaluating command: #{cmd}"
+            $stderr.puts "Command output:"
+            $stderr.puts output
+            $stderr.puts
+          end
+
           if for_condition
             # For conditions, we care about the exit status (success = true)
             # Check if output contains exit status marker

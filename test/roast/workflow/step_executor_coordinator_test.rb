@@ -11,6 +11,7 @@ module Roast
         @workflow = mock("workflow")
         @workflow.stubs(:transcript).returns([])
         @workflow.stubs(:output).returns({})
+        @workflow.stubs(:verbose).returns(false)
 
         @context = mock("context")
         @context.stubs(:workflow).returns(@workflow)
