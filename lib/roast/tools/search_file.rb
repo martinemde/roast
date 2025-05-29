@@ -26,6 +26,12 @@ module Roast
       end
 
       def call(glob_pattern, path = ".")
+        raise ArgumentError, "glob_pattern is required" if glob_pattern.nil?
+
+        path ||= "."
+        raise ArgumentError, "path is expected to exist" unless File.exist?(path)
+        raise ArgumentError, "path is expected to be a directory" unless File.directory?(path)
+
         Roast::Helpers::Logger.info("🔍 Searching for: '#{glob_pattern}' in '#{File.expand_path(path)}'\n")
         search_for(glob_pattern, path).then do |results|
           return "No results found for #{glob_pattern} in #{path}" if results.empty?
