@@ -35,8 +35,34 @@ module Roast
         # Extract tools from the configuration
         # @param config_hash [Hash] The configuration hash
         # @return [Array] The tools array or empty array
-        def extract_tools(config_hash)
-          config_hash["tools"] || []
+        def extract_local_tools(config_hash)
+          config_hash["tools"]&.select { |tool| tool.is_a?(String) } || []
+        end
+
+        # Extract MCP tools from the configuration, and convert them to MCP clients
+        # @param config_hash [Hash] The configuration hash
+        # @return [Array] The MCP tools array or empty array
+        def extract_mcp_tools(config_hash)
+          tools = config_hash["tools"]&.select { |tool| tool.is_a?(Hash) }
+          return [] unless tools&.any?
+
+          tools.map do |tool|
+            config = tool.values.first
+            client = if config["url"]
+              Raix::MCP::SseClient.new(
+                config["url"],
+                headers: config["headers"] || {},
+              )
+            elsif config["command"]
+              args = [config["command"]]
+              args += config["args"] if config["args"]
+              Raix::MCP::StdioClient.new(*args, env: config["env"] || {})
+            else
+              raise ArgumentError, "Invalid MCP tool configuration for #{tool.keys.first}. Provide `url` or `command`."
+            end
+
+            Configuration::MCPTool.new(client:, only: config["only"], except: config["except"])
+          end
         end
 
         # Extract function configurations
