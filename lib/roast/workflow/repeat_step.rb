@@ -23,8 +23,8 @@ module Roast
 
         begin
           # Loop until condition is met or max_iterations is reached
-          # Process the until_condition based on its type with Boolean coercion
-          until process_iteration_input(@until_condition, workflow, coerce_to: :boolean) || (iteration >= @max_iterations)
+          # Process the until_condition based on its type with configured coercion
+          until process_iteration_input(@until_condition, workflow, coerce_to: @coerce_to) || (iteration >= @max_iterations)
             $stderr.puts "Repeat loop iteration #{iteration + 1}"
 
             # Execute the nested steps

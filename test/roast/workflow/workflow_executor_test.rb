@@ -55,7 +55,7 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
     @workflow.expects(:chat_completion).with(
       openai: "gpt-4o",
       model: "gpt-4o",
-      loop: false,
+      loop: true,
       json: false,
       params: {},
     ).returns("Test response")

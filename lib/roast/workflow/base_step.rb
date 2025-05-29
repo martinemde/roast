@@ -9,7 +9,7 @@ module Roast
     class BaseStep
       extend Forwardable
 
-      attr_accessor :model, :print_response, :auto_loop, :json, :params, :resource
+      attr_accessor :model, :print_response, :auto_loop, :json, :params, :resource, :coerce_to
       attr_reader :workflow, :name, :context_path
 
       def_delegator :workflow, :append_to_final_output
@@ -25,20 +25,33 @@ module Roast
         @auto_loop = auto_loop
         @json = false
         @params = {}
+        @coerce_to = nil
         @resource = workflow.resource if workflow.respond_to?(:resource)
       end
 
       def call
         prompt(read_sidecar_prompt)
-        chat_completion(print_response:, auto_loop:, json:, params:)
+        result = chat_completion(print_response:, auto_loop:, json:, params:)
+
+        # Apply coercion if configured
+        apply_coercion(result)
       end
 
       protected
 
-      def chat_completion(print_response: false, auto_loop: true, json: false, params: {})
+      def chat_completion(print_response: nil, auto_loop: nil, json: nil, params: nil)
+        # Use instance variables as defaults if parameters are not provided
+        print_response = @print_response if print_response.nil?
+        auto_loop = @auto_loop if auto_loop.nil?
+        json = @json if json.nil?
+        params = @params if params.nil?
+
         workflow.chat_completion(openai: workflow.openai? && model, loop: auto_loop, model: model, json:, params:).then do |response|
           case response
+          in Array if json
+            response.flatten.first
           in Array
+            # For non-JSON responses, join array elements
             response.map(&:presence).compact.join("\n")
           else
             response
@@ -71,6 +84,30 @@ module Roast
           append_to_final_output(ERB.new(File.read(output_path), trim_mode: "-").result(binding))
         elsif print_response
           append_to_final_output(response)
+        end
+      end
+
+      private
+
+      def apply_coercion(result)
+        return result unless @coerce_to
+
+        case @coerce_to
+        when :boolean
+          # Simple boolean coercion
+          !!result
+        when :llm_boolean
+          # Use LLM boolean coercer for natural language responses
+          require "roast/workflow/llm_boolean_coercer"
+          LlmBooleanCoercer.coerce(result)
+        when :iterable
+          # Ensure result is iterable
+          return result if result.respond_to?(:each)
+
+          result.to_s.split("\n")
+        else
+          # Unknown coercion type, return as-is
+          result
         end
       end
     end

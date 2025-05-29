@@ -4,6 +4,18 @@
 
 A convention-oriented framework for creating structured AI workflows, maintained by the Augmented Engineering team at Shopify.
 
+## Installation
+
+```bash
+$ gem install roast-ai
+```
+
+Or add to your Gemfile:
+
+```ruby
+gem 'roast-ai'
+```
+
 ## Why you should use Roast
 
 Roast provides a structured, declarative approach to building AI workflows with:
@@ -63,6 +75,42 @@ steps:
   - $(bundle exec rubocop -A {{file}})
   - Summarize the changes made to {{File.basename(file)}}.
 ```
+
+## Try it
+
+If you don’t have one already, get an OpenAI key from [here](https://platform.openai.com/settings/organization/api-keys). You will need an account with a credit card, make sure that a basic completion works.
+
+```bash
+export OPENAI_API_KEY=sk-proj-....
+
+curl -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $API_TOKEN" \
+    -d '{"model":"gpt-4.1-mini","messages":[{"role":"user","content":"What is 1+1?"}]}' \
+    https://api.openai.com/v1/chat/completions
+```
+
+The [test grading workflow](examples/grading/workflow.md) in this repository is a senior software engineer and testing expert that evaluates the quality of a test based on guidelines.
+
+Try the workflow.
+
+```bash
+./exe/roast execute examples/grading/workflow.yml test/roast/resources_test.rb
+
+🔥🔥🔥 Everyone loves a good roast 🔥🔥🔥
+...
+```
+
+This will output a test grade.
+
+```
+========== TEST GRADE REPORT ==========
+Test file: test/roast/resources_test.rb
+
+FINAL GRADE:
+  Score: 80/100
+  Letter Grade: B
+```
+Note that you may also need `shadowenv` and `rg`, on MacOS run `brew install shadowenv` and `brew install rg`.
 
 ## How to use Roast
 
@@ -848,17 +896,6 @@ This pattern is ideal for:
 
 See the [pre/post processing example](examples/pre_post_processing) for a complete working demonstration.
 
-## Installation
-
-```bash
-$ gem install roast-ai
-```
-
-Or add to your Gemfile:
-
-```ruby
-gem 'roast-ai'
-```
 
 ## Development
 

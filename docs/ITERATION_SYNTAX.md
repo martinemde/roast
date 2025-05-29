@@ -90,10 +90,38 @@ For defining prompts directly in the workflow:
 
 ## Type Coercion
 
-Values are automatically coerced to the appropriate types:
+### Smart Defaults
 
-- For `until` conditions: Values are coerced to booleans (using Ruby's truthiness rules)
-- For `each` collections: Values are coerced to iterables (converted to arrays of lines if needed)
+Roast applies intelligent defaults for boolean coercion based on the type of expression:
+
+- **Ruby expressions** (`{{expr}}`) → Regular boolean coercion (`!!value`)
+- **Bash commands** (`$(cmd)`) → Exit code interpretation (0 = true, non-zero = false)
+- **Inline prompts/step names** → LLM boolean interpretation (analyzes yes/no intent)
+
+### Manual Coercion
+
+You can override the smart defaults by specifying `coerce_to` directly in the step:
+
+```yaml
+# Override prompt to use regular boolean instead of LLM boolean
+- repeat:
+    until: "check_condition"
+    coerce_to: boolean
+    steps:
+      - process_item
+
+# Force a step result to be treated as iterable
+- each: "get_items"
+  as: "item"
+  coerce_to: iterable
+  steps:
+    - process: "{{item}}"
+```
+
+Available coercion types:
+- `boolean` - Standard Ruby truthiness (`!!` operator)
+- `llm_boolean` - Natural language yes/no interpretation
+- `iterable` - Convert to array (splits strings on newlines)
 
 ## Migrating Existing Workflows
 

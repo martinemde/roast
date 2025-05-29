@@ -1,5 +1,7 @@
 name: Test Grading
-model: anthropic:claude-opus-4
+api_token: $(echo $OPENAI_API_KEY)
+# model: anthropic:claude-opus-4
+model: gpt-4.1-mini
 
 tools:
   - Roast::Tools::Grep
@@ -23,16 +25,16 @@ steps:
 
 # set non-default attributes for steps below
 analyze_coverage:
-  model: gpt-4.1-mini
+#  model: gpt-4.1-mini
   auto_loop: false
   json: true
   
 generate_grades:
-  model: o3
+#  model: o3
   json: true
 
 generate_recommendations:
-  model: o3
+#  model: o3
   auto_loop: false
   json: true
   params:
