@@ -721,7 +721,7 @@ target: "test/**/*_test.rb"
 # Pre-processing steps run once before any test files
 pre_processing:
   - gather_baseline_metrics
-  - setup_environment
+  - setup_test_environment
 
 # Main workflow steps run for each test file
 steps:
@@ -793,7 +793,7 @@ Based on the baseline metrics:
 <%= pre_processing.gather_baseline_metrics %>
 
 Environment configuration:
-<%= pre_processing.setup_environment %>
+<%= pre_processing.setup_test_environment %>
 
 And the results from processing all files:
 <% targets.each do |file, target| %>
@@ -818,7 +818,7 @@ Post-processing supports custom output formatting using ERB templates. Create an
 === Workflow Summary Report ===
 Generated at: <%= Time.now.strftime("%Y-%m-%d %H:%M:%S") %>
 
-Environment: <%= pre_processing.setup_environment %>
+Environment: <%= pre_processing.setup_test_environment %>
 
 Files Processed: <%= targets.size %>
 

@@ -27,7 +27,7 @@ module Roast
           name: test_workflow
           tools: []
           pre_processing:
-            - setup_environment
+            - setup_test_environment
             - gather_metrics
           steps:
             - process_file
@@ -38,14 +38,14 @@ module Roast
 
         configuration = Configuration.new(@workflow_path)
 
-        assert_equal ["setup_environment", "gather_metrics"], configuration.pre_processing
+        assert_equal ["setup_test_environment", "gather_metrics"], configuration.pre_processing
         assert_equal ["process_file"], configuration.steps
         assert_equal ["aggregate_results", "generate_report"], configuration.post_processing
       end
 
       test "step loader finds steps in pre_processing directory" do
         # Create a pre-processing step directory
-        step_dir = File.join(@pre_processing_dir, "setup_environment")
+        step_dir = File.join(@pre_processing_dir, "setup_test_environment")
         FileUtils.mkdir_p(step_dir)
         File.write(File.join(step_dir, "prompt.md"), "Setup the environment")
 
@@ -54,9 +54,9 @@ module Roast
         config_hash = { "name" => "test" }
         loader = StepLoader.new(workflow, config_hash, @temp_dir, phase: :pre_processing)
 
-        step = loader.load("setup_environment")
+        step = loader.load("setup_test_environment")
         assert_instance_of BaseStep, step
-        assert_equal "setup_environment", step.name
+        assert_equal "setup_test_environment", step.name
         assert_equal step_dir, step.context_path
       end
 
