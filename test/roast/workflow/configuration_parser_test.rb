@@ -17,12 +17,14 @@ class RoastWorkflowConfigurationParserTest < ActiveSupport::TestCase
         - step1: $(echo "Step 1")
         - step2: $(echo "Step 2")
     YAML
-
     @parser = Roast::Workflow::ConfigurationParser.new(@workflow_path)
+
+    @original_openai_key = ENV.delete("OPENAI_API_KEY")
   end
 
   def teardown
     FileUtils.rm_rf(@tmpdir) if @tmpdir && File.exist?(@tmpdir)
+    ENV["OPENAI_API_KEY"] = @original_openai_key
   end
 
   def capture_stderr

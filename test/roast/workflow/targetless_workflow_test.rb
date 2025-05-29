@@ -19,11 +19,38 @@ class RoastWorkflowTargetlessWorkflowTest < ActiveSupport::TestCase
         - step1: $(echo "Hello from targetless workflow")
     YAML
 
+    @original_openai_key = ENV.delete("OPENAI_API_KEY")
     @parser = Roast::Workflow::ConfigurationParser.new(@workflow_path)
   end
 
   def teardown
     FileUtils.rm_rf(@tmpdir) if @tmpdir && File.exist?(@tmpdir)
+    ENV["OPENAI_API_KEY"] = @original_openai_key
+  end
+
+  class MockedExecution < RoastWorkflowTargetlessWorkflowTest
+    def test_executes_workflow_without_a_target
+      # The workflow should execute with nil file for targetless workflows
+      executor = mock("executor")
+      executor.expects(:execute_steps)
+      Roast::Workflow::WorkflowExecutor.stubs(:new).returns(executor)
+
+      workflow = mock("workflow")
+      workflow.stubs(:output_file).returns(nil)
+      workflow.stubs(:final_output).returns("")
+      workflow.stubs(:session_name).returns("targetless")
+      workflow.stubs(:file).returns(nil)
+      workflow.stubs(:session_timestamp).returns(nil)
+      workflow.stubs(:respond_to?).with(:session_name).returns(true)
+      workflow.stubs(:respond_to?).with(:final_output).returns(true)
+
+      Roast::Workflow::BaseWorkflow.expects(:new).with(
+        nil,
+        has_entries(name: instance_of(String), context_path: instance_of(String)),
+      ).returns(workflow)
+
+      capture_io { @parser.begin! }
+    end
   end
 
   def test_executes_workflow_without_a_target

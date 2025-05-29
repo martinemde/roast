@@ -38,3 +38,5 @@ bin/ruby-lsp-test-exec
 bin/ruby-parse
 bin/ruby-rewrite
 bin/thor
+
+gemfiles/*.lock

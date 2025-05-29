@@ -29,9 +29,9 @@ module Roast
         Roast::Helpers::Logger.info("🔍 Searching for: '#{glob_pattern}' in '#{File.expand_path(path)}'\n")
         search_for(glob_pattern, path).then do |results|
           return "No results found for #{glob_pattern} in #{path}" if results.empty?
-          return read_contents(results.first) if results.size == 1
+          return read_contents(File.join(path, results.first)) if results.size == 1
 
-          results.join("\n") # purposely give the AI list of actual paths so that it can read without searching first
+          results.map { |result| File.join(path, result) }.join("\n") # purposely give the AI list of actual paths so that it can read without searching first
         end
       rescue StandardError => e
         "Error searching for '#{glob_pattern}' in '#{path}': #{e.message}".tap do |error_message|
