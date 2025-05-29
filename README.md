@@ -745,7 +745,7 @@ workflow.yml
 pre_processing/
   ├── gather_baseline_metrics/
   │   └── prompt.md
-  └── setup_environment/
+  └── setup_test_environment/
       └── prompt.md
 analyze_test/
   └── prompt.md
@@ -775,7 +775,7 @@ The baseline metrics from pre-processing:
 <%= pre_processing_data.gather_baseline_metrics %>
 
 Environment setup details:
-<%= pre_processing_data.setup_environment %>
+<%= pre_processing_data.setup_test_environment %>
 ```
 
 **Post-processing data access:**
@@ -783,7 +783,7 @@ Environment setup details:
 Post-processing steps have access to:
 
 - `pre_processing`: Direct access to pre-processing results with dot notation
-- `output.targets`: Hash of all target workflow results, keyed by parameterized file paths
+- `targets`: Hash of all target workflow results, keyed by file paths
 
 Example post-processing prompt:
 ```markdown
@@ -796,10 +796,11 @@ Environment configuration:
 <%= pre_processing.setup_environment %>
 
 And the results from processing all files:
-<% output.targets.each do |target_key, target_data| %>
-Target: <%= target_key %>
-Results: <%= target_data['output'] %>
-Final output: <%= target_data['final_output'] %>
+<% targets.each do |file, target| %>
+File: <%= file %>
+Analysis results: <%= target.output.analyze_test %>
+Coverage improvements: <%= target.output.improve_coverage %>
+Performance optimizations: <%= target.output.optimize_performance %>
 <% end %>
 
 Please generate a comprehensive summary report showing:
