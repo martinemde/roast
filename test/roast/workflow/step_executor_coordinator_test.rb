@@ -3,20 +3,17 @@
 require "test_helper"
 require "roast/workflow/step_executor_coordinator"
 require "roast/workflow/workflow_context"
+require "roast/workflow/workflow_executor"
 
 module Roast
   module Workflow
     class StepExecutorCoordinatorTest < Minitest::Test
       def setup
         @workflow = mock("workflow")
-        @workflow.stubs(:transcript).returns([])
         @workflow.stubs(:output).returns({})
-
-        @context = mock("context")
-        @context.stubs(:workflow).returns(@workflow)
-        @context.stubs(:has_resource?).returns(false)
-        @context.stubs(:resource_type).returns(:file)
-
+        @config_hash = {}
+        @context_path = "/test/path"
+        @context = WorkflowContext.new(workflow: @workflow, config_hash: @config_hash, context_path: @context_path)
         @dependencies = {
           workflow_executor: mock("workflow_executor"),
           interpolator: mock("interpolator"),
@@ -26,11 +23,7 @@ module Roast
           step_orchestrator: mock("step_orchestrator"),
           error_handler: mock("error_handler"),
         }
-
-        @coordinator = StepExecutorCoordinator.new(
-          context: @context,
-          dependencies: @dependencies,
-        )
+        @coordinator = StepExecutorCoordinator.new(context: @context, dependencies: @dependencies)
       end
 
       def test_executes_command_step
@@ -38,9 +31,12 @@ module Roast
         # Now command steps go through interpolation
         @dependencies[:interpolator].expects(:interpolate).with(step).returns(step)
         # The error handler wraps the execution
-        @dependencies[:error_handler].expects(:with_error_handling).with(step, resource_type: :file).yields.returns("hello")
+        @dependencies[:error_handler].expects(:with_error_handling).with(step, resource_type: nil).yields.returns("hello")
         # CommandExecutor expects the full command and strips it internally
         @dependencies[:command_executor].expects(:execute).with(step, exit_on_error: true).returns("hello")
+        # Expect transcript interaction (called twice - once to read, once to append)
+        transcript = []
+        @workflow.expects(:transcript).returns(transcript).twice
 
         result = @coordinator.execute(step)
         assert_equal("hello", result)
@@ -85,10 +81,11 @@ module Roast
         # Which will call execute on the nested hash
         @dependencies[:interpolator].expects(:interpolate).with("nested").returns("nested")
         @dependencies[:interpolator].expects(:interpolate).with("command").returns("command")
-        @context.expects(:exit_on_error?).with("nested").returns(true)
+        # Set config_hash to control exit_on_error behavior
+        @config_hash["nested"] = { "exit_on_error" => true }
         # And then the string step handler will also interpolate
         @dependencies[:interpolator].expects(:interpolate).with("command").returns("command")
-        @context.expects(:exit_on_error?).with("command").returns(true)
+        @config_hash["command"] = { "exit_on_error" => true }
         @dependencies[:step_orchestrator].expects(:execute_step).with("command", exit_on_error: true).returns("result")
         @workflow.output.expects(:[]=).with("nested", "result")
 
@@ -99,10 +96,11 @@ module Roast
         step = { "var1" => "command1" }
         @dependencies[:interpolator].expects(:interpolate).with("var1").returns("var1")
         @dependencies[:interpolator].expects(:interpolate).with("command1").returns("command1")
-        @context.expects(:exit_on_error?).with("var1").returns(true)
+        # Set config_hash to control exit_on_error behavior
+        @config_hash["var1"] = { "exit_on_error" => true }
         # The string step handler will also try to interpolate, so expect it twice
         @dependencies[:interpolator].expects(:interpolate).with("command1").returns("command1")
-        @context.expects(:exit_on_error?).with("command1").returns(true)
+        @config_hash["command1"] = { "exit_on_error" => true }
         @dependencies[:step_orchestrator].expects(:execute_step).with("command1", exit_on_error: true).returns("result")
 
         @workflow.output.expects(:[]=).with("var1", "result")
@@ -123,8 +121,9 @@ module Roast
         @workflow.stubs(:pause_step_name).returns(nil)
         @dependencies[:interpolator].expects(:interpolate).with("step1").returns("step1")
         @dependencies[:interpolator].expects(:interpolate).with("step2").returns("step2")
-        @context.expects(:exit_on_error?).with("step1").returns(true)
-        @context.expects(:exit_on_error?).with("step2").returns(true)
+        # Set config_hash to control exit_on_error behavior
+        @config_hash["step1"] = { "exit_on_error" => true }
+        @config_hash["step2"] = { "exit_on_error" => true }
         @dependencies[:step_orchestrator].expects(:execute_step).with("step1", exit_on_error: true)
         @dependencies[:step_orchestrator].expects(:execute_step).with("step2", exit_on_error: true)
 
@@ -135,8 +134,11 @@ module Roast
         step = "$(echo test)"
         # Command steps now go through interpolation first
         @dependencies[:interpolator].expects(:interpolate).with(step).returns(step)
-        @dependencies[:error_handler].expects(:with_error_handling).with(step, resource_type: :file).yields
+        @dependencies[:error_handler].expects(:with_error_handling).with(step, resource_type: nil).yields
         @dependencies[:command_executor].expects(:execute).with(step, exit_on_error: true).returns("test")
+        # Expect transcript interaction (called twice - once to read, once to append)
+        transcript = []
+        @workflow.expects(:transcript).returns(transcript).twice
 
         @coordinator.execute(step)
       end
@@ -144,7 +146,8 @@ module Roast
       def test_executes_string_step_regular
         step = "regular_step"
         @dependencies[:interpolator].expects(:interpolate).with(step).returns(step)
-        @context.expects(:exit_on_error?).with(step).returns(false)
+        # Set config_hash to control exit_on_error behavior
+        @config_hash["regular_step"] = { "exit_on_error" => false }
         @dependencies[:step_orchestrator].expects(:execute_step).with(step, exit_on_error: false)
 
         @coordinator.execute(step)
@@ -163,6 +166,9 @@ module Roast
         @dependencies[:interpolator].expects(:interpolate).with(step).returns(step)
         @dependencies[:error_handler].expects(:with_error_handling).yields
         @dependencies[:command_executor].expects(:execute).with(step, exit_on_error: false)
+        # Expect transcript interaction (called twice - once to read, once to append)
+        transcript = []
+        @workflow.expects(:transcript).returns(transcript).twice
 
         @coordinator.execute(step, exit_on_error: false)
       end
