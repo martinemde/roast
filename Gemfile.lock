@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     roast-ai (0.2.1)
-      activesupport (~> 7.0)
+      activesupport (>= 7.0)
       cli-ui
       diff-lcs (~> 1.5)
       faraday-retry
