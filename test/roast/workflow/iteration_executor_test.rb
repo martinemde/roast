@@ -10,7 +10,7 @@ class RoastWorkflowIterationExecutorTest < ActiveSupport::TestCase
     @workflow.stubs(:output).returns({})
     @context_path = "/test/path"
     @state_manager = mock("state_manager")
-    @executor = Roast::Workflow::IterationExecutor.new(@workflow, @context_path, @state_manager)
+    @executor = Roast::Workflow::IterationExecutor.new(@workflow, @context_path, @state_manager, {})
   end
 
   def test_execute_repeat_with_valid_config
@@ -30,6 +30,7 @@ class RoastWorkflowIterationExecutorTest < ActiveSupport::TestCase
       max_iterations: 10,
       name: "repeat_0",
       context_path: @context_path,
+      config_hash: {},
     ).returns(repeat_step)
 
     @state_manager.expects(:save_state).with("repeat_counter___5", ["result1", "result2"])
@@ -77,6 +78,7 @@ class RoastWorkflowIterationExecutorTest < ActiveSupport::TestCase
       steps: ["process_item"],
       name: "each_item",
       context_path: @context_path,
+      config_hash: {},
     ).returns(each_step)
 
     @state_manager.expects(:save_state).with("each_item", [{ item: 1, result: "processed1" }, { item: 2, result: "processed2" }])

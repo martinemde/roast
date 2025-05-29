@@ -85,7 +85,7 @@ module Roast
         @command_executor = command_executor || CommandExecutor.new(logger: @error_handler)
         @interpolator = interpolator || Interpolator.new(workflow, logger: @error_handler)
         @state_manager = state_manager || StateManager.new(workflow, logger: @error_handler)
-        @iteration_executor = iteration_executor || IterationExecutor.new(workflow, context_path, @state_manager)
+        @iteration_executor = iteration_executor || IterationExecutor.new(workflow, context_path, @state_manager, config_hash)
         @conditional_executor = conditional_executor || ConditionalExecutor.new(workflow, context_path, @state_manager, self)
         @step_orchestrator = step_orchestrator || StepOrchestrator.new(workflow, @step_loader, @state_manager, @error_handler, self)
 
