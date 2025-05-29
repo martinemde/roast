@@ -15,6 +15,10 @@ module Roast
         @config_hash = {}
         @context_path = "/test/path"
         @context = WorkflowContext.new(workflow: @workflow, config_hash: @config_hash, context_path: @context_path)
+        @context.stubs(:workflow).returns(@workflow)
+        @context.stubs(:has_resource?).returns(false)
+        @context.stubs(:resource_type).returns(:file)
+
         @dependencies = {
           workflow_executor: mock("workflow_executor"),
           interpolator: mock("interpolator"),
