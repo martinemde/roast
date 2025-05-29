@@ -1,3 +1,14 @@
+GIT
+  remote: https://github.com/macournoyer/raix
+  revision: 5de0c2208c290c0cdb5b7a6bae045872bfe3c550
+  branch: mcp-hell-yeah
+  specs:
+    raix (0.8.6)
+      activesupport (>= 6.0)
+      faraday-retry (~> 2.0)
+      open_router (~> 0.2)
+      ruby-openai (~> 7)
+
 PATH
   remote: .
   specs:
@@ -115,11 +126,6 @@ GEM
     public_suffix (6.0.1)
     racc (1.8.1)
     rainbow (3.1.1)
-    raix (0.8.6)
-      activesupport (>= 6.0)
-      faraday-retry (~> 2.0)
-      open_router (~> 0.2)
-      ruby-openai (~> 7)
     rake (13.2.1)
     rb-fsevent (0.11.2)
     rb-inotify (0.11.1)
@@ -175,6 +181,7 @@ DEPENDENCIES
   guard
   guard-minitest
   mocha
+  raix!
   rake
   roast-ai!
   rubocop-shopify
