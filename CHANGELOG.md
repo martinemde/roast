@@ -5,13 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-05-28
+## [0.2.2] - 2025-05-29
 
 ### Added
-- Pre/post processing framework for workflows with `pre_processing` and `post_processing` sections
-- Support for `output.txt` ERB templates in post-processing phase for custom output formatting
-- Pre/post processing support for single-target workflows (not just multi-target)
-- Simplified access to pre-processing data in target workflows (removed `output` intermediary level)
+- Pre/post processing framework for workflows with `pre_processing` and `post_processing` sections (#86)
+  - Support for `output.txt` ERB templates in post-processing phase for custom output formatting
+  - Pre/post processing support for single-target workflows (not just multi-target)
+  - Simplified access to pre-processing data in target workflows (removed `output` intermediary level)
+- Verbose mode improvements for better debugging experience (#98)
+  - Command outputs are now displayed when using the `--verbose` flag
+  - Commands executed within conditional branches also show output in verbose mode
+- User-friendly error reporting for workflow failures (#98)
+  - Clear ❌ indicators when commands or steps fail
+  - Command failures show exit status and output (no verbose needed for failures)
+  - Step failures provide helpful context about what might be wrong
+  - Exit handler displays actionable suggestions for resolving issues
+- Automatic workflow discovery by name (#97)
+  - Can now run workflows by name without full path: `roast execute my_workflow`
+  - Automatically looks for `roast/my_workflow/workflow.yml` in current directory
+- Configurable base URI for API endpoints (#83)
+
+### Fixed
+- Search file tool now correctly prefixes paths when searching (#92)
+- Support for Ruby projects using ActiveSupport 7.0+ (#95)
+
+### Changed
+- ActiveSupport dependency relaxed to >= 7.0 for broader compatibility
 
 ## [0.2.1]
 
