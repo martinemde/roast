@@ -6,7 +6,7 @@ module Roast
   module Workflow
     class CommandExecutor
       class CommandExecutionError < StandardError
-        attr_reader :command, :exit_status, :original_error
+        attr_reader :command, :exit_status, :original_error, :output
 
         def initialize(message, command:, exit_status: nil, original_error: nil)
           @command = command
@@ -56,11 +56,14 @@ module Roast
         return output if success
 
         if exit_on_error
-          raise CommandExecutionError.new(
+          error = CommandExecutionError.new(
             "Command exited with non-zero status (#{exit_status})",
             command: command,
             exit_status: exit_status,
           )
+          # Store the output in the error
+          error.instance_variable_set(:@output, output)
+          raise error
         else
           @logger.warn("Command '#{command}' exited with non-zero status (#{exit_status}), continuing execution")
           output + "\n[Exit status: #{exit_status}]"

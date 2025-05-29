@@ -85,6 +85,24 @@ module Roast
           execution_time: execution_time,
         })
 
+        # Print user-friendly error message based on error type
+        case error
+        when StepLoader::StepNotFoundError
+          $stderr.puts "\n❌ Step not found: '#{step_name}'"
+          $stderr.puts "   Please check that the step exists in your workflow's steps directory."
+          $stderr.puts "   Looking for: steps/#{step_name}.rb or steps/#{step_name}/prompt.md"
+        when NoMethodError
+          if error.message.include?("undefined method")
+            $stderr.puts "\n❌ Step error: '#{step_name}'"
+            $stderr.puts "   The step file exists but may be missing the 'call' method."
+            $stderr.puts "   Error: #{error.message}"
+          end
+        else
+          $stderr.puts "\n❌ Step failed: '#{step_name}'"
+          $stderr.puts "   Error: #{error.message}"
+          $stderr.puts "   This may be an issue with the step's implementation."
+        end
+
         # Wrap the original error with context about which step failed
         raise WorkflowExecutor::StepExecutionError.new(
           "Failed to execute step '#{step_name}': #{error.message}",
