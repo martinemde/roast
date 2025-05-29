@@ -17,7 +17,6 @@ module Roast
         @options = options
         @output_handler = OutputHandler.new
         @execution_context = WorkflowExecutionContext.new
-        @workflow_results = [] # For backward compatibility
       end
 
       def run_for_files(files)
@@ -120,14 +119,6 @@ module Roast
 
         # Store workflow output in execution context
         @execution_context.add_target_output(file, workflow.output_manager)
-
-        # Store workflow results for backward compatibility
-        @workflow_results << {
-          file: file,
-          state: workflow.output_manager.to_h,
-          final_output: workflow.final_output,
-          transcript: workflow.transcript.dup,
-        }
       end
 
       def run_pre_processing
