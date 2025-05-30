@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "active_support"
 require "fileutils"
 require "cli/ui"
 require "raix"
