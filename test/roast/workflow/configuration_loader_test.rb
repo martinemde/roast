@@ -16,7 +16,7 @@ module Roast
             {
               "raix Docs" => {
                 "url" => "https://gitmcp.io/OlympiaAI/raix/docs",
-                "headers" => { "Authorization" => "Bearer <YOUR_TOKEN>" },
+                "env" => { "Authorization" => "Bearer <YOUR_TOKEN>" },
                 "only" => ["get_issue", "get_issue_comments"],
               },
             },
@@ -122,7 +122,7 @@ module Roast
         Raix::MCP::StdioClient.stubs(:new).with(
           "echo",
           "hello $NAME",
-          env: { "NAME" => "Marc" },
+          { "NAME" => "Marc" },
         ).returns(mock_stdio_client)
 
         tools = ConfigurationLoader.extract_mcp_tools(@valid_config)

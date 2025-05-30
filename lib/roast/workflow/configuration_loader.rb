@@ -51,12 +51,12 @@ module Roast
             client = if config["url"]
               Raix::MCP::SseClient.new(
                 config["url"],
-                headers: config["headers"] || {},
+                headers: config["env"] || {},
               )
             elsif config["command"]
               args = [config["command"]]
               args += config["args"] if config["args"]
-              Raix::MCP::StdioClient.new(*args, env: config["env"] || {})
+              Raix::MCP::StdioClient.new(*args, config["env"] || {})
             else
               raise ArgumentError, "Invalid MCP tool configuration for #{tool.keys.first}. Provide `url` or `command`."
             end

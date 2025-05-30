@@ -7,7 +7,7 @@ tools:
   - Roast Docs:
       url: https://gitmcp.io/Shopify/roast/docs
       # Can pass headers for authentication
-      # headers:
+      # env:
       #   - "Authorization: Bearer {{resource.api_token}}"
   # stdio MCPs are also supported
   # - GitHub:
