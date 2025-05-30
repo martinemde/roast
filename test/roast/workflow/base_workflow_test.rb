@@ -15,14 +15,16 @@ class RoastWorkflowBaseWorkflowTest < ActiveSupport::TestCase
     ActiveSupport::Notifications.stubs(:instrument).returns(true)
 
     @mock_client = mock("client")
-    mock_config = mock("config")
-    mock_config.stubs(:openrouter_client).returns(@mock_client)
-    mock_config.stubs(:openai_client).returns(@mock_client)
-    mock_config.stubs(:model).returns("gpt-4")
-    mock_config.stubs(:max_tokens).returns(1024)
-    mock_config.stubs(:max_completion_tokens).returns(1024)
-    mock_config.stubs(:temperature).returns(0.7)
-    Raix.stubs(:configuration).returns(mock_config)
+
+    # Configure Raix properly
+    Raix.configure do |config|
+      config.openrouter_client = @mock_client
+      config.openai_client = @mock_client
+      config.model = "gpt-4"
+      config.max_tokens = 1024
+      config.max_completion_tokens = 1024
+      config.temperature = 0.7
+    end
   end
 
   def teardown
@@ -30,7 +32,16 @@ class RoastWorkflowBaseWorkflowTest < ActiveSupport::TestCase
     Roast::Tools.unstub(:setup_interrupt_handler)
     Roast::Tools.unstub(:setup_exit_handler)
     ActiveSupport::Notifications.unstub(:instrument)
-    Raix.unstub(:configuration)
+
+    # Reset Raix configuration to defaults
+    Raix.configure do |config|
+      config.openrouter_client = nil
+      config.openai_client = nil
+      config.model = Raix::Configuration::DEFAULT_MODEL
+      config.max_tokens = Raix::Configuration::DEFAULT_MAX_TOKENS
+      config.max_completion_tokens = Raix::Configuration::DEFAULT_MAX_COMPLETION_TOKENS
+      config.temperature = Raix::Configuration::DEFAULT_TEMPERATURE
+    end
   end
 
   test "initializes with file and sets up transcript" do

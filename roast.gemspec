@@ -41,6 +41,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency("diff-lcs", "~> 1.5")
   spec.add_dependency("faraday-retry")
   spec.add_dependency("json-schema")
-  spec.add_dependency("raix", "~> 0.8.6")
+  spec.add_dependency("raix", "~> 0.9.1")
   spec.add_dependency("thor", "~> 1.3")
 end

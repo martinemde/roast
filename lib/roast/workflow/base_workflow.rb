@@ -24,11 +24,23 @@ module Roast
         :resource,
         :session_name,
         :session_timestamp,
-        :configuration,
         :model
 
-      delegate :api_provider, :openai?, to: :configuration
+      delegate :api_provider, :openai?, to: :workflow_configuration, allow_nil: true
       delegate :output, :output=, :append_to_final_output, :final_output, to: :output_manager
+
+      # Override configuration to provide fallback to ChatCompletion's configuration
+      def configuration
+        @configuration || self.class.configuration
+      end
+
+      # Setter for configuration
+      attr_writer :configuration
+
+      # Alias for accessing the workflow-specific configuration
+      def workflow_configuration
+        @configuration
+      end
 
       def initialize(file = nil, name: nil, context_path: nil, resource: nil, session_name: nil, configuration: nil)
         @file = file

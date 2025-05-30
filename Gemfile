@@ -17,5 +17,3 @@ gem "rake", require: false
 gem "rubocop-shopify", require: false
 gem "vcr", require: false
 gem "webmock", require: false
-
-gem "raix", github: "macournoyer/raix", branch: "mcp-hell-yeah"
