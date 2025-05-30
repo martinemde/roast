@@ -10,7 +10,15 @@ require "roast/workflow/workflow_executor"
 class RoastWorkflowTargetlessWorkflowTest < ActiveSupport::TestCase
   def setup
     @workflow_path = fixture_file_path("targetless_workflow.yml")
+
+    # Stub the WorkflowInitializer to prevent API client validation
+    Roast::Workflow::WorkflowInitializer.any_instance.stubs(:configure_api_client)
+
     @parser = Roast::Workflow::ConfigurationParser.new(@workflow_path)
+  end
+
+  def teardown
+    Roast::Workflow::WorkflowInitializer.any_instance.unstub(:configure_api_client)
   end
 
   class MockedExecution < RoastWorkflowTargetlessWorkflowTest

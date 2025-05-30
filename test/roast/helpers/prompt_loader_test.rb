@@ -2,12 +2,21 @@
 
 require "test_helper"
 require "roast/helpers/prompt_loader"
+require "mocha/minitest"
 
 class RoastHelpersPromptLoaderTest < ActiveSupport::TestCase
   def setup
     @workflow_file = fixture_file("workflow/workflow.yml")
     @test_file = fixture_file("test.rb")
+
+    # Stub the WorkflowInitializer to prevent API client validation
+    Roast::Workflow::WorkflowInitializer.any_instance.stubs(:configure_api_client)
+
     @workflow = build_workflow(@workflow_file, @test_file)
+  end
+
+  def teardown
+    Roast::Workflow::WorkflowInitializer.any_instance.unstub(:configure_api_client)
   end
 
   def build_workflow(workflow_file, test_file)
