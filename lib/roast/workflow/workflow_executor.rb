@@ -1,9 +1,7 @@
 # frozen_string_literal: true
 
 require "English"
-require "active_support"
-require "active_support/isolated_execution_state"
-require "active_support/notifications"
+
 require "roast/workflow/command_executor"
 require "roast/workflow/conditional_executor"
 require "roast/workflow/error_handler"

@@ -1,9 +1,5 @@
 # frozen_string_literal: true
 
-require "active_support"
-require "active_support/isolated_execution_state"
-require "active_support/cache"
-require "active_support/notifications"
 require "roast/helpers/logger"
 
 module Roast

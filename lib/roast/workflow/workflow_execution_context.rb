@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "active_support/core_ext/string/inflections"
-
 module Roast
   module Workflow
     # Manages execution context across pre-processing, target workflows, and post-processing phases

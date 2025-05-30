@@ -2,10 +2,7 @@
 
 require "raix/chat_completion"
 require "raix/function_dispatch"
-require "active_support"
-require "active_support/isolated_execution_state"
-require "active_support/notifications"
-require "active_support/core_ext/hash/indifferent_access"
+
 require "roast/workflow/output_manager"
 require "roast/workflow/context_path_resolver"
 

@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "active_support/notifications"
 require "roast/helpers/logger"
 require "roast/workflow/command_executor"
 
