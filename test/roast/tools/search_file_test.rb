@@ -109,6 +109,13 @@ class RoastToolsSearchFileTest < ActiveSupport::TestCase
     assert_equal "No results found for nonexistent in .", result
   end
 
+  test ".call when path doesn't exist" do
+    Roast::Tools::SearchFile.stubs(:search_for).with("test_file", "nonexistent").returns([])
+
+    result = Roast::Tools::SearchFile.call("test_file", "nonexistent")
+    assert_equal "Path does not exist: nonexistent", result
+  end
+
   test ".call handles errors gracefully" do
     Roast::Tools::SearchFile.stubs(:search_for).with("test_file", ".").raises(StandardError, "Search failed")
 
