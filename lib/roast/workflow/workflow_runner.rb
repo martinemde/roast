@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "active_support/notifications"
 require "erb"
 require "roast/workflow/replay_handler"
 require "roast/workflow/workflow_executor"

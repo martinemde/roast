@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "active_support/core_ext/module/delegation"
 require "roast/workflow/api_configuration"
 require "roast/workflow/configuration_loader"
 require "roast/workflow/resource_resolver"
