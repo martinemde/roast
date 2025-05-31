@@ -135,6 +135,6 @@ class RoastToolsSearchFileTest < ActiveSupport::TestCase
     assert_equal true, DummyBaseClass.function_called
     assert_equal :search_for_file, DummyBaseClass.function_name
     assert_equal({ type: "string", description: "A glob pattern to search for. Example: 'test/**/*_test.rb'" }, DummyBaseClass.function_params[:glob_pattern])
-    assert_equal({ type: "string", description: "path to search from" }, DummyBaseClass.function_params[:path])
+    assert_equal({ type: "string", description: "path to search from", default: "." }, DummyBaseClass.function_params[:path])
   end
 end
