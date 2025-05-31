@@ -88,10 +88,10 @@ class RoastToolsSearchFileTest < ActiveSupport::TestCase
   end
 
   test ".call with path parameter passes path to search_for" do
-    Roast::Tools::SearchFile.expects(:search_for).with("test_file", "nested/dir").returns(["test_file.txt"])
-    Roast::Tools::SearchFile.stubs(:read_contents).with("nested/dir/test_file.txt").returns("file content")
+    Roast::Tools::SearchFile.expects(:search_for).with("test_file", "nested/deep").returns(["test_file.txt"])
+    Roast::Tools::SearchFile.stubs(:read_contents).with("nested/deep/test_file.txt").returns("file content")
 
-    result = Roast::Tools::SearchFile.call("test_file", "nested/dir")
+    result = Roast::Tools::SearchFile.call("test_file", "nested/deep")
     assert_equal "file content", result
   end
 
