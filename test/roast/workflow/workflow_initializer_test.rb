@@ -3,7 +3,6 @@
 require "test_helper"
 require "roast/workflow/workflow_initializer"
 require "roast/workflow/configuration"
-require "mocha/minitest"
 
 class RoastWorkflowInitializerTest < ActiveSupport::TestCase
   def setup
@@ -57,7 +56,7 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
     mock_client.stubs(:models).returns(mock_models)
     mock_models.stubs(:list).returns([])
 
-    OpenAI::Client.expects(:new).with(access_token: "test-token").returns(mock_client)
+    OpenAI::Client.expects(:new).with({ access_token: "test-token" }).returns(mock_client)
 
     @initializer.setup
   end
@@ -76,10 +75,10 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
     mock_client.stubs(:models).returns(mock_models)
     mock_models.stubs(:list).returns([])
 
-    OpenAI::Client.expects(:new).with(
+    OpenAI::Client.expects(:new).with({
       access_token: "test-token",
       uri_base: "https://custom-api.example.com",
-    ).returns(mock_client)
+    }).returns(mock_client)
 
     @initializer.setup
   end
@@ -112,7 +111,7 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
       mock_client.stubs(:models).returns(mock_models)
       mock_models.stubs(:list).returns([])
 
-      OpenRouter::Client.expects(:new).with(access_token: "test-token").returns(mock_client)
+      OpenRouter::Client.expects(:new).with({ access_token: "test-token" }).returns(mock_client)
       @initializer.setup
     else
       skip("OpenRouter gem not available")
@@ -135,10 +134,10 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
       mock_client.stubs(:models).returns(mock_models)
       mock_models.stubs(:list).returns([])
 
-      OpenRouter::Client.expects(:new).with(
+      OpenRouter::Client.expects(:new).with({
         access_token: "test-token",
         uri_base: "https://custom-api.example.com",
-      ).returns(mock_client)
+      }).returns(mock_client)
 
       @initializer.setup
     else
@@ -202,7 +201,7 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
     mock_client.stubs(:models).returns(mock_models)
     mock_models.stubs(:list).raises(Faraday::UnauthorizedError.new(nil))
 
-    OpenAI::Client.expects(:new).with(access_token: "invalid-token").returns(mock_client)
+    OpenAI::Client.expects(:new).with({ access_token: "invalid-token" }).returns(mock_client)
 
     ActiveSupport::Notifications.expects(:instrument).with(
       "roast.workflow.start.error",
@@ -229,7 +228,7 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
       Raix.configuration.stubs(:openrouter_client).returns(nil)
 
       # Mock OpenRouter client that raises configuration error
-      OpenRouter::Client.expects(:new).with(access_token: "invalid-format-token").raises(OpenRouter::ConfigurationError.new("Invalid access token format"))
+      OpenRouter::Client.expects(:new).with({ access_token: "invalid-format-token" }).raises(OpenRouter::ConfigurationError.new("Invalid access token format"))
 
       ActiveSupport::Notifications.expects(:instrument).with(
         "roast.workflow.start.error",

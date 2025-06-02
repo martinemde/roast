@@ -5,7 +5,7 @@ require "roast/workflow/step_loader"
 
 module Roast
   module Workflow
-    class StepLoaderTest < Minitest::Test
+    class StepLoaderTest < ActiveSupport::TestCase
       include FixtureHelpers
 
       def setup

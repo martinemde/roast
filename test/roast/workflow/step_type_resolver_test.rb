@@ -6,7 +6,7 @@ require "roast/workflow/workflow_context"
 
 module Roast
   module Workflow
-    class StepTypeResolverTest < Minitest::Test
+    class StepTypeResolverTest < ActiveSupport::TestCase
       def setup
         @context = mock("context")
       end

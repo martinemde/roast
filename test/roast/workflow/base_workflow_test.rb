@@ -2,7 +2,6 @@
 
 require "test_helper"
 require "roast/workflow/base_workflow"
-require "mocha/minitest"
 
 class RoastWorkflowBaseWorkflowTest < ActiveSupport::TestCase
   FILE_PATH = File.join(Dir.pwd, "test/fixtures/files/test.rb")

@@ -5,7 +5,7 @@ require "roast/workflow/command_executor"
 
 module Roast
   module Workflow
-    class CommandExecutorTest < Minitest::Test
+    class CommandExecutorTest < ActiveSupport::TestCase
       def setup
         @executor = CommandExecutor.new
       end
@@ -73,25 +73,21 @@ module Roast
       end
 
       def test_logger_receives_warning_when_continuing_after_error
-        logger = Minitest::Mock.new
+        logger = mock("Logger")
         executor = CommandExecutor.new(logger: logger)
 
-        logger.expect(:warn, nil, ["Command 'exit 3' exited with non-zero status (3), continuing execution"])
+        logger.expects(:warn).with(regexp_matches(/Command 'exit 3' exited with non-zero status \(3\), continuing execution/))
 
         executor.execute("$(exit 3)", exit_on_error: false)
-
-        logger.verify
       end
 
       def test_logger_receives_warning_for_command_error
-        logger = Minitest::Mock.new
+        logger = mock("Logger")
         executor = CommandExecutor.new(logger: logger)
 
-        logger.expect(:warn, nil, [/Command 'this_command_does_not_exist_12345' failed with error:/])
+        logger.expects(:warn).with(regexp_matches(/Command 'this_command_does_not_exist_12345' failed with error:/))
 
         executor.execute("$(this_command_does_not_exist_12345)", exit_on_error: false)
-
-        logger.verify
       end
 
       def test_complex_command_with_pipes_and_redirects

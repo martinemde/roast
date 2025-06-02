@@ -2,7 +2,6 @@
 
 require "test_helper"
 require "roast/workflow/iteration_executor"
-require "mocha/minitest"
 
 class RoastWorkflowIterationExecutorTest < ActiveSupport::TestCase
   def setup

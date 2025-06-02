@@ -5,7 +5,7 @@ require "roast/workflow/state_manager"
 
 module Roast
   module Workflow
-    class StateManagerTest < Minitest::Test
+    class StateManagerTest < ActiveSupport::TestCase
       def setup
         @workflow = mock("workflow")
         @workflow.stubs(session_name: "test_session")

@@ -8,64 +8,151 @@ module Roast
     module Cmd
       extend self
 
+      DEFAULT_ALLOWED_COMMANDS = [
+        { "name" => "pwd", "description" => "pwd command - print current working directory path" },
+        { "name" => "find", "description" => "find command - search for files/directories using patterns like -name '*.rb'" },
+        { "name" => "ls", "description" => "ls command - list directory contents with options like -la, -R" },
+        { "name" => "rake", "description" => "rake command - run Ruby tasks defined in Rakefile" },
+        { "name" => "ruby", "description" => "ruby command - execute Ruby code or scripts, supports -e for inline code" },
+        { "name" => "dev", "description" => "Shopify dev CLI - development environment tool with subcommands" },
+        { "name" => "mkdir", "description" => "mkdir command - create directories, supports -p for parent directories" },
+      ].freeze
+
+      CONFIG_ALLOWED_COMMANDS = "allowed_commands"
+      private_constant :DEFAULT_ALLOWED_COMMANDS, :CONFIG_ALLOWED_COMMANDS
+
       class << self
         # Add this method to be included in other classes
         def included(base)
-          base.class_eval do
-            function(
-              :cmd,
-              'Run a command in the current working directory (e.g. "ls", "rake", "ruby"). ' \
-                "You may use this tool to execute tests and verify if they pass.",
-              command: { type: "string", description: "The command to run in a bash shell." },
-            ) do |params|
-              Roast::Tools::Cmd.call(params[:command])
+          @base_class = base
+        end
+
+        # Called after configuration is loaded
+        def post_configuration_setup(base, config = {})
+          allowed_commands = config[CONFIG_ALLOWED_COMMANDS] || DEFAULT_ALLOWED_COMMANDS
+
+          allowed_commands.each do |command_entry|
+            case command_entry
+            when String
+              register_command_function(base, command_entry, nil)
+            when Hash
+              command_name = command_entry["name"] || command_entry[:name]
+              description = command_entry["description"] || command_entry[:description]
+
+              if command_name.nil?
+                raise ArgumentError, "Command configuration must include 'name' field"
+              end
+
+              register_command_function(base, command_name, description)
+            else
+              raise ArgumentError, "Invalid command configuration format: #{command_entry.inspect}"
             end
           end
         end
+
+        private
+
+        def register_command_function(base, command, custom_description = nil)
+          function_name = command.to_sym
+          description = custom_description || generate_command_description(command)
+
+          base.class_eval do
+            function(
+              function_name,
+              description,
+              args: {
+                type: "string",
+                description: "Arguments to pass to the #{command} command",
+                required: false,
+              },
+            ) do |params|
+              full_command = if params[:args].nil? || params[:args].empty?
+                command
+              else
+                "#{command} #{params[:args]}"
+              end
+
+              Roast::Tools::Cmd.execute_allowed_command(full_command, command)
+            end
+          end
+        end
+
+        def generate_command_description(command)
+          default_cmd = DEFAULT_ALLOWED_COMMANDS.find { |cmd| cmd["name"] == command }
+          default_cmd ? default_cmd["description"] : "Execute the #{command} command"
+        end
       end
 
-      def call(command)
+      def execute_allowed_command(full_command, command_prefix)
+        Roast::Helpers::Logger.info("🔧 Running command: #{full_command}\n")
+        execute_command(full_command, command_prefix)
+      rescue StandardError => e
+        handle_error(e)
+      end
+
+      # Legacy method for backward compatibility
+      def call(command, config = {})
         Roast::Helpers::Logger.info("🔧 Running command: #{command}\n")
 
-        # Validate the command starts with one of the allowed prefixes
-        allowed_prefixes = ["pwd", "find", "ls", "rake", "ruby", "dev", "mkdir"]
+        allowed_commands = config[CONFIG_ALLOWED_COMMANDS] || DEFAULT_ALLOWED_COMMANDS
+        validation_result = validate_command(command, allowed_commands)
+        return validation_result unless validation_result.nil?
+
+        command_prefix = command.split(" ").first
+        execute_command(command, command_prefix)
+      rescue StandardError => e
+        handle_error(e)
+      end
+
+      private
+
+      def validate_command(command, allowed_commands)
         command_prefix = command.split(" ").first
 
-        err = "Error: Command not allowed. Only commands starting with #{allowed_prefixes.join(", ")} are permitted."
-        return err unless allowed_prefixes.any? do |prefix|
-          command_prefix == prefix
-        end
+        # Extract command names from the allowed_commands array
+        allowed_command_names = allowed_commands.map do |cmd_entry|
+          case cmd_entry
+          when String
+            cmd_entry
+          when Hash
+            cmd_entry["name"] || cmd_entry[:name]
+          end
+        end.compact
 
-        # Execute the command in the current working directory
-        result = ""
+        return if allowed_command_names.include?(command_prefix)
 
-        # Use a full shell environment for commands, especially for 'dev'
-        if command_prefix == "dev"
+        "Error: Command not allowed. Only commands starting with #{allowed_command_names.join(", ")} are permitted."
+      end
+
+      def extract_tool_config
+        return {} unless respond_to?(:configuration)
+
+        configuration&.tool_config("Roast::Tools::Cmd") || {}
+      end
+
+      def execute_command(command, command_prefix)
+        result = if command_prefix == "dev"
           # Use bash -l -c to ensure we get a login shell with all environment variables
           full_command = "bash -l -c '#{command.gsub("'", "\\'")}'"
-          IO.popen(full_command, chdir: Dir.pwd) do |io|
-            result = io.read
-          end
+          IO.popen(full_command, chdir: Dir.pwd, &:read)
         else
-          # For other commands, use the original approach
-          IO.popen(command, chdir: Dir.pwd) do |io|
-            result = io.read
-          end
+          IO.popen(command, chdir: Dir.pwd, &:read)
         end
 
-        exit_status = $CHILD_STATUS.exitstatus
+        format_output(command, result, $CHILD_STATUS.exitstatus)
+      end
 
-        # Return the command output along with exit status information
-        output = "Command: #{command}\n"
-        output += "Exit status: #{exit_status}\n"
-        output += "Output:\n#{result}"
+      def format_output(command, result, exit_status)
+        "Command: #{command}\n" \
+          "Exit status: #{exit_status}\n" \
+          "Output:\n#{result}"
+      end
 
-        output
-      rescue StandardError => e
-        "Error running command: #{e.message}".tap do |error_message|
-          Roast::Helpers::Logger.error(error_message + "\n")
-          Roast::Helpers::Logger.debug(e.backtrace.join("\n") + "\n") if ENV["DEBUG"]
-        end
+      def handle_error(error)
+        error_message = "Error running command: #{error.message}"
+        Roast::Helpers::Logger.error("#{error_message}\n")
+        Roast::Helpers::Logger.debug("#{error.backtrace.join("\n")}\n") if ENV["DEBUG"]
+        error_message
       end
     end
   end
