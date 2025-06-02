@@ -98,8 +98,10 @@ class RoastToolsBashTest < ActiveSupport::TestCase
   end
 
   test "handles environment variables" do
-    result = Roast::Tools::Bash.call("TEST_VAR='hello' && echo $TEST_VAR")
+    ENV["TEST_VAR"] = "hello"
+    result = Roast::Tools::Bash.call("echo $TEST_VAR")
     assert_match(/hello/, result)
+    ENV.delete("TEST_VAR") # Clean up after test
   end
 
   test "works with current directory" do
