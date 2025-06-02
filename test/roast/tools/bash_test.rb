@@ -34,7 +34,11 @@ class RoastToolsBashTest < ActiveSupport::TestCase
 
   test "handles command errors gracefully" do
     result = Roast::Tools::Bash.call("command_that_does_not_exist")
-    assert_match(/Error running command/, result)
+    # Command not found returns exit status 127
+    assert_match(/Exit status: 127/, result)
+    assert_match(/command_that_does_not_exist/, result)
+    # The error message format varies by shell/OS
+    assert_match(/not found|No such file/, result)
   end
 
   test "includes function dispatch when included" do
