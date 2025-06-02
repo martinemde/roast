@@ -3,7 +3,6 @@
 require "test_helper"
 require "roast/workflow/base_step"
 require "roast/workflow/base_workflow"
-require "mocha/minitest"
 
 class RoastWorkflowBaseStepTest < ActiveSupport::TestCase
   # Helper to load fixture files

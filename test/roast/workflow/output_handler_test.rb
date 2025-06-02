@@ -2,7 +2,6 @@
 
 require "test_helper"
 require "roast/workflow/output_handler"
-require "mocha/minitest"
 
 class RoastWorkflowOutputHandlerTest < ActiveSupport::TestCase
   def setup

@@ -2,7 +2,6 @@
 
 require "test_helper"
 require "roast/workflow/replay_handler"
-require "mocha/minitest"
 
 class RoastWorkflowReplayHandlerTest < ActiveSupport::TestCase
   def setup

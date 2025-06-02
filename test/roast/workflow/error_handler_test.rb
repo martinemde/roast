@@ -3,7 +3,6 @@
 require "test_helper"
 require "roast/workflow/error_handler"
 require "roast/workflow/workflow_executor"
-require "mocha/minitest"
 
 class RoastWorkflowErrorHandlerTest < ActiveSupport::TestCase
   def setup

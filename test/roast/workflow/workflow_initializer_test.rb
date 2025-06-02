@@ -3,7 +3,6 @@
 require "test_helper"
 require "roast/workflow/workflow_initializer"
 require "roast/workflow/configuration"
-require "mocha/minitest"
 
 class RoastWorkflowInitializerTest < ActiveSupport::TestCase
   def setup
