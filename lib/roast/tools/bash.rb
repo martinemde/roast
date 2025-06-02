@@ -32,7 +32,7 @@ module Roast
 
         # Execute the command without any restrictions
         result = ""
-        IO.popen(command, chdir: Dir.pwd) do |io|
+        IO.popen("#{command} 2>&1", chdir: Dir.pwd) do |io|
           result = io.read
         end
 
