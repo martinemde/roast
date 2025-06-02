@@ -6,7 +6,7 @@ require "tempfile"
 
 module Roast
   module Workflow
-    class ConfigurationLoaderTest < Minitest::Test
+    class ConfigurationLoaderTest < ActiveSupport::TestCase
       def setup
         @valid_config = {
           "name" => "test-workflow",

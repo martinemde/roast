@@ -28,10 +28,19 @@ module Roast
 
       def call(string)
         Roast::Helpers::Logger.info("🔍 Grepping for string: #{string}\n")
-        # Escape regex special characters in strings with curly braces
-        # Example: "import {render}" becomes "import \{render\}"
-        escaped_string = string.gsub(/(\{|\})/, '\\\\\\1')
-        %x(rg -C 4 --trim --color=never --heading -F -- "#{escaped_string}" . | head -n #{MAX_RESULT_LINES})
+
+        # Use Open3 to safely pass the string as an argument, avoiding shell injection
+        require "open3"
+        cmd = ["rg", "-C", "4", "--trim", "--color=never", "--heading", "-F", "--", string, "."]
+        stdout, _stderr, _status = Open3.capture3(*cmd)
+
+        # Limit output to MAX_RESULT_LINES
+        lines = stdout.lines
+        if lines.size > MAX_RESULT_LINES
+          lines.first(MAX_RESULT_LINES).join + "\n... (truncated to #{MAX_RESULT_LINES} lines)"
+        else
+          stdout
+        end
       rescue StandardError => e
         "Error grepping for string: #{e.message}".tap do |error_message|
           Roast::Helpers::Logger.error(error_message + "\n")

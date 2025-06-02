@@ -5,7 +5,7 @@ require "roast/value_objects/workflow_path"
 
 module Roast
   module ValueObjects
-    class WorkflowPathTest < Minitest::Test
+    class WorkflowPathTest < ActiveSupport::TestCase
       def test_initialization_with_valid_yml_path
         path = WorkflowPath.new("/path/to/workflow.yml")
         assert_equal("/path/to/workflow.yml", path.value)

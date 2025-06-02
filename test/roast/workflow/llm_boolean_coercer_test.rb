@@ -5,7 +5,7 @@ require "roast/workflow/llm_boolean_coercer"
 
 module Roast
   module Workflow
-    class LlmBooleanCoercerTest < Minitest::Test
+    class LlmBooleanCoercerTest < ActiveSupport::TestCase
       def test_coerces_explicit_true_values
         assert_equal(true, LlmBooleanCoercer.coerce("yes"))
         assert_equal(true, LlmBooleanCoercer.coerce("Yes"))

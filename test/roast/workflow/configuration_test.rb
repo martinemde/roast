@@ -160,16 +160,8 @@ module Roast
         end
 
         def teardown
-          if @original_openai_key.nil?
-            ENV.delete("OPENAI_API_KEY")
-          else
-            ENV["OPENAI_API_KEY"] = @original_openai_key
-          end
-          if @original_openrouter_key.nil?
-            ENV.delete("OPENROUTER_API_KEY")
-          else
-            ENV["OPENROUTER_API_KEY"] = @original_openai_key
-          end
+          ENV["OPENAI_API_KEY"] = @original_openai_key
+          ENV["OPENROUTER_API_KEY"] = @original_openai_key
         end
 
         def test_uses_openai_env_var_when_provider_is_openai

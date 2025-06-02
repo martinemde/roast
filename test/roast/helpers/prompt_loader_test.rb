@@ -6,6 +6,7 @@ require "mocha/minitest"
 
 class RoastHelpersPromptLoaderTest < ActiveSupport::TestCase
   def setup
+    @original_openai_key = ENV.delete("OPENAI_API_KEY")
     @workflow_file = fixture_file("workflow/workflow.yml")
     @test_file = fixture_file("test.rb")
 
@@ -17,6 +18,7 @@ class RoastHelpersPromptLoaderTest < ActiveSupport::TestCase
 
   def teardown
     Roast::Workflow::WorkflowInitializer.any_instance.unstub(:configure_api_client)
+    ENV["OPENAI_API_KEY"] = @original_openai_key
   end
 
   def build_workflow(workflow_file, test_file)
@@ -71,7 +73,7 @@ class RoastHelpersPromptLoaderTest < ActiveSupport::TestCase
 
   test "processes erb if needed" do
     result = Roast::Helpers::PromptLoader.load_prompt(@workflow, @test_file)
-    assert_includes result, "class RoastTest < Minitest::Test", "Prompt should include ERB-processed class definition"
+    assert_includes result, "class RoastTest < ActiveSupport::TestCase", "Prompt should include ERB-processed class definition"
   end
 
   class WithNilTargetFile < ActiveSupport::TestCase

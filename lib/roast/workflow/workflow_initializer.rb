@@ -91,11 +91,19 @@ module Roast
         end
       end
 
+      def client_options
+        {
+          access_token: @configuration.api_token,
+          uri_base: @configuration.uri_base&.to_s,
+        }.compact
+      end
+
       def configure_openrouter_client
         $stderr.puts "Configuring OpenRouter client with token from workflow"
         require "open_router"
 
-        client = OpenRouter::Client.new(access_token: @configuration.api_token)
+        client = OpenRouter::Client.new(client_options)
+
         Raix.configure do |config|
           config.openrouter_client = client
         end
@@ -106,7 +114,8 @@ module Roast
         $stderr.puts "Configuring OpenAI client with token from workflow"
         require "openai"
 
-        client = OpenAI::Client.new(access_token: @configuration.api_token)
+        client = OpenAI::Client.new(client_options)
+
         Raix.configure do |config|
           config.openai_client = client
         end

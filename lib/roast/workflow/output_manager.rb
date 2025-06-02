@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "active_support/core_ext/hash/indifferent_access"
 require "roast/workflow/dot_access_hash"
 
 module Roast

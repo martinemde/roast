@@ -25,11 +25,11 @@ module Roast
       class StepNotFoundError < StepLoaderError; end
       class StepExecutionError < StepLoaderError; end
 
-      attr_reader :context
+      attr_reader :context, :phase
 
       delegate :workflow, :config_hash, :context_path, to: :context
 
-      def initialize(workflow, config_hash, context_path)
+      def initialize(workflow, config_hash, context_path, phase: :steps)
         # Support both old and new initialization patterns
         @context = if workflow.is_a?(WorkflowContext)
           workflow
@@ -40,6 +40,7 @@ module Roast
             context_path: context_path,
           )
         end
+        @phase = phase
       end
 
       # Finds and loads a step by name
@@ -75,6 +76,12 @@ module Roast
 
       # Find a Ruby step file in various locations
       def find_step_file(step_name)
+        # Check in phase-specific directory first
+        if phase != :steps
+          phase_rb_path = File.join(context_path, phase.to_s, "#{step_name}.rb")
+          return phase_rb_path if File.file?(phase_rb_path)
+        end
+
         # Check in context path
         rb_file_path = File.join(context_path, "#{step_name}.rb")
         return rb_file_path if File.file?(rb_file_path)
@@ -88,6 +95,12 @@ module Roast
 
       # Find a step directory
       def find_step_directory(step_name)
+        # Check in phase-specific directory first
+        if phase != :steps
+          phase_step_path = File.join(context_path, phase.to_s, step_name)
+          return phase_step_path if File.directory?(phase_step_path)
+        end
+
         # Check in context path
         step_path = File.join(context_path, step_name)
         return step_path if File.directory?(step_path)

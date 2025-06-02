@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "mocha/minitest"
+
 require "roast/workflow/configuration_parser"
 require "roast/workflow/base_workflow"
 require "roast/resources/none_resource"
@@ -9,7 +9,17 @@ require "roast/workflow/workflow_executor"
 
 class RoastWorkflowTargetlessWorkflowTest < ActiveSupport::TestCase
   def setup
-    @workflow_path = fixture_file_path("targetless_workflow.yml")
+    # Create a simple targetless workflow for testing
+    @tmpdir = Dir.mktmpdir
+    @workflow_path = File.join(@tmpdir, "targetless_workflow.yml")
+    File.write(@workflow_path, <<~YAML)
+      name: Simple Targetless
+      tools: []
+      steps:
+        - step1: $(echo "Hello from targetless workflow")
+    YAML
+
+    @original_openai_key = ENV.delete("OPENAI_API_KEY")
 
     # Stub the WorkflowInitializer to prevent API client validation
     Roast::Workflow::WorkflowInitializer.any_instance.stubs(:configure_api_client)
@@ -18,6 +28,8 @@ class RoastWorkflowTargetlessWorkflowTest < ActiveSupport::TestCase
   end
 
   def teardown
+    FileUtils.rm_rf(@tmpdir) if @tmpdir && File.exist?(@tmpdir)
+    ENV["OPENAI_API_KEY"] = @original_openai_key
     Roast::Workflow::WorkflowInitializer.any_instance.unstub(:configure_api_client)
   end
 
@@ -37,6 +49,10 @@ class RoastWorkflowTargetlessWorkflowTest < ActiveSupport::TestCase
       workflow.stubs(:respond_to?).with(:session_name).returns(true)
       workflow.stubs(:respond_to?).with(:final_output).returns(true)
 
+      # Stub output_manager for the pre/post processing code
+      output_manager = mock("output_manager")
+      workflow.stubs(:output_manager).returns(output_manager)
+
       Roast::Workflow::BaseWorkflow.expects(:new).with(
         nil,
         has_entries(name: instance_of(String), context_path: instance_of(String)),
@@ -46,28 +62,29 @@ class RoastWorkflowTargetlessWorkflowTest < ActiveSupport::TestCase
     end
   end
 
-  class RealBaseWorkflow < RoastWorkflowTargetlessWorkflowTest
-    def setup
-      super
-      @workflow = mock("workflow")
-      @workflow.stubs(:output).returns({})
-      @workflow.stubs(:final_output).returns("")
-      @workflow.stubs(:output_file).returns(nil)
-      @workflow.stubs(:output_file=)
-      @workflow.stubs(:verbose=)
-      # Stub execute_steps to return the workflow
-      Roast::Workflow::WorkflowExecutor.any_instance.stubs(:execute_steps).returns(@workflow)
-    end
+  def test_executes_workflow_without_a_target
+    # The workflow should execute with nil file for targetless workflows
+    output = capture_io { @parser.begin! }
+    assert_match(/Running targetless workflow/, output.join)
+  end
 
-    def test_initializes_base_workflow_with_nil_file
-      Roast::Workflow::BaseWorkflow.expects(:new).with do |file, options|
-        assert_nil(file)
-        assert_kind_of(String, options[:name])
-        assert_kind_of(String, options[:context_path])
-        assert_kind_of(Roast::Resources::NoneResource, options[:resource])
-        true
-      end.returns(@workflow)
-      @parser.begin!
+  def test_initializes_base_workflow_with_nil_file
+    # Create a temporary targetless workflow file
+    Dir.mktmpdir do |tmpdir|
+      workflow_file = File.join(tmpdir, "targetless_workflow.yml")
+      File.write(workflow_file, <<~YAML)
+        name: Targetless Test
+        steps:
+          - step1: $(echo "Test step")
+      YAML
+
+      parser = Roast::Workflow::ConfigurationParser.new(workflow_file)
+      configuration = parser.configuration
+
+      # Verify configuration properties
+      assert_nil(configuration.target)
+      assert_equal("Targetless Test", configuration.name)
+      assert_kind_of(Roast::Resources::NoneResource, configuration.resource)
     end
   end
 end

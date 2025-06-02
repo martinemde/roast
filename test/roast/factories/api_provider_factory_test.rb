@@ -5,7 +5,7 @@ require "roast/factories/api_provider_factory"
 
 module Roast
   module Factories
-    class ApiProviderFactoryTest < Minitest::Test
+    class ApiProviderFactoryTest < ActiveSupport::TestCase
       def test_from_config_with_openai
         config = { "api_provider" => "openai" }
         assert_equal(:openai, ApiProviderFactory.from_config(config))

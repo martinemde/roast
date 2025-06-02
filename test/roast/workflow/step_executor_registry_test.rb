@@ -5,7 +5,7 @@ require "roast/workflow/step_executor_registry"
 
 module Roast
   module Workflow
-    class StepExecutorRegistryTest < Minitest::Test
+    class StepExecutorRegistryTest < ActiveSupport::TestCase
       class TestExecutor
         def initialize(workflow_executor)
           @workflow_executor = workflow_executor

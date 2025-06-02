@@ -132,16 +132,42 @@ module Roast
         error_handler.with_error_handling(step, resource_type: resource_type) do
           $stderr.puts "Executing: #{step} (Resource type: #{resource_type || "unknown"})"
 
-          output = command_executor.execute(step, exit_on_error: exit_on_error)
+          begin
+            output = command_executor.execute(step, exit_on_error: exit_on_error)
 
-          # Add to transcript
-          workflow = context.workflow
-          workflow.transcript << {
-            user: "I just executed the following command: ```\n#{step}\n```\n\nHere is the output:\n\n```\n#{output}\n```",
-          }
-          workflow.transcript << { assistant: "Noted, thank you." }
+            # Print command output in verbose mode
+            workflow = context.workflow
+            if workflow.verbose
+              $stderr.puts "Command output:"
+              $stderr.puts output
+              $stderr.puts
+            end
 
-          output
+            # Add to transcript
+            workflow.transcript << {
+              user: "I just executed the following command: ```\n#{step}\n```\n\nHere is the output:\n\n```\n#{output}\n```",
+            }
+            workflow.transcript << { assistant: "Noted, thank you." }
+
+            output
+          rescue CommandExecutor::CommandExecutionError => e
+            # Print user-friendly error message
+            $stderr.puts "\n❌ Command failed: #{step}"
+            $stderr.puts "   Exit status: #{e.exit_status}" if e.exit_status
+
+            # Show command output if available
+            if e.respond_to?(:output) && e.output && !e.output.strip.empty?
+              $stderr.puts "   Command output:"
+              e.output.strip.split("\n").each do |line|
+                $stderr.puts "     #{line}"
+              end
+            elsif workflow && !workflow.verbose
+              $stderr.puts "   To see the command output, run with --verbose flag."
+            end
+
+            $stderr.puts "   This typically means the command returned an error.\n"
+            raise
+          end
         end
       end
 
