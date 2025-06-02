@@ -4,7 +4,7 @@ require "test_helper"
 require "securerandom"
 require "tmpdir"
 
-class RoastTest < Minitest::Test
+class RoastTest < ActiveSupport::TestCase
   def test_config_file_returns_correct_path
     # Use a fixed path to make the test deterministic
     mock_home = "/mock/home"

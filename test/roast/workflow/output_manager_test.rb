@@ -6,7 +6,7 @@ require "roast/workflow/dot_access_hash"
 
 module Roast
   module Workflow
-    class OutputManagerTest < Minitest::Test
+    class OutputManagerTest < ActiveSupport::TestCase
       def setup
         @manager = OutputManager.new
       end

@@ -5,7 +5,7 @@ require "roast/workflow/step_orchestrator"
 
 module Roast
   module Workflow
-    class StepOrchestratorTest < Minitest::Test
+    class StepOrchestratorTest < ActiveSupport::TestCase
       def setup
         @workflow = mock("workflow")
         @step_loader = mock("step_loader")

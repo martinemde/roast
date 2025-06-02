@@ -67,7 +67,7 @@ class RoastHelpersPromptLoaderTest < ActiveSupport::TestCase
 
   test "processes erb if needed" do
     result = Roast::Helpers::PromptLoader.load_prompt(@workflow, @test_file)
-    assert_includes result, "class RoastTest < Minitest::Test", "Prompt should include ERB-processed class definition"
+    assert_includes result, "class RoastTest < ActiveSupport::TestCase", "Prompt should include ERB-processed class definition"
   end
 
   class WithNilTargetFile < ActiveSupport::TestCase
