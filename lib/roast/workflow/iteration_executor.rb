@@ -4,10 +4,11 @@ module Roast
   module Workflow
     # Handles execution of iteration steps (repeat and each)
     class IterationExecutor
-      def initialize(workflow, context_path, state_manager)
+      def initialize(workflow, context_path, state_manager, config_hash = {})
         @workflow = workflow
         @context_path = context_path
         @state_manager = state_manager
+        @config_hash = config_hash
       end
 
       def execute_repeat(repeat_config)
@@ -31,6 +32,7 @@ module Roast
           max_iterations: max_iterations,
           name: "repeat_#{@workflow.output.size}",
           context_path: @context_path,
+          config_hash: @config_hash,
         )
 
         # Apply configuration if provided
@@ -70,6 +72,7 @@ module Roast
           steps: steps,
           name: "each_#{variable_name}",
           context_path: @context_path,
+          config_hash: @config_hash,
         )
 
         # Apply configuration if provided

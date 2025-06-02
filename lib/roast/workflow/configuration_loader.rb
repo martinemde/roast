@@ -32,37 +32,75 @@ module Roast
           config_hash["steps"] || []
         end
 
-        # Extract tools from the configuration
+        # Extract pre-processing steps from the configuration
         # @param config_hash [Hash] The configuration hash
-        # @return [Array] The tools array or empty array
-        def extract_local_tools(config_hash)
-          config_hash["tools"]&.select { |tool| tool.is_a?(String) } || []
+        # @return [Array] The pre_processing array or empty array
+        def extract_pre_processing(config_hash)
+          config_hash["pre_processing"] || []
+        end
+
+        # Extract post-processing steps from the configuration
+        # @param config_hash [Hash] The configuration hash
+        # @return [Array] The post_processing array or empty array
+        def extract_post_processing(config_hash)
+          config_hash["post_processing"] || []
+        end
+
+        # Extract tools and tool configurations from the configuration
+        # @param config_hash [Hash] The configuration hash
+        # @return [Array, Hash] The tools array or empty array
+        def extract_tools(config_hash)
+          tools_config = config_hash["tools"] || []
+          tools = []
+          tool_configs = {}
+
+          tools_config.each do |tool_entry|
+            case tool_entry
+            when String
+              tools << tool_entry
+            when Hash
+              tool_entry.each do |tool_name, config|
+                # Skip MCP tool configurations (those with url or command)
+                if config.is_a?(Hash) && (config["url"] || config["command"])
+                  next
+                end
+                tools << tool_name
+                tool_configs[tool_name] = config || {}
+              end
+            end
+          end
+
+          [tools, tool_configs]
         end
 
         # Extract MCP tools from the configuration, and convert them to MCP clients
         # @param config_hash [Hash] The configuration hash
         # @return [Array] The MCP tools array or empty array
         def extract_mcp_tools(config_hash)
-          tools = config_hash["tools"]&.select { |tool| tool.is_a?(Hash) }
-          return [] unless tools&.any?
+          tools = config_hash["tools"]&.select { |tool| tool.is_a?(Hash) } || []
+          return [] unless tools.any?
 
-          tools.map do |tool|
-            config = tool.values.first
-            client = if config["url"]
-              Raix::MCP::SseClient.new(
-                config["url"],
-                headers: config["env"] || {},
-              )
-            elsif config["command"]
-              args = [config["command"]]
-              args += config["args"] if config["args"]
-              Raix::MCP::StdioClient.new(*args, config["env"] || {})
-            else
-              raise ArgumentError, "Invalid MCP tool configuration for #{tool.keys.first}. Provide `url` or `command`."
+          mcp_tools = []
+          tools.each do |tool|
+            tool.each do |tool_name, config|
+              next unless config.is_a?(Hash) && (config["url"] || config["command"])
+
+              client = if config["url"]
+                Raix::MCP::SseClient.new(
+                  config["url"],
+                  headers: config["env"] || {},
+                )
+              elsif config["command"]
+                args = [config["command"]]
+                args += config["args"] if config["args"]
+                Raix::MCP::StdioClient.new(*args, config["env"] || {})
+              end
+
+              mcp_tools << Configuration::MCPTool.new(client:, only: config["only"], except: config["except"])
             end
-
-            Configuration::MCPTool.new(client:, only: config["only"], except: config["except"])
           end
+
+          mcp_tools
         end
 
         # Extract function configurations

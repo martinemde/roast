@@ -5,7 +5,6 @@ require "roast/tools/search_file"
 require "roast/tools/read_file"
 require "tempfile"
 require "fileutils"
-require "mocha/minitest"
 
 class RoastToolsSearchFileTest < ActiveSupport::TestCase
   def setup
@@ -81,14 +80,14 @@ class RoastToolsSearchFileTest < ActiveSupport::TestCase
 
   test ".call returns file content for single match" do
     Roast::Tools::SearchFile.stubs(:search_for).with("test_file1.txt", ".").returns(["test_file1.txt"])
-    Roast::Tools::SearchFile.stubs(:read_contents).with("test_file1.txt").returns("file content")
+    Roast::Tools::SearchFile.stubs(:read_contents).with("./test_file1.txt").returns("file content")
 
     result = Roast::Tools::SearchFile.call("test_file1.txt")
     assert_equal "file content", result
   end
 
   test ".call with path parameter passes path to search_for" do
-    Roast::Tools::SearchFile.expects(:search_for).with("test_file", "nested/dir").returns(["nested/dir/test_file.txt"])
+    Roast::Tools::SearchFile.expects(:search_for).with("test_file", "nested/dir").returns(["test_file.txt"])
     Roast::Tools::SearchFile.stubs(:read_contents).with("nested/dir/test_file.txt").returns("file content")
 
     result = Roast::Tools::SearchFile.call("test_file", "nested/dir")
@@ -99,7 +98,7 @@ class RoastToolsSearchFileTest < ActiveSupport::TestCase
     Roast::Tools::SearchFile.stubs(:search_for).with("file", ".").returns(["file1.txt", "file2.txt"])
 
     result = Roast::Tools::SearchFile.call("file")
-    assert_equal "file1.txt\nfile2.txt", result
+    assert_equal "./file1.txt\n./file2.txt", result
   end
 
   test ".call returns no results message when empty" do

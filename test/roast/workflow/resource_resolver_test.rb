@@ -6,7 +6,7 @@ require "roast/resources"
 
 module Roast
   module Workflow
-    class ResourceResolverTest < Minitest::Test
+    class ResourceResolverTest < ActiveSupport::TestCase
       def setup
         @context_path = File.expand_path("test/fixtures/files")
       end

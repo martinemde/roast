@@ -2,7 +2,7 @@
 
 require "test_helper"
 require "json"
-require "mocha/minitest"
+
 require "net/http"
 
 class ApiResourceTest < ActiveSupport::TestCase

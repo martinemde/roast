@@ -6,7 +6,7 @@ require "roast/workflow/command_executor"
 
 module Roast
   module Workflow
-    class ExitOnErrorIntegrationTest < Minitest::Test
+    class ExitOnErrorIntegrationTest < ActiveSupport::TestCase
       include FixtureHelpers
 
       def setup

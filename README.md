@@ -78,7 +78,7 @@ steps:
 
 ## Try it
 
-If you don’t have one already, get an OpenAI key from [here](https://platform.openai.com/settings/organization/api-keys). You will need an account with a credit card, make sure that a basic completion works.
+If you don't have one already, get an OpenAI key from [here](https://platform.openai.com/settings/organization/api-keys). You will need an account with a credit card, make sure that a basic completion works.
 
 ```bash
 export OPENAI_API_KEY=sk-proj-....
@@ -124,6 +124,9 @@ roast execute workflow.yml target_file.rb
 
 # Or for a targetless workflow (API calls, data generation, etc.)
 roast execute workflow.yml
+
+# Roast will automatically search in `project_root/roast/workflow_name` if the path is incomplete.
+roast execute my_cool_workflow # Equivalent to `roast execute roast/my_cool_workflow/workflow.yml
 ```
 
 ### Understanding Workflows
@@ -166,7 +169,7 @@ Roast supports several types of steps:
    steps:
      - lint_check: $(rubocop {{file}})
      - fix_issues
-   
+
    # Step configuration
    lint_check:
      exit_on_error: false  # Continue workflow even if command fails
@@ -183,13 +186,13 @@ Roast supports several types of steps:
            - notify_team
          else:
            - run_development_setup
-     
+
      - verify_dependencies:
          unless: "$(bundle check)"
          then:
            - bundle_install: "$(bundle install)"
    ```
-   
+
    Conditions can be:
    - Ruby expressions: `if: "{{output['count'] > 5}}"`
    - Bash commands: `if: "$(test -f config.yml && echo true)"` (exit code 0 = true)
@@ -206,7 +209,7 @@ Roast supports several types of steps:
          steps:
            - analyze_file
            - Generate a report for {{current_file}}
-     
+
      # Repeat until a condition is met
      - improve_code:
          repeat:
@@ -216,12 +219,12 @@ Roast supports several types of steps:
              - run_tests
              - fix_issues
    ```
-   
+
    Each loops support:
    - Collections from Ruby expressions: `each: "{{[1, 2, 3]}}"`
    - Command output: `each: "$(ls *.rb)"`
    - Step references: `each: "file_list"`
-   
+
    Repeat loops support:
    - Until conditions: `until: "{{condition}}"`
    - Maximum iterations: `max_iterations: 10`
@@ -230,7 +233,7 @@ Roast supports several types of steps:
    ```yaml
    steps:
      - detect_language
-     
+
      - case: "{{ workflow.output.detect_language }}"
        when:
          ruby:
@@ -246,13 +249,13 @@ Roast supports several types of steps:
          - analyze_generic
          - generate_basic_report
    ```
-   
+
    Case expressions can be:
    - Workflow outputs: `case: "{{ workflow.output.variable }}"`
    - Ruby expressions: `case: "{{ count > 10 ? 'high' : 'low' }}"`
    - Bash commands: `case: "$(echo $ENVIRONMENT)"`
    - Direct values: `case: "production"`
-   
+
    The value is compared against each key in the `when` clause, and matching steps are executed.
    If no match is found, the `else` steps are executed (if provided).
 
@@ -476,9 +479,9 @@ Benefits of using OpenRouter:
 
 When using OpenRouter, specify fully qualified model names including the provider prefix (e.g., `anthropic/claude-3-opus-20240229`).
 
-#### Dynamic API Tokens
+#### Dynamic API Tokens and URIs
 
-Roast allows you to dynamically fetch API tokens using shell commands directly in your workflow configuration:
+Roast allows you to dynamically fetch attributes such as API token and URI base (to use with a proxy) via shell commands directly in your workflow configuration:
 
 ```yaml
 # This will execute the shell command and use the result as the API token
@@ -490,8 +493,13 @@ api_token: $(echo $OPENAI_API_KEY)
 # For OpenRouter (requires api_provider setting)
 api_provider: openrouter
 api_token: $(echo $OPENROUTER_API_KEY)
-```
 
+# Static Proxy URI
+uri_base: https://proxy.example.com/v1
+
+# Dynamic Proxy URI
+uri_base: $(echo $AI_PROXY_URI_BASE)
+```
 
 This makes it easy to use environment-specific tokens without hardcoding credentials, especially useful in development environments or CI/CD pipelines. Alternatively, Roast will fall back to `OPENROUTER_API_KEY` or `OPENAI_API_KEY` environment variables based on the specified provider.
 
@@ -533,6 +541,52 @@ Roast provides extensive instrumentation capabilities using ActiveSupport::Notif
 ### Built-in Tools
 
 Roast provides several built-in tools that you can use in your workflows:
+
+#### Tool Configuration
+
+Tools can be configured using a hash format in your workflow YAML:
+
+```yaml
+tools:
+  - Roast::Tools::ReadFile        # No configuration needed
+  - Roast::Tools::Cmd:             # With configuration
+      allowed_commands:
+        - git
+        - npm
+        - yarn
+```
+
+Currently, only `Roast::Tools::Cmd` supports configuration via `allowed_commands`, which restricts which commands can be executed (defaults to: `pwd`, `find`, `ls`, `rake`, `ruby`, `dev`, `mkdir`).
+
+##### Cmd Tool Configuration
+
+The `Cmd` tool's `allowed_commands` can be configured in two ways:
+
+**1. Simple String Format** (uses default descriptions):
+```yaml
+tools:
+  - Roast::Tools::Cmd:
+      allowed_commands:
+        - pwd
+        - ls
+        - git
+```
+
+**2. Hash Format with Custom Descriptions**:
+```yaml
+tools:
+  - Roast::Tools::Cmd:
+      allowed_commands:
+        - pwd
+        - name: git
+          description: "git CLI - version control system with subcommands like status, commit, push"
+        - name: npm
+          description: "npm CLI - Node.js package manager with subcommands like install, run"
+        - name: docker
+          description: "Docker CLI - container platform with subcommands like build, run, ps"
+```
+
+Custom descriptions help the LLM understand when and how to use each command, making your workflows more effective.
 
 #### ReadFile
 
@@ -641,23 +695,43 @@ search_file(query: "class User", file_path: "app/models")
 
 #### Cmd
 
-Executes shell commands and returns their output.
+Executes shell commands with configurable restrictions. By default, only allows specific safe commands.
 
 ```ruby
-# Execute a simple command
+# Execute allowed commands (pwd, find, ls, rake, ruby, dev, mkdir by default)
+pwd(args: "-L")
+ls(args: "-la")
+ruby(args: "-e 'puts RUBY_VERSION'")
+
+# Or use the legacy cmd function with full command
 cmd(command: "ls -la")
-
-# With working directory specified
-cmd(command: "npm list", cwd: "/path/to/project")
-
-# With environment variables
-cmd(command: "deploy", env: { "NODE_ENV" => "production" })
 ```
 
-- Provides access to shell commands for more complex operations
-- Can specify working directory and environment variables
-- Captures and returns command output
-- Useful for integrating with existing tools and scripts
+- Commands are registered as individual functions based on allowed_commands configuration
+- Default allowed commands: pwd, find, ls, rake, ruby, dev, mkdir
+- Each command has built-in descriptions to help the LLM understand usage
+- Configurable via workflow YAML (see Tool Configuration section)
+
+#### Bash
+
+Executes shell commands without restrictions. **⚠️ WARNING: Use only in trusted environments!**
+
+```ruby
+# Execute any command - no restrictions
+bash(command: "curl https://api.example.com | jq '.data'")
+
+# Complex operations with pipes and redirects
+bash(command: "find . -name '*.log' -mtime +30 -delete")
+
+# System administration tasks
+bash(command: "ps aux | grep ruby | awk '{print $2}'")
+```
+
+- **No command restrictions** - full shell access
+- Designed for prototyping and development environments
+- Logs warnings by default (disable with `ROAST_BASH_WARNINGS=false`)
+- Should NOT be used in production or untrusted contexts
+- See `examples/bash_prototyping/` for usage examples
 
 #### CodingAgent
 
@@ -745,6 +819,157 @@ your-project/
   │       └── custom_tools.rb
   └── ...
 ```
+
+### Pre/Post Processing Framework
+
+Roast supports pre-processing and post-processing phases for workflows. This enables powerful workflows that need setup/teardown or result aggregation across all processed files.
+
+#### Overview
+
+- **Pre-processing**: Steps executed once before any targets are processed
+- **Post-processing**: Steps executed once after all targets have been processed
+- **Shared state**: Pre-processing results are available to all subsequent steps
+- **Result aggregation**: Post-processing has access to all workflow execution results
+- **Single-target support**: Pre/post processing works with single-target workflows too
+- **Output templates**: Post-processing supports `output.txt` templates for custom formatting
+
+#### Configuration
+
+```yaml
+name: optimize_tests
+model: gpt-4o
+target: "test/**/*_test.rb"
+
+# Pre-processing steps run once before any test files
+pre_processing:
+  - gather_baseline_metrics
+  - setup_test_environment
+
+# Main workflow steps run for each test file
+steps:
+  - analyze_test
+  - improve_coverage
+  - optimize_performance
+
+# Post-processing steps run once after all test files
+post_processing:
+  - aggregate_results
+  - generate_report
+  - cleanup_environment
+```
+
+#### Directory Structure
+
+Pre and post-processing steps follow the same conventions as regular steps but are organized in their own directories:
+
+```
+workflow.yml
+pre_processing/
+  ├── gather_baseline_metrics/
+  │   └── prompt.md
+  └── setup_test_environment/
+      └── prompt.md
+analyze_test/
+  └── prompt.md
+improve_coverage/
+  └── prompt.md
+optimize_performance/
+  └── prompt.md
+post_processing/
+  ├── output.txt
+  ├── aggregate_results/
+  │   └── prompt.md
+  ├── generate_report/
+  │   └── prompt.md
+  └── cleanup_environment/
+      └── prompt.md
+```
+
+#### Data Access
+
+**Pre-processing results in target workflows:**
+
+Target workflows have access to pre-processing results through the `pre_processing_data` variable with dot notation:
+
+```erb
+# In a target workflow step prompt
+The baseline metrics from pre-processing:
+<%= pre_processing_data.gather_baseline_metrics %>
+
+Environment setup details:
+<%= pre_processing_data.setup_test_environment %>
+```
+
+**Post-processing data access:**
+
+Post-processing steps have access to:
+
+- `pre_processing`: Direct access to pre-processing results with dot notation
+- `targets`: Hash of all target workflow results, keyed by file paths
+
+Example post-processing prompt:
+```markdown
+# Generate Summary Report
+
+Based on the baseline metrics:
+<%= pre_processing.gather_baseline_metrics %>
+
+Environment configuration:
+<%= pre_processing.setup_test_environment %>
+
+And the results from processing all files:
+<% targets.each do |file, target| %>
+File: <%= file %>
+Analysis results: <%= target.output.analyze_test %>
+Coverage improvements: <%= target.output.improve_coverage %>
+Performance optimizations: <%= target.output.optimize_performance %>
+<% end %>
+
+Please generate a comprehensive summary report showing:
+1. Overall improvements achieved
+2. Files with the most significant changes
+3. Recommendations for further optimization
+```
+
+#### Output Templates
+
+Post-processing supports custom output formatting using ERB templates. Create an `output.txt` file in your `post_processing` directory to format the final workflow output:
+
+```erb
+# post_processing/output.txt
+=== Workflow Summary Report ===
+Generated at: <%= Time.now.strftime("%Y-%m-%d %H:%M:%S") %>
+
+Environment: <%= pre_processing.setup_test_environment %>
+
+Files Processed: <%= targets.size %>
+
+<% targets.each do |file, target| %>
+- <%= file %>: <%= target.output.analyze_test %>
+<% end %>
+
+<%= output.generate_report %>
+===============================
+```
+
+The template has access to:
+- `pre_processing`: All pre-processing step outputs with dot notation
+- `targets`: Hash of all target workflow results with dot notation (each target has `.output` and `.final_output`)
+- `output`: Post-processing step outputs with dot notation
+
+#### Use Cases
+
+This pattern is ideal for:
+
+- **Code migrations**: Setup migration tools, process files, generate migration report
+- **Test optimization**: Baseline metrics, optimize tests, aggregate improvements
+- **Documentation generation**: Analyze codebase, generate docs per module, create index
+- **Dependency updates**: Check versions, update files, verify compatibility
+- **Security audits**: Setup scanners, check each file, generate security report
+- **Performance analysis**: Establish baselines, analyze components, summarize findings
+
+See the [pre/post processing example](examples/pre_post_processing) for a complete working demonstration.
+
 
 ## Development
 

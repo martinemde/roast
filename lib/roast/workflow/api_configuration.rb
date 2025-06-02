@@ -2,12 +2,13 @@
 
 require "roast/factories/api_provider_factory"
 require "roast/workflow/resource_resolver"
+require "roast/value_objects/uri_base"
 
 module Roast
   module Workflow
     # Handles API-related configuration including tokens and providers
     class ApiConfiguration
-      attr_reader :api_token, :api_provider
+      attr_reader :api_token, :api_provider, :uri_base
 
       def initialize(config_hash)
         @config_hash = config_hash
@@ -37,6 +38,7 @@ module Roast
       def process_api_configuration
         extract_api_token
         extract_api_provider
+        extract_uri_base
       end
 
       def extract_api_token
@@ -47,6 +49,12 @@ module Roast
 
       def extract_api_provider
         @api_provider = Roast::Factories::ApiProviderFactory.from_config(@config_hash)
+      end
+
+      def extract_uri_base
+        if @config_hash["uri_base"]
+          @uri_base = ResourceResolver.process_shell_command(@config_hash["uri_base"])
+        end
       end
 
       def environment_token

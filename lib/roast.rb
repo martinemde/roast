@@ -1,5 +1,13 @@
 # frozen_string_literal: true
 
+require "active_support"
+require "active_support/cache"
+require "active_support/notifications"
+require "active_support/core_ext/hash/indifferent_access"
+require "active_support/core_ext/string"
+require "active_support/core_ext/string/inflections"
+require "active_support/core_ext/module/delegation"
+require "active_support/isolated_execution_state"
 require "fileutils"
 require "cli/ui"
 require "raix"
@@ -28,7 +36,13 @@ module Roast
       raise Thor::Error, "Workflow configuration file is required" if paths.empty?
 
       workflow_path, *files = paths
-      expanded_workflow_path = File.expand_path(workflow_path)
+
+      expanded_workflow_path = if workflow_path.include?("workflow.yml")
+        File.expand_path(workflow_path)
+      else
+        File.expand_path("roast/#{workflow_path}/workflow.yml")
+      end
+
       raise Thor::Error, "Expected a Roast workflow configuration file, got directory: #{expanded_workflow_path}" if File.directory?(expanded_workflow_path)
 
       Roast::Workflow::ConfigurationParser.new(expanded_workflow_path, files, options.transform_keys(&:to_sym)).begin!

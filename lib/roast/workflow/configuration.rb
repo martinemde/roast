@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "active_support/core_ext/module/delegation"
 require "roast/workflow/api_configuration"
 require "roast/workflow/configuration_loader"
 require "roast/workflow/resource_resolver"
@@ -13,10 +12,10 @@ module Roast
     class Configuration
       MCPTool = Struct.new(:client, :only, :except, keyword_init: true)
 
-      attr_reader :config_hash, :workflow_path, :name, :steps, :local_tools, :mcp_tools, :function_configs, :model, :resource
+      attr_reader :config_hash, :workflow_path, :name, :steps, :pre_processing, :post_processing, :tools, :tool_configs, :mcp_tools, :function_configs, :model, :resource
       attr_accessor :target
 
-      delegate :api_provider, :openrouter?, :openai?, to: :api_configuration
+      delegate :api_provider, :openrouter?, :openai?, :uri_base, to: :api_configuration
 
       # Delegate api_token to effective_token for backward compatibility
       def api_token
@@ -32,7 +31,9 @@ module Roast
         # Extract basic configuration values
         @name = ConfigurationLoader.extract_name(@config_hash, workflow_path)
         @steps = ConfigurationLoader.extract_steps(@config_hash)
-        @local_tools = ConfigurationLoader.extract_local_tools(@config_hash)
+        @pre_processing = ConfigurationLoader.extract_pre_processing(@config_hash)
+        @post_processing = ConfigurationLoader.extract_post_processing(@config_hash)
+        @tools, @tool_configs = ConfigurationLoader.extract_tools(@config_hash)
         @mcp_tools = ConfigurationLoader.extract_mcp_tools(@config_hash)
         @function_configs = ConfigurationLoader.extract_functions(@config_hash)
         @model = ConfigurationLoader.extract_model(@config_hash)
@@ -81,6 +82,13 @@ module Roast
       # @return [Hash] The configuration for the function or empty hash if not found
       def function_config(function_name)
         @function_configs[function_name.to_s] || {}
+      end
+
+      # Get configuration for a specific tool
+      # @param tool_name [String] The name of the tool (e.g., 'Roast::Tools::Cmd')
+      # @return [Hash] The configuration for the tool or empty hash if not found
+      def tool_config(tool_name)
+        @tool_configs[tool_name.to_s] || {}
       end
 
       private

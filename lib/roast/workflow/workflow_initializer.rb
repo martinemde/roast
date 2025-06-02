@@ -27,19 +27,32 @@ module Roast
       end
 
       def include_tools
-        return unless @configuration.local_tools.present? || @configuration.mcp_tools.present?
+        return unless @configuration.tools.present? || @configuration.mcp_tools.present?
 
         BaseWorkflow.include(Raix::FunctionDispatch)
         BaseWorkflow.include(Roast::Helpers::FunctionCachingInterceptor) # Add caching support
 
-        if @configuration.local_tools.present?
-          BaseWorkflow.include(*@configuration.local_tools.map(&:constantize))
+        if @configuration.tools.present?
+          BaseWorkflow.include(*@configuration.tools.map(&:constantize))
         end
 
         if @configuration.mcp_tools.present?
           BaseWorkflow.include(Raix::MCP)
           @configuration.mcp_tools.each do |tool|
             BaseWorkflow.mcp(client: tool.client, only: tool.only, except: tool.except)
+          end
+        end
+
+        post_configure_tools
+      end
+
+      def post_configure_tools
+        @configuration.tools.each do |tool_name|
+          tool_module = tool_name.constantize
+
+          if tool_module.respond_to?(:post_configuration_setup)
+            tool_config = @configuration.tool_config(tool_name)
+            tool_module.post_configuration_setup(BaseWorkflow, tool_config)
           end
         end
       end
@@ -91,11 +104,19 @@ module Roast
         end
       end
 
+      def client_options
+        {
+          access_token: @configuration.api_token,
+          uri_base: @configuration.uri_base&.to_s,
+        }.compact
+      end
+
       def configure_openrouter_client
         $stderr.puts "Configuring OpenRouter client with token from workflow"
         require "open_router"
 
-        client = OpenRouter::Client.new(access_token: @configuration.api_token)
+        client = OpenRouter::Client.new(client_options)
+
         Raix.configure do |config|
           config.openrouter_client = client
         end
@@ -106,7 +127,8 @@ module Roast
         $stderr.puts "Configuring OpenAI client with token from workflow"
         require "openai"
 
-        client = OpenAI::Client.new(access_token: @configuration.api_token)
+        client = OpenAI::Client.new(client_options)
+
         Raix.configure do |config|
           config.openai_client = client
         end

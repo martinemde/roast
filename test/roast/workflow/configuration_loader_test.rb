@@ -6,7 +6,7 @@ require "tempfile"
 
 module Roast
   module Workflow
-    class ConfigurationLoaderTest < Minitest::Test
+    class ConfigurationLoaderTest < ActiveSupport::TestCase
       def setup
         @valid_config = {
           "name" => "test-workflow",
@@ -94,14 +94,61 @@ module Roast
         assert_equal([], steps)
       end
 
-      def test_extract_local_tools
-        tools = ConfigurationLoader.extract_local_tools(@valid_config)
+      def test_extract_tools
+        tools, tool_configs = ConfigurationLoader.extract_tools(@valid_config)
         assert_equal(["Roast::Tools::Grep"], tools)
+        assert_equal({}, tool_configs)
       end
 
-      def test_extract_local_tools_returns_empty_array_when_missing
-        tools = ConfigurationLoader.extract_local_tools({})
+      def test_extract_tools_returns_empty_array_when_missing
+        tools, tool_configs = ConfigurationLoader.extract_tools({})
         assert_equal([], tools)
+        assert_equal({}, tool_configs)
+      end
+
+      def test_extract_tools_with_mixed_formats
+        config = {
+          "tools" => [
+            "Roast::Tools::Grep",
+            { "Roast::Tools::Cmd" => { "allowed_commands" => ["ls", "pwd"] } },
+            "Roast::Tools::ReadFile",
+          ],
+        }
+        tools, tool_configs = ConfigurationLoader.extract_tools(config)
+
+        assert_equal(["Roast::Tools::Grep", "Roast::Tools::Cmd", "Roast::Tools::ReadFile"], tools)
+        assert_equal({ "Roast::Tools::Cmd" => { "allowed_commands" => ["ls", "pwd"] } }, tool_configs)
+      end
+
+      def test_extract_tools_with_only_hash_format
+        config = {
+          "tools" => [
+            { "Roast::Tools::Cmd" => { "allowed_commands" => ["git"] } },
+            { "Roast::Tools::Grep" => nil },
+          ],
+        }
+        tools, tool_configs = ConfigurationLoader.extract_tools(config)
+
+        assert_equal(["Roast::Tools::Cmd", "Roast::Tools::Grep"], tools)
+        assert_equal(
+          {
+            "Roast::Tools::Cmd" => { "allowed_commands" => ["git"] },
+            "Roast::Tools::Grep" => {},
+          },
+          tool_configs,
+        )
+      end
+
+      def test_extract_tools_with_nil_config_in_hash
+        config = {
+          "tools" => [
+            { "Roast::Tools::Cmd" => nil },
+          ],
+        }
+        tools, tool_configs = ConfigurationLoader.extract_tools(config)
+
+        assert_equal(["Roast::Tools::Cmd"], tools)
+        assert_equal({ "Roast::Tools::Cmd" => {} }, tool_configs)
       end
 
       def test_extract_functions

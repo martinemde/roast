@@ -15,7 +15,7 @@ module Roast
         @context_path = "/tmp/test"
         @state_manager = mock("state_manager")
         @state_manager.stubs(:save_state)
-        @executor = IterationExecutor.new(@workflow, @context_path, @state_manager)
+        @executor = IterationExecutor.new(@workflow, @context_path, @state_manager, {})
       end
 
       test "repeat step accepts configuration for model" do
@@ -46,6 +46,7 @@ module Roast
           max_iterations: 100,
           name: "repeat_0",
           context_path: @context_path,
+          config_hash: {},
         ).returns(mock_step)
 
         @executor.execute_repeat(repeat_config)
@@ -75,6 +76,7 @@ module Roast
           steps: ["process item"],
           name: "each_item",
           context_path: @context_path,
+          config_hash: {},
         ).returns(mock_step)
 
         @executor.execute_each(each_config)

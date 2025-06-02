@@ -12,11 +12,12 @@ module Roast
 
       DEFAULT_MAX_ITERATIONS = 100
 
-      attr_reader :steps
+      attr_reader :steps, :config_hash
 
-      def initialize(workflow, steps:, **kwargs)
+      def initialize(workflow, steps:, config_hash: {}, **kwargs)
         super(workflow, **kwargs)
         @steps = steps
+        @config_hash = config_hash
         # Don't initialize cmd_tool here - we'll do it lazily when needed
       end
 
@@ -65,7 +66,7 @@ module Roast
 
       # Execute nested steps
       def execute_nested_steps(steps, context, executor = nil)
-        executor ||= WorkflowExecutor.new(context, {}, context_path)
+        executor ||= WorkflowExecutor.new(context, config_hash, context_path)
         results = []
 
         steps.each do |step|
@@ -139,7 +140,7 @@ module Roast
       # Execute a step by name and return its result
       def execute_step_by_name(step_name, context)
         # Reuse existing step execution logic
-        executor = WorkflowExecutor.new(context, {}, context_path)
+        executor = WorkflowExecutor.new(context, config_hash, context_path)
         executor.execute_step(step_name)
       end
 

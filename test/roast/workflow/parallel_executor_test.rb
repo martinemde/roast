@@ -2,7 +2,6 @@
 
 require "test_helper"
 require "roast/workflow/parallel_executor"
-require "mocha/minitest"
 
 class RoastWorkflowParallelExecutorTest < ActiveSupport::TestCase
   def setup

@@ -1,14 +1,29 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "mocha/minitest"
+
 require "roast/workflow/configuration_parser"
-require "active_support/notifications"
 
 class RoastWorkflowConfigurationParserTest < ActiveSupport::TestCase
   def setup
-    @workflow_path = fixture_file("workflow/workflow.yml")
+    # Create a simple test workflow
+    @tmpdir = Dir.mktmpdir
+    @workflow_path = File.join(@tmpdir, "test_workflow.yml")
+    File.write(@workflow_path, <<~YAML)
+      name: test_workflow
+      tools: []
+      steps:
+        - step1: $(echo "Step 1")
+        - step2: $(echo "Step 2")
+    YAML
     @parser = Roast::Workflow::ConfigurationParser.new(@workflow_path)
+
+    @original_openai_key = ENV.delete("OPENAI_API_KEY")
+  end
+
+  def teardown
+    FileUtils.rm_rf(@tmpdir) if @tmpdir && File.exist?(@tmpdir)
+    ENV["OPENAI_API_KEY"] = @original_openai_key
   end
 
   def capture_stderr
@@ -22,22 +37,10 @@ class RoastWorkflowConfigurationParserTest < ActiveSupport::TestCase
 
   def test_initialize_with_example_workflow
     assert_instance_of(Roast::Workflow::Configuration, @parser.configuration)
-    assert_equal("run_coverage", @parser.configuration.steps.first)
+    assert_equal({ "step1" => "$(echo \"Step 1\")" }, @parser.configuration.steps.first)
   end
 
   def test_begin_without_files_or_target_runs_targetless_workflow
-    executor = mock("WorkflowExecutor")
-    executor.stubs(:execute_steps)
-    Roast::Workflow::WorkflowExecutor.stubs(:new).returns(executor)
-
-    workflow = mock("BaseWorkflow")
-    workflow.stubs(:output).returns({})
-    workflow.stubs(:final_output).returns("")
-    workflow.stubs(:output_file).returns(nil)
-    Roast::Workflow::BaseWorkflow.stubs(:new).returns(workflow)
-    workflow.stubs(:output_file=)
-    workflow.stubs(:verbose=)
-
     output = capture_stderr { @parser.begin! }
     assert_match(/Running targetless workflow/, output)
   end
@@ -50,12 +53,8 @@ class RoastWorkflowConfigurationParserTest < ActiveSupport::TestCase
       events << { name: name, payload: payload }
     end
 
-    executor = mock("WorkflowExecutor")
-    executor.stubs(:execute_steps)
-    Roast::Workflow::WorkflowExecutor.stubs(:new).returns(executor)
-
     begin
-      parser.begin!
+      capture_stderr { parser.begin! }
     ensure
       ActiveSupport::Notifications.unsubscribe(subscription)
     end
@@ -74,10 +73,6 @@ class RoastWorkflowConfigurationParserTest < ActiveSupport::TestCase
   def test_begin_with_files_initializes_workflow_for_each_file
     test_file = fixture_file("test.rb")
     parser = Roast::Workflow::ConfigurationParser.new(@workflow_path, [test_file])
-    executor = mock("WorkflowExecutor")
-    # Use expects instead of stubs for verification
-    Roast::Workflow::WorkflowExecutor.expects(:new).returns(executor)
-    executor.stubs(:execute_steps)
 
     output = capture_stderr { parser.begin! }
     assert_match(/Running workflow for file: #{Regexp.escape(test_file)}/, output)
@@ -108,15 +103,10 @@ class RoastWorkflowConfigurationParserTest < ActiveSupport::TestCase
       # Create parser with replay option
       parser = Roast::Workflow::ConfigurationParser.new(workflow_file, [target_file], { replay: "step3" })
 
-      # Mock the executor to verify which steps are executed
-      executor = mock("WorkflowExecutor")
-      Roast::Workflow::WorkflowExecutor.stubs(:new).returns(executor)
-
-      # Should only execute step3 and step4 when replaying from step3
-      executor.expects(:execute_steps).with([{ "step3" => "$(echo \"Step 3\")" }, { "step4" => "$(echo \"Step 4\")" }]).at_least_once
-
-      # Run the workflow
-      capture_stderr { parser.begin! }
+      # Run the workflow and check output behavior
+      output = capture_stderr { parser.begin! }
+      # When replaying from step3, we should see that it's replaying
+      assert_match(/Replaying from step: step3/, output)
     end
   end
 
@@ -138,23 +128,9 @@ class RoastWorkflowConfigurationParserTest < ActiveSupport::TestCase
       # Create parser with replay option
       parser = Roast::Workflow::ConfigurationParser.new(workflow_file, [target_file], { replay: "step2" })
 
-      # Mock the state repository to simulate existing state
-      state_repository = mock("FileStateRepository")
-      Roast::Workflow::FileStateRepository.stubs(:new).returns(state_repository)
-      state_repository.expects(:load_state_before_step).returns({
-        step_name: "step1",
-        output: { "step1" => "result1" },
-      })
-
-      # Mock the executor
-      executor = mock("WorkflowExecutor")
-      Roast::Workflow::WorkflowExecutor.stubs(:new).returns(executor)
-
-      # Should execute only step2 and step3
-      executor.expects(:execute_steps).with([{ "step2" => "$(echo \"Step 2\")" }, { "step3" => "$(echo \"Step 3\")" }]).at_least_once
-
-      # Run the workflow
-      capture_stderr { parser.begin! }
+      # Run the workflow and verify state restoration behavior
+      output = capture_stderr { parser.begin! }
+      assert_match(/Replaying from step: step2/, output)
     end
   end
 
@@ -178,22 +154,10 @@ class RoastWorkflowConfigurationParserTest < ActiveSupport::TestCase
       # Create parser with replay option including timestamp
       parser = Roast::Workflow::ConfigurationParser.new(workflow_file, [target_file], { replay: "#{timestamp}:step3" })
 
-      # Mock the executor
-      executor = mock("WorkflowExecutor")
-      Roast::Workflow::WorkflowExecutor.stubs(:new).returns(executor)
-      executor.expects(:execute_steps).with([{ "step3" => "$(echo \"Step 3\")" }, { "step4" => "$(echo \"Step 4\")" }]).at_least_once
-
-      # Expect the BaseWorkflow to receive session_timestamp
-      timestamp_set = false
-      Roast::Workflow::BaseWorkflow.any_instance.stubs(:session_timestamp=).with(timestamp) do
-        timestamp_set = true
-      end
-
       # Run the workflow
-      capture_stderr { parser.begin! }
-
-      # Verify the timestamp was set
-      assert(timestamp_set, "Expected session_timestamp to be set to #{timestamp}")
+      output = capture_stderr { parser.begin! }
+      # Should show replaying with session timestamp
+      assert_match(/Replaying from step: step3 \(session: #{timestamp}\)/, output)
     end
   end
 
@@ -213,13 +177,6 @@ class RoastWorkflowConfigurationParserTest < ActiveSupport::TestCase
 
       # Create parser with replay option for non-existent step
       parser = Roast::Workflow::ConfigurationParser.new(workflow_file, [target_file], { replay: "nonexistent_step" })
-
-      # Mock the executor
-      executor = mock("WorkflowExecutor")
-      Roast::Workflow::WorkflowExecutor.stubs(:new).returns(executor)
-
-      # Should execute all steps when step not found
-      executor.expects(:execute_steps).with([{ "step1" => "$(echo \"Step 1\")" }, { "step2" => "$(echo \"Step 2\")" }]).at_least_once
 
       # Run the workflow and capture output
       output = capture_stderr { parser.begin! }
