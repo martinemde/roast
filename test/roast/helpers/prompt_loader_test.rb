@@ -2,7 +2,6 @@
 
 require "test_helper"
 require "roast/helpers/prompt_loader"
-require "mocha/minitest"
 
 class RoastHelpersPromptLoaderTest < ActiveSupport::TestCase
   def setup

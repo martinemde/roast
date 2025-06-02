@@ -64,6 +64,7 @@ module Roast
                 if config.is_a?(Hash) && (config["url"] || config["command"])
                   next
                 end
+
                 tools << tool_name
                 tool_configs[tool_name] = config || {}
               end
@@ -78,11 +79,11 @@ module Roast
         # @return [Array] The MCP tools array or empty array
         def extract_mcp_tools(config_hash)
           tools = config_hash["tools"]&.select { |tool| tool.is_a?(Hash) } || []
-          return [] unless tools.any?
+          return [] if tools.none?
 
           mcp_tools = []
           tools.each do |tool|
-            tool.each do |tool_name, config|
+            tool.each do |_tool_name, config|
               next unless config.is_a?(Hash) && (config["url"] || config["command"])
 
               client = if config["url"]

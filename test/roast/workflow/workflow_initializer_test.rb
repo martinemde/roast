@@ -26,7 +26,7 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
   end
 
   def test_includes_local_tools_when_configured
-    @configuration.stubs(:local_tools).returns(["Roast::Tools::ReadFile", "Roast::Tools::Grep"])
+    @configuration.stubs(:tools).returns(["Roast::Tools::ReadFile", "Roast::Tools::Grep"])
     @configuration.stubs(:mcp_tools).returns([])
 
     Roast::Workflow::BaseWorkflow.expects(:include).with(Raix::FunctionDispatch)
@@ -37,7 +37,7 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
   end
 
   def test_does_not_include_local_tools_when_none_configured
-    @configuration.stubs(:local_tools).returns([])
+    @configuration.stubs(:tools).returns([])
     @configuration.stubs(:mcp_tools).returns([])
 
     Roast::Workflow::BaseWorkflow.expects(:include).never
@@ -47,7 +47,7 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
 
   def test_includes_mcp_tools_when_configured
     mock_client = mock("client")
-    @configuration.stubs(:local_tools).returns([])
+    @configuration.stubs(:tools).returns([])
     @configuration.stubs(:mcp_tools).returns([
       Roast::Workflow::Configuration::MCPTool.new(client: mock_client, only: ["get_issue", "get_issue_comments"], except: nil),
     ])
@@ -61,7 +61,7 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
   end
 
   def test_does_not_include_mcp_tools_when_none_configured
-    @configuration.stubs(:local_tools).returns([])
+    @configuration.stubs(:tools).returns([])
     @configuration.stubs(:mcp_tools).returns([])
 
     Roast::Workflow::BaseWorkflow.expects(:include).never
