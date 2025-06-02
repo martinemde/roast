@@ -651,14 +651,24 @@ search_file(query: "class User", file_path: "app/models")
 
 Executes allowed shell commands with configurable restrictions.
 
-```ruby
-# Execute allowed commands
-cmd(command: "ls -la")
-cmd(command: "pwd")
+Configure allowed commands in your workflow:
+
+```yaml
+tools:
+  - Roast::Tools::Cmd:
+      allowed_commands:
+        - pwd
+        - ls
+        - name: git
+          description: "git CLI - version control system"
+        - name: npm
+          description: "npm CLI - Node.js package manager"
 ```
 
-- Default allowed commands: `pwd`, `find`, `ls`, `rake`, `ruby`, `dev`, `mkdir`
+Default allowed commands: `pwd`, `find`, `ls`, `rake`, `ruby`, `dev`, `mkdir`
+
 - Only commands from the allowed list can be executed
+- Commands can include custom descriptions for better AI understanding
 - Provides safety restrictions for production environments
 
 #### Bash
