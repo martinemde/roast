@@ -4,7 +4,7 @@ require "test_helper"
 
 module Roast
   module Workflow
-    class BaseWorkflowChatCompletionTest < Minitest::Test
+    class BaseWorkflowChatCompletionTest < ActiveSupport::TestCase
       class TestWorkflow < BaseWorkflow
         # Override to avoid loading prompt files
         def read_sidecar_prompt

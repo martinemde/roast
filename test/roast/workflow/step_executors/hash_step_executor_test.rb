@@ -7,7 +7,7 @@ require "roast/workflow/workflow_executor"
 module Roast
   module Workflow
     module StepExecutors
-      class HashStepExecutorTest < Minitest::Test
+      class HashStepExecutorTest < ActiveSupport::TestCase
         def setup
           @workflow = mock("workflow")
           @workflow.stubs(:output).returns({})

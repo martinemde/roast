@@ -5,7 +5,7 @@ require "roast/workflow/command_executor"
 
 module Roast
   module Workflow
-    class CommandExecutorTest < Minitest::Test
+    class CommandExecutorTest < ActiveSupport::TestCase
       def setup
         @executor = CommandExecutor.new
       end

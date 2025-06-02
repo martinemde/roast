@@ -5,7 +5,7 @@ require "roast/workflow/interpolator"
 
 module Roast
   module Workflow
-    class InterpolatorTest < Minitest::Test
+    class InterpolatorTest < ActiveSupport::TestCase
       def setup
         @context = Object.new
         @interpolator = Interpolator.new(@context)

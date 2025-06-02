@@ -5,7 +5,7 @@ require "roast/value_objects/step_name"
 
 module Roast
   module ValueObjects
-    class StepNameTest < Minitest::Test
+    class StepNameTest < ActiveSupport::TestCase
       def test_initialization_with_string
         step_name = StepName.new("test_step")
         assert_equal("test_step", step_name.value)

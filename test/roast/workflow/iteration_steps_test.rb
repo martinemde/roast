@@ -7,7 +7,7 @@ require "roast/workflow/base_iteration_step"
 
 module Roast
   module Workflow
-    class IterationStepsTest < Minitest::Test
+    class IterationStepsTest < ActiveSupport::TestCase
       include FixtureHelpers
 
       def setup

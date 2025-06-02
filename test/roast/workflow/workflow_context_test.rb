@@ -5,7 +5,7 @@ require "roast/workflow/workflow_context"
 
 module Roast
   module Workflow
-    class WorkflowContextTest < Minitest::Test
+    class WorkflowContextTest < ActiveSupport::TestCase
       def setup
         @workflow = mock("workflow")
         @config_hash = {

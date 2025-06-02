@@ -5,7 +5,7 @@ require "roast/workflow/step_finder"
 
 module Roast
   module Workflow
-    class StepFinderTest < Minitest::Test
+    class StepFinderTest < ActiveSupport::TestCase
       def setup
         @steps = ["step1", { "var1" => "step2" }, ["step3", "step4"]]
         @finder = StepFinder.new(@steps)
