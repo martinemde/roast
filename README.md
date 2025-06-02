@@ -695,23 +695,43 @@ search_file(query: "class User", file_path: "app/models")
 
 #### Cmd
 
-Executes shell commands and returns their output.
+Executes shell commands with configurable restrictions. By default, only allows specific safe commands.
 
 ```ruby
-# Execute a simple command
+# Execute allowed commands (pwd, find, ls, rake, ruby, dev, mkdir by default)
+pwd(args: "-L")
+ls(args: "-la")
+ruby(args: "-e 'puts RUBY_VERSION'")
+
+# Or use the legacy cmd function with full command
 cmd(command: "ls -la")
-
-# With working directory specified
-cmd(command: "npm list", cwd: "/path/to/project")
-
-# With environment variables
-cmd(command: "deploy", env: { "NODE_ENV" => "production" })
 ```
 
-- Provides access to shell commands for more complex operations
-- Can specify working directory and environment variables
-- Captures and returns command output
-- Useful for integrating with existing tools and scripts
+- Commands are registered as individual functions based on allowed_commands configuration
+- Default allowed commands: pwd, find, ls, rake, ruby, dev, mkdir
+- Each command has built-in descriptions to help the LLM understand usage
+- Configurable via workflow YAML (see Tool Configuration section)
+
+#### Bash
+
+Executes shell commands without restrictions. **⚠️ WARNING: Use only in trusted environments!**
+
+```ruby
+# Execute any command - no restrictions
+bash(command: "curl https://api.example.com | jq '.data'")
+
+# Complex operations with pipes and redirects
+bash(command: "find . -name '*.log' -mtime +30 -delete")
+
+# System administration tasks
+bash(command: "ps aux | grep ruby | awk '{print $2}'")
+```
+
+- **No command restrictions** - full shell access
+- Designed for prototyping and development environments
+- Logs warnings by default (disable with `ROAST_BASH_WARNINGS=false`)
+- Should NOT be used in production or untrusted contexts
+- See `examples/bash_prototyping/` for usage examples
 
 #### CodingAgent
 
