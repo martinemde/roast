@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "open_router"
 
 module Roast
   module Workflow
@@ -10,12 +11,10 @@ module Roast
       end
 
       def test_configure_openrouter_client
-        setup_openrouter_constants
-
-        mock_openrouter_client = mock
+        mock_openrouter_client = mock("OpenRouter::Client")
         OpenRouter::Client.stubs(:new).with(access_token: "test_openrouter_token").returns(mock_openrouter_client)
 
-        ConfigurationParser.new(@workflow_path)
+        assert_nothing_raised { ConfigurationParser.new(@workflow_path) }
       end
 
       def setup_openrouter_constants

@@ -61,17 +61,16 @@ module Roast
       end
 
       def test_logs_error_for_failed_interpolation
-        logger = Minitest::Mock.new
+        logger = mock("Logger")
         interpolator = Interpolator.new(@context, logger: logger)
 
-        logger.expect(:error, nil) do |msg|
+        logger.expects(:error) do |msg|
           msg.include?("Error interpolating {{unknown}}:") &&
             msg.include?("undefined local variable or method") &&
             msg.include?("This variable is not defined in the workflow context.")
         end
 
         interpolator.interpolate("{{unknown}}")
-        logger.verify
       end
 
       def test_handles_nested_braces_correctly
