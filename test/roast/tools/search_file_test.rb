@@ -5,7 +5,6 @@ require "roast/tools/search_file"
 require "roast/tools/read_file"
 require "tempfile"
 require "fileutils"
-require "mocha/minitest"
 
 class RoastToolsSearchFileTest < ActiveSupport::TestCase
   def setup

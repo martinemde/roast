@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "mocha/minitest"
+
 require "roast/workflow/configuration_parser"
 
 class RoastWorkflowConfigurationParserTest < ActiveSupport::TestCase
