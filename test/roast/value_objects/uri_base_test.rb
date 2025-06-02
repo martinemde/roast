@@ -5,7 +5,7 @@ require "roast/value_objects/uri_base"
 
 module Roast
   module ValueObjects
-    class UriBaseTest < Minitest::Test
+    class UriBaseTest < ActiveSupport::TestCase
       def test_initialization_with_valid_uri_base
         uri_base = UriBase.new("https://api.example.com")
         assert_equal("https://api.example.com", uri_base.value)

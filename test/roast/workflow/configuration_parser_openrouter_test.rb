@@ -5,7 +5,7 @@ require "mocha/minitest"
 
 module Roast
   module Workflow
-    class ConfigurationParserOpenRouterTest < Minitest::Test
+    class ConfigurationParserOpenRouterTest < ActiveSupport::TestCase
       def setup
         @workflow_path = File.expand_path("../../fixtures/files/openrouter_workflow.yml", __dir__)
       end

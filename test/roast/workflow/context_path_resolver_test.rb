@@ -5,7 +5,7 @@ require "roast/workflow/context_path_resolver"
 
 module Roast
   module Workflow
-    class ContextPathResolverTest < Minitest::Test
+    class ContextPathResolverTest < ActiveSupport::TestCase
       class TestClass
         def test_method; end
       end
