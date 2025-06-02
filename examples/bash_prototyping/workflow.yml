@@ -1,0 +1,15 @@
+name: Bash Tool Prototyping Example
+model: default
+
+# WARNING: This workflow uses unrestricted bash access
+# Only use in trusted development environments!
+
+tools:
+  - Roast::Tools::Bash
+  - Roast::Tools::ReadFile
+  - Roast::Tools::WriteFile
+
+steps:
+  - explore_system
+  - analyze_environment
+  - demonstrate_flexibility

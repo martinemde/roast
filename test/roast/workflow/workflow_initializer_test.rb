@@ -16,6 +16,10 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
   end
 
   def test_setup_loads_initializers_and_configures_tools
+    # Stub API configuration to prevent validation attempts
+    @configuration.stubs(:api_token).returns(nil)
+    @configuration.stubs(:api_provider).returns(nil)
+
     Roast::Initializers.expects(:load_all)
 
     @initializer.setup
@@ -24,6 +28,9 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
   def test_includes_local_tools_when_configured
     @configuration.stubs(:local_tools).returns(["Roast::Tools::ReadFile", "Roast::Tools::Grep"])
     @configuration.stubs(:mcp_tools).returns([])
+    # Stub API configuration to prevent validation attempts
+    @configuration.stubs(:api_token).returns(nil)
+    @configuration.stubs(:api_provider).returns(nil)
 
     Roast::Workflow::BaseWorkflow.expects(:include).with(Raix::FunctionDispatch)
     Roast::Workflow::BaseWorkflow.expects(:include).with(Roast::Helpers::FunctionCachingInterceptor)
@@ -35,6 +42,9 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
   def test_does_not_include_local_tools_when_none_configured
     @configuration.stubs(:local_tools).returns([])
     @configuration.stubs(:mcp_tools).returns([])
+    # Stub API configuration to prevent validation attempts
+    @configuration.stubs(:api_token).returns(nil)
+    @configuration.stubs(:api_provider).returns(nil)
 
     Roast::Workflow::BaseWorkflow.expects(:include).never
 
@@ -47,6 +57,9 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
     @configuration.stubs(:mcp_tools).returns([
       Roast::Workflow::Configuration::MCPTool.new(client: mock_client, only: ["get_issue", "get_issue_comments"], except: nil),
     ])
+    # Stub API configuration to prevent validation attempts
+    @configuration.stubs(:api_token).returns(nil)
+    @configuration.stubs(:api_provider).returns(nil)
 
     Roast::Workflow::BaseWorkflow.expects(:include).with(Raix::FunctionDispatch)
     Roast::Workflow::BaseWorkflow.expects(:include).with(Roast::Helpers::FunctionCachingInterceptor)
@@ -59,6 +72,9 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
   def test_does_not_include_mcp_tools_when_none_configured
     @configuration.stubs(:local_tools).returns([])
     @configuration.stubs(:mcp_tools).returns([])
+    # Stub API configuration to prevent validation attempts
+    @configuration.stubs(:api_token).returns(nil)
+    @configuration.stubs(:api_provider).returns(nil)
 
     Roast::Workflow::BaseWorkflow.expects(:include).never
 

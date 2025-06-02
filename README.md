@@ -641,23 +641,44 @@ search_file(query: "class User", file_path: "app/models")
 
 #### Cmd
 
-Executes shell commands and returns their output.
+Executes allowed shell commands with configurable restrictions.
 
-```ruby
-# Execute a simple command
-cmd(command: "ls -la")
+With PR #99, individual commands are now registered as separate functions based on the `allowed_commands` configuration:
 
-# With working directory specified
-cmd(command: "npm list", cwd: "/path/to/project")
-
-# With environment variables
-cmd(command: "deploy", env: { "NODE_ENV" => "production" })
+```yaml
+tools:
+  - Roast::Tools::Cmd:
+      allowed_commands:
+        - pwd
+        - ls
+        - name: git
+          description: "git CLI - version control system"
+        - name: npm
+          description: "npm CLI - Node.js package manager"
 ```
 
-- Provides access to shell commands for more complex operations
-- Can specify working directory and environment variables
-- Captures and returns command output
-- Useful for integrating with existing tools and scripts
+Default allowed commands: `pwd`, `find`, `ls`, `rake`, `ruby`, `dev`, `mkdir`
+
+#### Bash
+
+Executes shell commands without restrictions. **⚠️ WARNING: Use only in trusted environments!**
+
+```ruby
+# Execute any command - no restrictions
+bash(command: "curl https://api.example.com | jq '.data'")
+
+# Complex operations with pipes and redirects
+bash(command: "find . -name '*.log' -mtime +30 -delete")
+
+# System administration tasks
+bash(command: "ps aux | grep ruby | awk '{print $2}'")
+```
+
+- **No command restrictions** - full shell access
+- Designed for prototyping and development environments
+- Logs warnings by default (disable with `ROAST_BASH_WARNINGS=false`)
+- Should NOT be used in production or untrusted contexts
+- See `examples/bash_prototyping/` for usage examples
 
 #### CodingAgent
 
