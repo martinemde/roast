@@ -40,11 +40,11 @@ module Roast
         if @configuration.mcp_tools.present?
           BaseWorkflow.include(Raix::MCP)
 
-          # Create an interpolator that can evaluate ENV references
+          # Create an interpolator for MCP tool configuration
           # We use Object.new as the context because this interpolation happens during
-          # initialization, before any workflow instance exists. We only need to interpolate
-          # ENV variables (e.g., {{ENV['HOME']}}) in the MCP tool configuration.
-          # The workflow instance isn't available yet, so we use a minimal object context.
+          # initialization, before any workflow instance exists. Since we don't have
+          # a workflow instance yet, we use a minimal object that can still evaluate
+          # Ruby expressions like ENV['HOME'] or any other valid Ruby code.
           interpolator = Interpolator.new(Object.new)
 
           @configuration.mcp_tools.each do |tool|
