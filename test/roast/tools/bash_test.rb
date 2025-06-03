@@ -81,9 +81,9 @@ class RoastToolsBashTest < ActiveSupport::TestCase
       "rm -rf /tmp/test_file_that_does_not_exist",
       "ps aux",
       "chmod +x /tmp/nonexistent",
-      "sed 's/foo/bar/g'",
-      "awk '{print $1}'",
-      "grep 'pattern'",
+      "sed 's/foo/bar/g' /dev/null",
+      "awk '{print $1}' /dev/null",
+      "grep 'pattern' /dev/null",
     ]
 
     dangerous_commands.each do |cmd|
