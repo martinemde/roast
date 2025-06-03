@@ -14,6 +14,7 @@ module Roast
         @workflow.stubs(:append_to_final_output)
         @workflow.stubs(:openai?).returns(false)
         @workflow.stubs(:pause_step_name).returns(nil)
+        @workflow.stubs(:tools).returns(nil)
 
         @config_hash = {
           "analyze the code" => {

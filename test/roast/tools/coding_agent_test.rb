@@ -26,6 +26,10 @@ module Roast
       end
 
       test "uses default command when no configuration is provided" do
+        # Store original ENV value
+        original_env = ENV["CLAUDE_CODE_COMMAND"]
+        ENV.delete("CLAUDE_CODE_COMMAND")
+
         # Mock Open3.capture3 to prevent actual command execution
         mock_stdout = "AI response"
         mock_stderr = ""
@@ -35,7 +39,9 @@ module Roast
         Open3.expects(:capture3).with { |cmd| cmd =~ /cat .* \| claude -p$/ }.returns([mock_stdout, mock_stderr, mock_status])
 
         result = Roast::Tools::CodingAgent.call("Test prompt")
-        assert_equal "AI response", result
+        assert_equal("AI response", result)
+      ensure
+        ENV["CLAUDE_CODE_COMMAND"] = original_env
       end
 
       test "uses environment variable when set" do

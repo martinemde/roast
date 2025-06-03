@@ -18,6 +18,7 @@ module Roast
           params: {},
         ).returns("Test response") # Return string directly
         workflow.stubs(:openai?).returns(false)
+        workflow.stubs(:tools).returns(nil)
 
         step = PromptStep.new(workflow, name: "test_step")
         step.print_response = true
@@ -41,6 +42,7 @@ module Roast
           params: {},
         ).returns("Test response") # Return string directly
         workflow.stubs(:openai?).returns(false)
+        workflow.stubs(:tools).returns(nil)
 
         step = PromptStep.new(workflow, name: "test_step")
         step.print_response = false

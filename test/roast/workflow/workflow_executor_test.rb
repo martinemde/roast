@@ -50,6 +50,7 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
     @workflow.stubs(:resource).returns(nil)
     @workflow.stubs(:append_to_final_output)
     @workflow.stubs(:openai?).returns(true)
+    @workflow.stubs(:tools).returns(nil)
 
     # Expect chat_completion to be called with the configured model
     # Now expects loop: false due to new BaseStep behavior
