@@ -1,0 +1,1 @@
+Use the read_file function to read the README.md file in the current directory and summarize what it contains.

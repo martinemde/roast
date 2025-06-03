@@ -10,7 +10,7 @@ module Roast
     # Encapsulates workflow configuration data and provides structured access
     # to the configuration settings
     class Configuration
-      MCPTool = Struct.new(:client, :only, :except, keyword_init: true)
+      MCPTool = Struct.new(:name, :config, :only, :except, keyword_init: true)
 
       attr_reader :config_hash, :workflow_path, :name, :steps, :pre_processing, :post_processing, :tools, :tool_configs, :mcp_tools, :function_configs, :model, :resource
       attr_accessor :target

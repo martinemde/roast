@@ -47,9 +47,10 @@ module Roast
         # Test with no configuration
         executor = WorkflowExecutor.new(@workflow, {}, @context_path)
 
+        # Now expects loop: false due to new BaseStep behavior
         @workflow.expects(:chat_completion).with(
           openai: false,
-          loop: true, # Default auto_loop is true
+          loop: false, # Changed from true - new BaseStep behavior
           model: "openai/gpt-4o-mini", # Default model
           json: false,
           params: {},
@@ -65,9 +66,10 @@ module Roast
         }
         executor = WorkflowExecutor.new(@workflow, config_with_global_model, @context_path)
 
+        # Now expects loop: false due to new BaseStep behavior
         @workflow.expects(:chat_completion).with(
           openai: false,
-          loop: true,
+          loop: false, # Changed from true - new BaseStep behavior
           model: "claude-3-opus",
           json: false,
           params: {},

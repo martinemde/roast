@@ -97,7 +97,7 @@ module Roast
         @dependencies[:interpolator].expects(:interpolate).with("command").returns("command")
         # And then the string step handler will also interpolate
         @dependencies[:interpolator].expects(:interpolate).with("command").returns("command")
-        @dependencies[:step_orchestrator].expects(:execute_step).with("command", exit_on_error: true).returns("result")
+        @dependencies[:step_orchestrator].expects(:execute_step).with("command", exit_on_error: true, step_key: "nested").returns("result")
         @workflow.output.expects(:[]=).with("nested", "result")
 
         @coordinator.execute(step)
@@ -113,7 +113,7 @@ module Roast
         @dependencies[:interpolator].expects(:interpolate).with("command1").returns("command1")
         # The string step handler will also try to interpolate, so expect it twice
         @dependencies[:interpolator].expects(:interpolate).with("command1").returns("command1")
-        @dependencies[:step_orchestrator].expects(:execute_step).with("command1", exit_on_error: true).returns("result")
+        @dependencies[:step_orchestrator].expects(:execute_step).with("command1", exit_on_error: true, step_key: "var1").returns("result")
 
         @workflow.output.expects(:[]=).with("var1", "result")
 
@@ -137,8 +137,8 @@ module Roast
         @workflow.stubs(:pause_step_name).returns(nil)
         @dependencies[:interpolator].expects(:interpolate).with("step1").returns("step1")
         @dependencies[:interpolator].expects(:interpolate).with("step2").returns("step2")
-        @dependencies[:step_orchestrator].expects(:execute_step).with("step1", exit_on_error: true)
-        @dependencies[:step_orchestrator].expects(:execute_step).with("step2", exit_on_error: true)
+        @dependencies[:step_orchestrator].expects(:execute_step).with("step1", exit_on_error: true, step_key: nil)
+        @dependencies[:step_orchestrator].expects(:execute_step).with("step2", exit_on_error: true, step_key: nil)
 
         @coordinator.execute(steps)
       end
@@ -162,14 +162,14 @@ module Roast
         @context.stubs(:exit_on_error?).with("regular_step").returns(false)
 
         @dependencies[:interpolator].expects(:interpolate).with(step).returns(step)
-        @dependencies[:step_orchestrator].expects(:execute_step).with(step, exit_on_error: false)
+        @dependencies[:step_orchestrator].expects(:execute_step).with(step, exit_on_error: false, step_key: nil)
 
         @coordinator.execute(step)
       end
 
       def test_executes_standard_step_as_fallback
         step = mock("unknown_step")
-        @dependencies[:step_orchestrator].expects(:execute_step).with(step, exit_on_error: true)
+        @dependencies[:step_orchestrator].expects(:execute_step).with(step, exit_on_error: true, step_key: nil)
 
         @coordinator.execute(step)
       end

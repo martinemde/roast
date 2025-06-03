@@ -47,19 +47,29 @@ module Roast
         json = @json if json.nil?
         params = @params if params.nil?
 
-        workflow.chat_completion(openai: workflow.openai? && model, loop: auto_loop, model: model, json:, params:).then do |response|
-          case response
-          in Array if json
-            response.flatten.first
-          in Array
-            # For non-JSON responses, join array elements
-            response.map(&:presence).compact.join("\n")
-          else
-            response
-          end
-        end.tap do |response|
-          process_output(response, print_response:)
+        # Don't use loop parameter when we need to handle tool responses for display
+        # because Raix doesn't return the final response when loop=true
+        response = workflow.chat_completion(openai: workflow.openai? && model, loop: false, model: model, json:, params:)
+
+        # If we got tool call results and we want to print the response,
+        # we need to make another call to get the AI's final response
+        if response.is_a?(Array) && workflow.tools.present? && (auto_loop || print_response)
+          # Tool calls were made, get the final response
+          response = workflow.chat_completion(openai: workflow.openai? && model, loop: false, model: model, json:, params:)
         end
+
+        # Process the response
+        result = if response.is_a?(Array) && json
+          response.flatten.first
+        elsif response.is_a?(Array)
+          # For non-JSON responses, join array elements
+          response.map(&:presence).compact.join("\n")
+        else
+          response
+        end
+
+        process_output(result, print_response:)
+        result
       end
 
       def prompt(text)

@@ -49,8 +49,19 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
     mock_client = mock("client")
     @configuration.stubs(:tools).returns([])
     @configuration.stubs(:mcp_tools).returns([
-      Roast::Workflow::Configuration::MCPTool.new(client: mock_client, only: ["get_issue", "get_issue_comments"], except: nil),
+      Roast::Workflow::Configuration::MCPTool.new(
+        name: "TestTool",
+        config: {
+          "command" => "echo",
+          "args" => ["test"],
+        },
+        only: ["get_issue", "get_issue_comments"],
+        except: nil,
+      ),
     ])
+
+    # Stub the client creation
+    Raix::MCP::StdioClient.stubs(:new).with("echo", "test", {}).returns(mock_client)
 
     Roast::Workflow::BaseWorkflow.expects(:include).with(Raix::FunctionDispatch)
     Roast::Workflow::BaseWorkflow.expects(:include).with(Roast::Helpers::FunctionCachingInterceptor)

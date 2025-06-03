@@ -88,6 +88,8 @@ module Roast
         executor = WorkflowExecutor.new(@workflow, config_hash, "/tmp/test")
 
         @workflow.expects(:chat_completion).returns(["item1", "item2", "item3"])
+        # Since response is an array, BaseStep will check for tools
+        @workflow.expects(:tools).returns(nil)
 
         result = executor.execute_step("get items")
         assert_equal ["item1", "item2", "item3"], result

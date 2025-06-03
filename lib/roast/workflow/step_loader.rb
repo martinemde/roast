@@ -46,8 +46,9 @@ module Roast
       # Finds and loads a step by name
       #
       # @param step_name [String, StepName] The name of the step to load
+      # @param step_key [String] The configuration key for the step (optional)
       # @return [BaseStep] The loaded step instance
-      def load(step_name)
+      def load(step_name, step_key: nil)
         name = step_name.is_a?(Roast::ValueObjects::StepName) ? step_name : Roast::ValueObjects::StepName.new(step_name)
 
         # Get step config for per-step path
@@ -57,7 +58,9 @@ module Roast
         # First check for a prompt step (contains spaces)
         if name.plain_text?
           step = Roast::Workflow::PromptStep.new(workflow, name: name.to_s, auto_loop: true)
-          configure_step(step, name.to_s)
+          # Use step_key for configuration if provided, otherwise use name
+          config_key = step_key || name.to_s
+          configure_step(step, config_key)
           return step
         end
 

@@ -79,7 +79,6 @@ module Roast
         )
         output_file = File.join(session_dir, "final_output.txt")
         File.write(output_file, output_content)
-        $stderr.puts "Final output saved to: #{output_file}"
         output_file
       rescue => e
         $stderr.puts "Failed to save final output: #{e.message}"

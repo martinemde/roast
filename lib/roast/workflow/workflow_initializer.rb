@@ -5,6 +5,7 @@ require "roast/initializers"
 require "roast/helpers/function_caching_interceptor"
 require "roast/helpers/logger"
 require "roast/workflow/base_workflow"
+require "roast/workflow/interpolator"
 
 module Roast
   module Workflow
@@ -38,8 +39,27 @@ module Roast
 
         if @configuration.mcp_tools.present?
           BaseWorkflow.include(Raix::MCP)
+
+          # Create an interpolator that can evaluate ENV references
+          interpolator = Interpolator.new(Object.new)
+
           @configuration.mcp_tools.each do |tool|
-            BaseWorkflow.mcp(client: tool.client, only: tool.only, except: tool.except)
+            # Interpolate the config values
+            config = interpolate_config(tool.config, interpolator)
+
+            # Create the appropriate client based on config
+            client = if config["url"]
+              Raix::MCP::SseClient.new(
+                config["url"],
+                headers: config["env"] || {},
+              )
+            elsif config["command"]
+              args = [config["command"]]
+              args += config["args"] if config["args"]
+              Raix::MCP::StdioClient.new(*args, config["env"] || {})
+            end
+
+            BaseWorkflow.mcp(client: client, only: tool.only, except: tool.except)
           end
         end
 
@@ -138,6 +158,23 @@ module Roast
       def validate_api_client(client)
         # Make a lightweight API call to validate the token
         client.models.list if client.respond_to?(:models)
+      end
+
+      def interpolate_config(config, interpolator)
+        interpolated = {}
+        config.each do |key, value|
+          interpolated[key] = case value
+          when String
+            interpolator.interpolate(value)
+          when Array
+            value.map { |v| v.is_a?(String) ? interpolator.interpolate(v) : v }
+          when Hash
+            interpolate_config(value, interpolator)
+          else
+            value
+          end
+        end
+        interpolated
       end
     end
   end
