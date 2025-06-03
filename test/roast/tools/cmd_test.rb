@@ -122,7 +122,7 @@ module Roast
           "allowed_commands" => [
             "ls",
             { "name" => "git", "description" => "Custom git description for version control" },
-            { "name" => "npm", "description" => "Node.js package manager for dependencies" },
+            { "name" => "node", "description" => "Node.js package manager for dependencies" },
           ],
         }
         Roast::Tools::Cmd.post_configuration_setup(DummyBaseClass, config)
@@ -130,12 +130,12 @@ module Roast
         # Check that functions were registered
         assert DummyBaseClass.registered_functions.key?(:ls)
         assert DummyBaseClass.registered_functions.key?(:git)
-        assert DummyBaseClass.registered_functions.key?(:npm)
+        assert DummyBaseClass.registered_functions.key?(:node)
 
         # Check descriptions
         assert_equal "ls command - list directory contents with options like -la, -R", DummyBaseClass.registered_functions[:ls][:description]
         assert_equal "Custom git description for version control", DummyBaseClass.registered_functions[:git][:description]
-        assert_equal "Node.js package manager for dependencies", DummyBaseClass.registered_functions[:npm][:description]
+        assert_equal "Node.js package manager for dependencies", DummyBaseClass.registered_functions[:node][:description]
       end
 
       test "post_configuration_setup accepts symbol keys in hash format" do
@@ -171,7 +171,7 @@ module Roast
           "allowed_commands" => [
             "pwd",
             { "name" => "git", "description" => "Version control" },
-            { "name" => "npm" },
+            { "name" => "node" },
           ],
         }
 
@@ -182,12 +182,12 @@ module Roast
         result = Roast::Tools::Cmd.call("git status", config)
         refute_match(/Error: Command not allowed/, result)
 
-        result = Roast::Tools::Cmd.call("npm install", config)
+        result = Roast::Tools::Cmd.call("node -v", config)
         refute_match(/Error: Command not allowed/, result)
 
         # This should fail
         result = Roast::Tools::Cmd.call("rm file.txt", config)
-        assert_equal "Error: Command not allowed. Only commands starting with pwd, git, npm are permitted.", result
+        assert_equal "Error: Command not allowed. Only commands starting with pwd, git, node are permitted.", result
       end
 
       test "included method does not register any functions" do

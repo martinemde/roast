@@ -167,7 +167,7 @@ module Roast
           context_path: @configuration.context_path,
           resource: @configuration.resource,
           session_name: @configuration.name,
-          configuration: @configuration,
+          workflow_configuration: @configuration,
           pre_processing_data:,
         ).tap do |workflow|
           workflow.output_file = @options[:output] if @options[:output].present?

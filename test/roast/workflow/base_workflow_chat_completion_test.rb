@@ -23,14 +23,14 @@ module Roast
       end
 
       def test_chat_completion_module_is_included_in_base_workflow
-        workflow = TestWorkflow.new(nil, name: "test", configuration: MockConfiguration.new)
+        workflow = TestWorkflow.new(nil, name: "test", workflow_configuration: MockConfiguration.new)
 
         # Verify that BaseWorkflow includes Raix::ChatCompletion
         assert(workflow.class.included_modules.include?(Raix::ChatCompletion))
       end
 
       def test_chat_completion_method_is_overridden
-        TestWorkflow.new(nil, name: "test", configuration: MockConfiguration.new)
+        TestWorkflow.new(nil, name: "test", workflow_configuration: MockConfiguration.new)
 
         # The chat_completion method should be defined on BaseWorkflow itself
         # (not just inherited from the module)
@@ -38,7 +38,7 @@ module Roast
       end
 
       def test_chat_completion_responds_to_method
-        workflow = TestWorkflow.new(nil, name: "test", configuration: MockConfiguration.new)
+        workflow = TestWorkflow.new(nil, name: "test", workflow_configuration: MockConfiguration.new)
 
         # Verify the workflow responds to chat_completion
         assert(workflow.respond_to?(:chat_completion))
