@@ -10,7 +10,14 @@ module Roast
     module CodingAgent
       extend self
 
+      CONFIG_CODING_AGENT_COMMAND = "coding_agent_command"
+      private_constant :CONFIG_CODING_AGENT_COMMAND
+
+      @configured_command = nil
+
       class << self
+        attr_accessor :configured_command
+
         def included(base)
           base.class_eval do
             function(
@@ -21,6 +28,11 @@ module Roast
               Roast::Tools::CodingAgent.call(params[:prompt])
             end
           end
+        end
+
+        # Called after configuration is loaded
+        def post_configuration_setup(base, config = {})
+          self.configured_command = config[CONFIG_CODING_AGENT_COMMAND]
         end
       end
 
@@ -51,7 +63,6 @@ module Roast
           temp_file.close
 
           # Run Claude Code CLI using the temp file as input
-          claude_code_command = ENV.fetch("CLAUDE_CODE_COMMAND", "claude -p")
           stdout, stderr, status = Open3.capture3("cat #{temp_file.path} | #{claude_code_command}")
 
           if status.success?
@@ -63,6 +74,10 @@ module Roast
           # Always clean up the temp file
           temp_file.unlink
         end
+      end
+
+      def claude_code_command
+        CodingAgent.configured_command || ENV["CLAUDE_CODE_COMMAND"] || "claude -p"
       end
     end
   end

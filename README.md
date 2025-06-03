@@ -595,9 +595,13 @@ tools:
         - git
         - npm
         - yarn
+  - Roast::Tools::CodingAgent:     # Optional configuration
+      coding_agent_command: claude --model opus -p --allowedTools "Bash, Glob, Grep, LS, Read"
 ```
 
-Currently, only `Roast::Tools::Cmd` supports configuration via `allowed_commands`, which restricts which commands can be executed (defaults to: `pwd`, `find`, `ls`, `rake`, `ruby`, `dev`, `mkdir`).
+Currently supported configurations:
+- `Roast::Tools::Cmd` via `allowed_commands`: restricts which commands can be executed (defaults to: `pwd`, `find`, `ls`, `rake`, `ruby`, `dev`, `mkdir`)
+- `Roast::Tools::CodingAgent` via `coding_agent_command`: customizes the Claude Code CLI command used by the agent
 
 ##### Cmd Tool Configuration
 
@@ -802,13 +806,13 @@ MCP tools are configured in the `tools` section of your workflow YAML alongside 
 tools:
   # Traditional Roast tools
   - Roast::Tools::ReadFile
-  
+
   # MCP tools with SSE (Server-Sent Events)
   - Documentation:
       url: https://gitmcp.io/myorg/myrepo/docs
       env:
         - "Authorization: Bearer {{env.API_TOKEN}}"
-  
+
   # MCP tools with stdio
   - GitHub:
       command: npx
