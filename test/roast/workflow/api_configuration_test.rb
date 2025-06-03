@@ -5,7 +5,7 @@ require "roast/workflow/api_configuration"
 
 module Roast
   module Workflow
-    class ApiConfigurationTest < Minitest::Test
+    class ApiConfigurationTest < ActiveSupport::TestCase
       def setup
         @original_openai_key = ENV["OPENAI_API_KEY"]
         @original_openrouter_key = ENV["OPENROUTER_API_KEY"]

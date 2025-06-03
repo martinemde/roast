@@ -5,7 +5,7 @@ require "roast/value_objects/api_token"
 
 module Roast
   module ValueObjects
-    class ApiTokenTest < Minitest::Test
+    class ApiTokenTest < ActiveSupport::TestCase
       def test_initialization_with_valid_token
         token = ApiToken.new("valid-token-123")
         assert_equal("valid-token-123", token.value)

@@ -1,9 +1,8 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "mocha/minitest"
+
 require "roast/workflow/configuration_parser"
-require "active_support/notifications"
 
 class RoastWorkflowConfigurationParserTest < ActiveSupport::TestCase
   def setup

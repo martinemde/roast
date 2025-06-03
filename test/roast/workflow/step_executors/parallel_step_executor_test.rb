@@ -6,7 +6,7 @@ require "roast/workflow/step_executors/parallel_step_executor"
 module Roast
   module Workflow
     module StepExecutors
-      class ParallelStepExecutorTest < Minitest::Test
+      class ParallelStepExecutorTest < ActiveSupport::TestCase
         def setup
           @workflow = mock("workflow")
           @coordinator = mock("coordinator")

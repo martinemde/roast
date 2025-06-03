@@ -3,9 +3,6 @@
 require "roast/workflow/configuration"
 require "roast/workflow/workflow_initializer"
 require "roast/workflow/workflow_runner"
-require "active_support"
-require "active_support/isolated_execution_state"
-require "active_support/notifications"
 
 module Roast
   module Workflow

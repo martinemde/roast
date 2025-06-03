@@ -6,12 +6,29 @@ require "tempfile"
 
 module Roast
   module Workflow
-    class ConfigurationLoaderTest < Minitest::Test
+    class ConfigurationLoaderTest < ActiveSupport::TestCase
       def setup
         @valid_config = {
           "name" => "test-workflow",
           "steps" => ["step1", "step2"],
-          "tools" => ["Roast::Tools::Grep"],
+          "tools" => [
+            "Roast::Tools::Grep",
+            {
+              "raix Docs" => {
+                "url" => "https://gitmcp.io/OlympiaAI/raix/docs",
+                "env" => { "Authorization" => "Bearer <YOUR_TOKEN>" },
+                "only" => ["get_issue", "get_issue_comments"],
+              },
+            },
+            {
+              "echo command" => {
+                "command" => "echo",
+                "args" => ["hello $NAME"],
+                "env" => { "NAME" => "Marc" },
+                "except" => ["get_issue_comments"],
+              },
+            },
+          ],
           "functions" => { "grep" => { "enabled" => true } },
           "model" => "gpt-4",
           "target" => "test.rb",
@@ -78,18 +95,92 @@ module Roast
       end
 
       def test_extract_tools
-        tools = ConfigurationLoader.extract_tools(@valid_config)
+        tools, tool_configs = ConfigurationLoader.extract_tools(@valid_config)
         assert_equal(["Roast::Tools::Grep"], tools)
+        assert_equal({}, tool_configs)
       end
 
       def test_extract_tools_returns_empty_array_when_missing
-        tools = ConfigurationLoader.extract_tools({})
+        tools, tool_configs = ConfigurationLoader.extract_tools({})
         assert_equal([], tools)
+        assert_equal({}, tool_configs)
+      end
+
+      def test_extract_tools_with_mixed_formats
+        config = {
+          "tools" => [
+            "Roast::Tools::Grep",
+            { "Roast::Tools::Cmd" => { "allowed_commands" => ["ls", "pwd"] } },
+            "Roast::Tools::ReadFile",
+          ],
+        }
+        tools, tool_configs = ConfigurationLoader.extract_tools(config)
+
+        assert_equal(["Roast::Tools::Grep", "Roast::Tools::Cmd", "Roast::Tools::ReadFile"], tools)
+        assert_equal({ "Roast::Tools::Cmd" => { "allowed_commands" => ["ls", "pwd"] } }, tool_configs)
+      end
+
+      def test_extract_tools_with_only_hash_format
+        config = {
+          "tools" => [
+            { "Roast::Tools::Cmd" => { "allowed_commands" => ["git"] } },
+            { "Roast::Tools::Grep" => nil },
+          ],
+        }
+        tools, tool_configs = ConfigurationLoader.extract_tools(config)
+
+        assert_equal(["Roast::Tools::Cmd", "Roast::Tools::Grep"], tools)
+        assert_equal(
+          {
+            "Roast::Tools::Cmd" => { "allowed_commands" => ["git"] },
+            "Roast::Tools::Grep" => {},
+          },
+          tool_configs,
+        )
+      end
+
+      def test_extract_tools_with_nil_config_in_hash
+        config = {
+          "tools" => [
+            { "Roast::Tools::Cmd" => nil },
+          ],
+        }
+        tools, tool_configs = ConfigurationLoader.extract_tools(config)
+
+        assert_equal(["Roast::Tools::Cmd"], tools)
+        assert_equal({ "Roast::Tools::Cmd" => {} }, tool_configs)
       end
 
       def test_extract_functions
         functions = ConfigurationLoader.extract_functions(@valid_config)
         assert_equal({ "grep" => { "enabled" => true } }, functions)
+      end
+
+      def test_extract_mcp_tools
+        # Stub the MCP client constructors to prevent actual process creation
+        mock_sse_client = mock("sse_client")
+        mock_stdio_client = mock("stdio_client")
+
+        Raix::MCP::SseClient.stubs(:new).with(
+          "https://gitmcp.io/OlympiaAI/raix/docs",
+          headers: { "Authorization" => "Bearer <YOUR_TOKEN>" },
+        ).returns(mock_sse_client)
+
+        Raix::MCP::StdioClient.stubs(:new).with(
+          "echo",
+          "hello $NAME",
+          { "NAME" => "Marc" },
+        ).returns(mock_stdio_client)
+
+        tools = ConfigurationLoader.extract_mcp_tools(@valid_config)
+
+        assert_equal(2, tools.length)
+        assert_equal(tools[0].client, mock_sse_client)
+        assert_equal(tools[0].only, ["get_issue", "get_issue_comments"])
+        assert_nil(tools[0].except)
+        assert_equal(tools[1].client, mock_stdio_client)
+        assert_nil(tools[1].only)
+        assert_equal(tools[1].except, ["get_issue_comments"])
       end
 
       def test_extract_functions_returns_empty_hash_when_missing
@@ -123,6 +214,76 @@ module Roast
         assert_equal("options.rb", target)
       end
 
+      def test_load_with_shared_yml
+        shared_yaml = <<~YAML
+          standard_tools: &tools
+            - "Roast::Tools::Grep"
+            - "Roast::Tools::ReadFile"
+        YAML
+
+        workflow_yaml = <<~YAML
+          name: "test-workflow"
+          api_token: "test-token"
+          model: "gpt-4"
+          tools: *tools
+          steps: ["step1", "step2"]
+        YAML
+
+        with_temp_workflow_and_shared_yaml(workflow_yaml, shared_yaml) do |workflow_path|
+          config = ConfigurationLoader.load(workflow_path)
+
+          assert_equal("test-workflow", config["name"])
+          assert_equal("test-token", config["api_token"])
+          assert_equal("gpt-4", config["model"])
+          assert_equal(["Roast::Tools::Grep", "Roast::Tools::ReadFile"], config["tools"])
+          assert_equal(["step1", "step2"], config["steps"])
+        end
+      end
+
+      def test_load_without_shared_yml
+        # Ensure it still works when shared.yml doesn't exist
+        workflow_config = {
+          "name" => "test-workflow",
+          "api_token" => "direct-token",
+          "steps" => ["step1", "step2"],
+        }
+
+        with_temp_dir do |dir|
+          subdir = File.join(dir, "workflows")
+          FileUtils.mkdir_p(subdir)
+          workflow_path = File.join(subdir, "workflow.yml")
+          File.write(workflow_path, YAML.dump(workflow_config))
+
+          config = ConfigurationLoader.load(workflow_path)
+
+          assert_equal("test-workflow", config["name"])
+          assert_equal("direct-token", config["api_token"])
+          assert_equal(["step1", "step2"], config["steps"])
+        end
+      end
+
+      def test_yaml_aliases_with_array_references
+        shared_yaml = <<~YAML
+          standard_tools: &tools
+            - Roast::Tools::Grep
+            - Roast::Tools::ReadFile
+            - Roast::Tools::SearchFile
+        YAML
+
+        workflow_yaml = <<~YAML
+          name: test-workflow
+          tools: *tools
+          steps:
+            - step1
+        YAML
+
+        with_temp_workflow_and_shared_yaml(workflow_yaml, shared_yaml) do |workflow_path|
+          config = ConfigurationLoader.load(workflow_path)
+
+          assert_equal(["Roast::Tools::Grep", "Roast::Tools::ReadFile", "Roast::Tools::SearchFile"], config["tools"])
+        end
+      end
+
       private
 
       def with_temp_yaml_file(content)
@@ -139,6 +300,32 @@ module Roast
         path = File.join(dir, filename)
         File.write(path, content)
         yield path
+      ensure
+        FileUtils.rm_rf(dir)
+      end
+
+      def with_temp_dir
+        dir = Dir.mktmpdir
+        yield dir
+      ensure
+        FileUtils.rm_rf(dir)
+      end
+
+      def with_temp_workflow_and_shared_yaml(workflow_yaml, shared_yaml)
+        dir = Dir.mktmpdir
+
+        # Create shared.yml in parent directory
+        File.write(File.join(dir, "shared.yml"), shared_yaml)
+
+        # Create workflow subdirectory
+        workflow_dir = File.join(dir, "workflows")
+        FileUtils.mkdir_p(workflow_dir)
+
+        # Create workflow.yml in subdirectory
+        workflow_path = File.join(workflow_dir, "workflow.yml")
+        File.write(workflow_path, workflow_yaml)
+
+        yield workflow_path
       ensure
         FileUtils.rm_rf(dir)
       end

@@ -6,7 +6,7 @@ require "roast/workflow/step_executors/string_step_executor"
 module Roast
   module Workflow
     module StepExecutors
-      class StringStepExecutorTest < Minitest::Test
+      class StringStepExecutorTest < ActiveSupport::TestCase
         def setup
           @workflow = mock("workflow")
           @config_hash = {}

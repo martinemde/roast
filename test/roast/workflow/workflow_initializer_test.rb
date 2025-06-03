@@ -3,7 +3,6 @@
 require "test_helper"
 require "roast/workflow/workflow_initializer"
 require "roast/workflow/configuration"
-require "mocha/minitest"
 
 class RoastWorkflowInitializerTest < ActiveSupport::TestCase
   def setup
@@ -26,8 +25,9 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
     @initializer.setup
   end
 
-  def test_includes_tools_when_configured
+  def test_includes_local_tools_when_configured
     @configuration.stubs(:tools).returns(["Roast::Tools::ReadFile", "Roast::Tools::Grep"])
+    @configuration.stubs(:mcp_tools).returns([])
 
     Roast::Workflow::BaseWorkflow.expects(:include).with(Raix::FunctionDispatch)
     Roast::Workflow::BaseWorkflow.expects(:include).with(Roast::Helpers::FunctionCachingInterceptor)
@@ -36,8 +36,33 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
     @initializer.setup
   end
 
-  def test_does_not_include_tools_when_none_configured
+  def test_does_not_include_local_tools_when_none_configured
     @configuration.stubs(:tools).returns([])
+    @configuration.stubs(:mcp_tools).returns([])
+
+    Roast::Workflow::BaseWorkflow.expects(:include).never
+
+    @initializer.setup
+  end
+
+  def test_includes_mcp_tools_when_configured
+    mock_client = mock("client")
+    @configuration.stubs(:tools).returns([])
+    @configuration.stubs(:mcp_tools).returns([
+      Roast::Workflow::Configuration::MCPTool.new(client: mock_client, only: ["get_issue", "get_issue_comments"], except: nil),
+    ])
+
+    Roast::Workflow::BaseWorkflow.expects(:include).with(Raix::FunctionDispatch)
+    Roast::Workflow::BaseWorkflow.expects(:include).with(Roast::Helpers::FunctionCachingInterceptor)
+    Roast::Workflow::BaseWorkflow.expects(:include).with(Raix::MCP)
+    Roast::Workflow::BaseWorkflow.expects(:mcp).with(client: mock_client, only: ["get_issue", "get_issue_comments"], except: nil)
+
+    @initializer.setup
+  end
+
+  def test_does_not_include_mcp_tools_when_none_configured
+    @configuration.stubs(:tools).returns([])
+    @configuration.stubs(:mcp_tools).returns([])
 
     Roast::Workflow::BaseWorkflow.expects(:include).never
 
@@ -57,7 +82,7 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
     mock_client.stubs(:models).returns(mock_models)
     mock_models.stubs(:list).returns([])
 
-    OpenAI::Client.expects(:new).with(access_token: "test-token").returns(mock_client)
+    OpenAI::Client.expects(:new).with({ access_token: "test-token" }).returns(mock_client)
 
     @initializer.setup
   end
@@ -76,10 +101,10 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
     mock_client.stubs(:models).returns(mock_models)
     mock_models.stubs(:list).returns([])
 
-    OpenAI::Client.expects(:new).with(
+    OpenAI::Client.expects(:new).with({
       access_token: "test-token",
       uri_base: "https://custom-api.example.com",
-    ).returns(mock_client)
+    }).returns(mock_client)
 
     @initializer.setup
   end
@@ -98,52 +123,42 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
   end
 
   def test_configures_openrouter_client_when_api_token_present_and_not_already_configured
-    # Skip this test if OpenRouter is not available
-    if defined?(OpenRouter) && defined?(OpenRouter::Client)
-      @configuration.stubs(:api_token).returns("test-token")
-      @configuration.stubs(:api_provider).returns(:openrouter)
+    @configuration.stubs(:api_token).returns("test-token")
+    @configuration.stubs(:api_provider).returns(:openrouter)
 
-      # Stub Raix configuration to indicate no client is configured yet
-      Raix.configuration.stubs(:openrouter_client).returns(nil)
+    # Stub Raix configuration to indicate no client is configured yet
+    Raix.configuration.stubs(:openrouter_client).returns(nil)
 
-      # Mock successful client creation and validation
-      mock_client = mock("OpenRouter::Client")
-      mock_models = mock("models")
-      mock_client.stubs(:models).returns(mock_models)
-      mock_models.stubs(:list).returns([])
+    # Mock successful client creation and validation
+    mock_client = mock("OpenRouter::Client")
+    mock_models = mock("models")
+    mock_client.stubs(:models).returns(mock_models)
+    mock_models.stubs(:list).returns([])
 
-      OpenRouter::Client.expects(:new).with(access_token: "test-token").returns(mock_client)
-      @initializer.setup
-    else
-      skip("OpenRouter gem not available")
-    end
+    OpenRouter::Client.expects(:new).with({ access_token: "test-token" }).returns(mock_client)
+    @initializer.setup
   end
 
   def test_configures_openrouter_client_with_uri_base
-    # Skip this test if OpenRouter is not available
-    if defined?(OpenRouter) && defined?(OpenRouter::Client)
-      @configuration.stubs(:api_token).returns("test-token")
-      @configuration.stubs(:api_provider).returns(:openrouter)
-      @configuration.stubs(:uri_base).returns(Roast::ValueObjects::UriBase.new("https://custom-api.example.com"))
+    @configuration.stubs(:api_token).returns("test-token")
+    @configuration.stubs(:api_provider).returns(:openrouter)
+    @configuration.stubs(:uri_base).returns(Roast::ValueObjects::UriBase.new("https://custom-api.example.com"))
 
-      # Stub Raix configuration to indicate no client is configured yet
-      Raix.configuration.stubs(:openrouter_client).returns(nil)
+    # Stub Raix configuration to indicate no client is configured yet
+    Raix.configuration.stubs(:openrouter_client).returns(nil)
 
-      # Mock successful client creation and validation
-      mock_client = mock("OpenRouter::Client")
-      mock_models = mock("models")
-      mock_client.stubs(:models).returns(mock_models)
-      mock_models.stubs(:list).returns([])
+    # Mock successful client creation and validation
+    mock_client = mock("OpenRouter::Client")
+    mock_models = mock("models")
+    mock_client.stubs(:models).returns(mock_models)
+    mock_models.stubs(:list).returns([])
 
-      OpenRouter::Client.expects(:new).with(
-        access_token: "test-token",
-        uri_base: "https://custom-api.example.com",
-      ).returns(mock_client)
+    OpenRouter::Client.expects(:new).with({
+      access_token: "test-token",
+      uri_base: "https://custom-api.example.com",
+    }).returns(mock_client)
 
-      @initializer.setup
-    else
-      skip("OpenRouter gem not available")
-    end
+    @initializer.setup
   end
 
   def test_skips_configuration_when_no_api_token
@@ -202,7 +217,7 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
     mock_client.stubs(:models).returns(mock_models)
     mock_models.stubs(:list).raises(Faraday::UnauthorizedError.new(nil))
 
-    OpenAI::Client.expects(:new).with(access_token: "invalid-token").returns(mock_client)
+    OpenAI::Client.expects(:new).with({ access_token: "invalid-token" }).returns(mock_client)
 
     ActiveSupport::Notifications.expects(:instrument).with(
       "roast.workflow.start.error",
@@ -220,32 +235,27 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
   end
 
   def test_handles_openrouter_configuration_error
-    # Only run if OpenRouter is available
-    if defined?(OpenRouter) && defined?(OpenRouter::Client) && defined?(OpenRouter::ConfigurationError)
-      @configuration.stubs(:api_token).returns("invalid-format-token")
-      @configuration.stubs(:api_provider).returns(:openrouter)
+    @configuration.stubs(:api_token).returns("invalid-format-token")
+    @configuration.stubs(:api_provider).returns(:openrouter)
 
-      # Stub Raix configuration to indicate no client is configured yet
-      Raix.configuration.stubs(:openrouter_client).returns(nil)
+    # Stub Raix configuration to indicate no client is configured yet
+    Raix.configuration.stubs(:openrouter_client).returns(nil)
 
-      # Mock OpenRouter client that raises configuration error
-      OpenRouter::Client.expects(:new).with(access_token: "invalid-format-token").raises(OpenRouter::ConfigurationError.new("Invalid access token format"))
+    # Mock OpenRouter client that raises configuration error
+    OpenRouter::Client.expects(:new).with({ access_token: "invalid-format-token" }).raises(OpenRouter::ConfigurationError.new("Invalid access token format"))
 
-      ActiveSupport::Notifications.expects(:instrument).with(
-        "roast.workflow.start.error",
-        has_entries(
-          error: "Roast::AuthenticationError",
-          message: "API authentication failed: No API token provided or token is invalid",
-        ),
-      ).once
+    ActiveSupport::Notifications.expects(:instrument).with(
+      "roast.workflow.start.error",
+      has_entries(
+        error: "Roast::AuthenticationError",
+        message: "API authentication failed: No API token provided or token is invalid",
+      ),
+    ).once
 
-      error = assert_raises(Roast::AuthenticationError) do
-        @initializer.setup
-      end
-
-      assert_equal("API authentication failed: No API token provided or token is invalid", error.message)
-    else
-      skip("OpenRouter gem not available")
+    error = assert_raises(Roast::AuthenticationError) do
+      @initializer.setup
     end
+
+    assert_equal("API authentication failed: No API token provided or token is invalid", error.message)
   end
 end

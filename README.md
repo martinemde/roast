@@ -51,6 +51,10 @@ steps:
 analyze_coverage:
   model: gpt-4-turbo
   json: true
+
+# Step-specific config that specifies a custom path, not in the current directory
+generate_report:
+  path: ../reporting/generate_report
 ```
 
 Each step can have its own prompt file (e.g., `analyze_coverage/prompt.md`) and configuration. Steps can be run in parallel by nesting them in arrays:
@@ -78,7 +82,7 @@ steps:
 
 ## Try it
 
-If you don’t have one already, get an OpenAI key from [here](https://platform.openai.com/settings/organization/api-keys). You will need an account with a credit card, make sure that a basic completion works.
+If you don't have one already, get an OpenAI key from [here](https://platform.openai.com/settings/organization/api-keys). You will need an account with a credit card, make sure that a basic completion works.
 
 ```bash
 export OPENAI_API_KEY=sk-proj-....
@@ -169,7 +173,7 @@ Roast supports several types of steps:
    steps:
      - lint_check: $(rubocop {{file}})
      - fix_issues
-   
+
    # Step configuration
    lint_check:
      exit_on_error: false  # Continue workflow even if command fails
@@ -186,13 +190,13 @@ Roast supports several types of steps:
            - notify_team
          else:
            - run_development_setup
-     
+
      - verify_dependencies:
          unless: "$(bundle check)"
          then:
            - bundle_install: "$(bundle install)"
    ```
-   
+
    Conditions can be:
    - Ruby expressions: `if: "{{output['count'] > 5}}"`
    - Bash commands: `if: "$(test -f config.yml && echo true)"` (exit code 0 = true)
@@ -209,7 +213,7 @@ Roast supports several types of steps:
          steps:
            - analyze_file
            - Generate a report for {{current_file}}
-     
+
      # Repeat until a condition is met
      - improve_code:
          repeat:
@@ -219,12 +223,12 @@ Roast supports several types of steps:
              - run_tests
              - fix_issues
    ```
-   
+
    Each loops support:
    - Collections from Ruby expressions: `each: "{{[1, 2, 3]}}"`
    - Command output: `each: "$(ls *.rb)"`
    - Step references: `each: "file_list"`
-   
+
    Repeat loops support:
    - Until conditions: `until: "{{condition}}"`
    - Maximum iterations: `max_iterations: 10`
@@ -233,7 +237,7 @@ Roast supports several types of steps:
    ```yaml
    steps:
      - detect_language
-     
+
      - case: "{{ workflow.output.detect_language }}"
        when:
          ruby:
@@ -249,13 +253,13 @@ Roast supports several types of steps:
          - analyze_generic
          - generate_basic_report
    ```
-   
+
    Case expressions can be:
    - Workflow outputs: `case: "{{ workflow.output.variable }}"`
    - Ruby expressions: `case: "{{ count > 10 ? 'high' : 'low' }}"`
    - Bash commands: `case: "$(echo $ENVIRONMENT)"`
    - Direct values: `case: "production"`
-   
+
    The value is compared against each key in the `when` clause, and matching steps are executed.
    If no match is found, the `else` steps are executed (if provided).
 
@@ -265,6 +269,43 @@ Roast supports several types of steps:
      - Summarize the changes made to the codebase.
    ```
    This creates a simple prompt-response interaction without tool calls or looping. It's detected by the presence of spaces in the step name and is useful for summarization or simple questions at the end of a workflow.
+
+#### Shared Configuration
+
+Roast supports sharing common configuration and steps across multiple workflows using a `shared.yml` file.
+
+1. Place a `shared.yml` file one level above your workflow directory
+2. Define YAML anchors for common configurations like tools, models or steps
+3. Reference these anchors in your workflow files using YAML alias syntax
+
+**Example structure:**
+```
+my_project/
+├── shared.yml          # Common configuration anchors
+└── workflows/
+    ├── analyze_code.yml
+    ├── generate_docs.yml
+    └── test_suite.yml
+```
+
+**Example `shared.yml`:**
+```yaml
+# Define common tools
+standard_tools: &standard_tools
+  - Roast::Tools::Grep
+  - Roast::Tools::ReadFile
+  - Roast::Tools::WriteFile
+  - Roast::Tools::SearchFile
+```
+
+**Using in workflows:**
+```yaml
+name: Code Analysis Workflow
+tools: *standard_tools         # Reference shared tools
+
+steps:
+  ...
+```
 
 #### Data Flow Between Steps
 
@@ -542,6 +583,52 @@ Roast provides extensive instrumentation capabilities using ActiveSupport::Notif
 
 Roast provides several built-in tools that you can use in your workflows:
 
+#### Tool Configuration
+
+Tools can be configured using a hash format in your workflow YAML:
+
+```yaml
+tools:
+  - Roast::Tools::ReadFile        # No configuration needed
+  - Roast::Tools::Cmd:             # With configuration
+      allowed_commands:
+        - git
+        - npm
+        - yarn
+```
+
+Currently, only `Roast::Tools::Cmd` supports configuration via `allowed_commands`, which restricts which commands can be executed (defaults to: `pwd`, `find`, `ls`, `rake`, `ruby`, `dev`, `mkdir`).
+
+##### Cmd Tool Configuration
+
+The `Cmd` tool's `allowed_commands` can be configured in two ways:
+
+**1. Simple String Format** (uses default descriptions):
+```yaml
+tools:
+  - Roast::Tools::Cmd:
+      allowed_commands:
+        - pwd
+        - ls
+        - git
+```
+
+**2. Hash Format with Custom Descriptions**:
+```yaml
+tools:
+  - Roast::Tools::Cmd:
+      allowed_commands:
+        - pwd
+        - name: git
+          description: "git CLI - version control system with subcommands like status, commit, push"
+        - name: npm
+          description: "npm CLI - Node.js package manager with subcommands like install, run"
+        - name: docker
+          description: "Docker CLI - container platform with subcommands like build, run, ps"
+```
+
+Custom descriptions help the LLM understand when and how to use each command, making your workflows more effective.
+
 #### ReadFile
 
 Reads the contents of a file from the filesystem.
@@ -649,23 +736,43 @@ search_file(query: "class User", file_path: "app/models")
 
 #### Cmd
 
-Executes shell commands and returns their output.
+Executes shell commands with configurable restrictions. By default, only allows specific safe commands.
 
 ```ruby
-# Execute a simple command
+# Execute allowed commands (pwd, find, ls, rake, ruby, dev, mkdir by default)
+pwd(args: "-L")
+ls(args: "-la")
+ruby(args: "-e 'puts RUBY_VERSION'")
+
+# Or use the legacy cmd function with full command
 cmd(command: "ls -la")
-
-# With working directory specified
-cmd(command: "npm list", cwd: "/path/to/project")
-
-# With environment variables
-cmd(command: "deploy", env: { "NODE_ENV" => "production" })
 ```
 
-- Provides access to shell commands for more complex operations
-- Can specify working directory and environment variables
-- Captures and returns command output
-- Useful for integrating with existing tools and scripts
+- Commands are registered as individual functions based on allowed_commands configuration
+- Default allowed commands: pwd, find, ls, rake, ruby, dev, mkdir
+- Each command has built-in descriptions to help the LLM understand usage
+- Configurable via workflow YAML (see Tool Configuration section)
+
+#### Bash
+
+Executes shell commands without restrictions. **⚠️ WARNING: Use only in trusted environments!**
+
+```ruby
+# Execute any command - no restrictions
+bash(command: "curl https://api.example.com | jq '.data'")
+
+# Complex operations with pipes and redirects
+bash(command: "find . -name '*.log' -mtime +30 -delete")
+
+# System administration tasks
+bash(command: "ps aux | grep ruby | awk '{print $2}'")
+```
+
+- **No command restrictions** - full shell access
+- Designed for prototyping and development environments
+- Logs warnings by default (disable with `ROAST_BASH_WARNINGS=false`)
+- Should NOT be used in production or untrusted contexts
+- See `examples/bash_prototyping/` for usage examples
 
 #### CodingAgent
 
@@ -682,6 +789,64 @@ coding_agent(
 - Delegates complex tasks to a specialized coding agent
 - Useful for tasks that require deep code understanding or multi-step changes
 - Can work across multiple files and languages
+
+### MCP (Model Context Protocol) Tools
+
+Roast supports MCP tools, allowing you to integrate external services and tools through the Model Context Protocol standard. MCP enables seamless connections to databases, APIs, and specialized tools.
+
+#### Configuring MCP Tools
+
+MCP tools are configured in the `tools` section of your workflow YAML alongside traditional Roast tools:
+
+```yaml
+tools:
+  # Traditional Roast tools
+  - Roast::Tools::ReadFile
+  
+  # MCP tools with SSE (Server-Sent Events)
+  - Documentation:
+      url: https://gitmcp.io/myorg/myrepo/docs
+      env:
+        - "Authorization: Bearer {{env.API_TOKEN}}"
+  
+  # MCP tools with stdio
+  - GitHub:
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-github"]
+      env:
+        GITHUB_PERSONAL_ACCESS_TOKEN: "{{env.GITHUB_TOKEN}}"
+      only:
+        - search_repositories
+        - get_issue
+        - create_issue
+```
+
+#### SSE MCP Tools
+
+Connect to HTTP endpoints implementing the MCP protocol:
+
+```yaml
+- Tool Name:
+    url: https://example.com/mcp-endpoint
+    env:
+      - "Authorization: Bearer {{resource.api_token}}"
+    only: [function1, function2]  # Optional whitelist
+    except: [function3]           # Optional blacklist
+```
+
+#### Stdio MCP Tools
+
+Connect to local processes implementing the MCP protocol:
+
+```yaml
+- Tool Name:
+    command: docker
+    args: ["run", "-i", "--rm", "ghcr.io/example/mcp-server"]
+    env:
+      API_KEY: "{{env.API_KEY}}"
+```
+
+See the [MCP tools example](examples/mcp/) for complete documentation and more examples.
 
 ### Custom Tools
 

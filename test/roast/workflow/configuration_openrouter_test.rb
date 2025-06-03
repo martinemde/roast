@@ -4,7 +4,7 @@ require "test_helper"
 
 module Roast
   module Workflow
-    class ConfigurationOpenRouterTest < Minitest::Test
+    class ConfigurationOpenRouterTest < ActiveSupport::TestCase
       def setup
         @workflow_path = File.expand_path("../../fixtures/files/openrouter_workflow.yml", __dir__)
         @configuration = Configuration.new(@workflow_path)
