@@ -16,20 +16,6 @@ module Roast
 
         assert_nothing_raised { ConfigurationParser.new(@workflow_path) }
       end
-
-      def setup_openrouter_constants
-        unless defined?(::OpenRouter)
-          Object.const_set(:OpenRouter, Module.new)
-        end
-
-        unless defined?(::OpenRouter::Client)
-          OpenRouter.const_set(:Client, Class.new)
-        end
-      end
-
-      def teardown
-        OpenRouter.send(:remove_const, :Client) if defined?(::OpenRouter) && defined?(::OpenRouter::Client)
-      end
     end
   end
 end
