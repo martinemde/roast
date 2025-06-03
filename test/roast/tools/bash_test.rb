@@ -77,10 +77,10 @@ class RoastToolsBashTest < ActiveSupport::TestCase
   test "executes commands that would be restricted by Cmd tool" do
     # Commands that Cmd tool would reject
     dangerous_commands = [
-      "curl --version",
-      "rm --help",
-      "ps aux | head -5",
-      "chmod --version",
+      "curl https://example.com",
+      "rm -rf /tmp/test_file_that_does_not_exist",
+      "ps aux",
+      "chmod +x /tmp/nonexistent",
       "echo 'foo' | sed 's/foo/bar/g'",
       "echo 'hello world' | awk '{print $1}'",
       "echo 'test pattern' | grep 'pattern'",

@@ -123,52 +123,42 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
   end
 
   def test_configures_openrouter_client_when_api_token_present_and_not_already_configured
-    # Skip this test if OpenRouter is not available
-    if defined?(OpenRouter) && defined?(OpenRouter::Client)
-      @configuration.stubs(:api_token).returns("test-token")
-      @configuration.stubs(:api_provider).returns(:openrouter)
+    @configuration.stubs(:api_token).returns("test-token")
+    @configuration.stubs(:api_provider).returns(:openrouter)
 
-      # Stub Raix configuration to indicate no client is configured yet
-      Raix.configuration.stubs(:openrouter_client).returns(nil)
+    # Stub Raix configuration to indicate no client is configured yet
+    Raix.configuration.stubs(:openrouter_client).returns(nil)
 
-      # Mock successful client creation and validation
-      mock_client = mock("OpenRouter::Client")
-      mock_models = mock("models")
-      mock_client.stubs(:models).returns(mock_models)
-      mock_models.stubs(:list).returns([])
+    # Mock successful client creation and validation
+    mock_client = mock("OpenRouter::Client")
+    mock_models = mock("models")
+    mock_client.stubs(:models).returns(mock_models)
+    mock_models.stubs(:list).returns([])
 
-      OpenRouter::Client.expects(:new).with({ access_token: "test-token" }).returns(mock_client)
-      @initializer.setup
-    else
-      skip("OpenRouter gem not available")
-    end
+    OpenRouter::Client.expects(:new).with({ access_token: "test-token" }).returns(mock_client)
+    @initializer.setup
   end
 
   def test_configures_openrouter_client_with_uri_base
-    # Skip this test if OpenRouter is not available
-    if defined?(OpenRouter) && defined?(OpenRouter::Client)
-      @configuration.stubs(:api_token).returns("test-token")
-      @configuration.stubs(:api_provider).returns(:openrouter)
-      @configuration.stubs(:uri_base).returns(Roast::ValueObjects::UriBase.new("https://custom-api.example.com"))
+    @configuration.stubs(:api_token).returns("test-token")
+    @configuration.stubs(:api_provider).returns(:openrouter)
+    @configuration.stubs(:uri_base).returns(Roast::ValueObjects::UriBase.new("https://custom-api.example.com"))
 
-      # Stub Raix configuration to indicate no client is configured yet
-      Raix.configuration.stubs(:openrouter_client).returns(nil)
+    # Stub Raix configuration to indicate no client is configured yet
+    Raix.configuration.stubs(:openrouter_client).returns(nil)
 
-      # Mock successful client creation and validation
-      mock_client = mock("OpenRouter::Client")
-      mock_models = mock("models")
-      mock_client.stubs(:models).returns(mock_models)
-      mock_models.stubs(:list).returns([])
+    # Mock successful client creation and validation
+    mock_client = mock("OpenRouter::Client")
+    mock_models = mock("models")
+    mock_client.stubs(:models).returns(mock_models)
+    mock_models.stubs(:list).returns([])
 
-      OpenRouter::Client.expects(:new).with({
-        access_token: "test-token",
-        uri_base: "https://custom-api.example.com",
-      }).returns(mock_client)
+    OpenRouter::Client.expects(:new).with({
+      access_token: "test-token",
+      uri_base: "https://custom-api.example.com",
+    }).returns(mock_client)
 
-      @initializer.setup
-    else
-      skip("OpenRouter gem not available")
-    end
+    @initializer.setup
   end
 
   def test_skips_configuration_when_no_api_token
@@ -245,32 +235,27 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
   end
 
   def test_handles_openrouter_configuration_error
-    # Only run if OpenRouter is available
-    if defined?(OpenRouter) && defined?(OpenRouter::Client) && defined?(OpenRouter::ConfigurationError)
-      @configuration.stubs(:api_token).returns("invalid-format-token")
-      @configuration.stubs(:api_provider).returns(:openrouter)
+    @configuration.stubs(:api_token).returns("invalid-format-token")
+    @configuration.stubs(:api_provider).returns(:openrouter)
 
-      # Stub Raix configuration to indicate no client is configured yet
-      Raix.configuration.stubs(:openrouter_client).returns(nil)
+    # Stub Raix configuration to indicate no client is configured yet
+    Raix.configuration.stubs(:openrouter_client).returns(nil)
 
-      # Mock OpenRouter client that raises configuration error
-      OpenRouter::Client.expects(:new).with({ access_token: "invalid-format-token" }).raises(OpenRouter::ConfigurationError.new("Invalid access token format"))
+    # Mock OpenRouter client that raises configuration error
+    OpenRouter::Client.expects(:new).with({ access_token: "invalid-format-token" }).raises(OpenRouter::ConfigurationError.new("Invalid access token format"))
 
-      ActiveSupport::Notifications.expects(:instrument).with(
-        "roast.workflow.start.error",
-        has_entries(
-          error: "Roast::AuthenticationError",
-          message: "API authentication failed: No API token provided or token is invalid",
-        ),
-      ).once
+    ActiveSupport::Notifications.expects(:instrument).with(
+      "roast.workflow.start.error",
+      has_entries(
+        error: "Roast::AuthenticationError",
+        message: "API authentication failed: No API token provided or token is invalid",
+      ),
+    ).once
 
-      error = assert_raises(Roast::AuthenticationError) do
-        @initializer.setup
-      end
-
-      assert_equal("API authentication failed: No API token provided or token is invalid", error.message)
-    else
-      skip("OpenRouter gem not available")
+    error = assert_raises(Roast::AuthenticationError) do
+      @initializer.setup
     end
+
+    assert_equal("API authentication failed: No API token provided or token is invalid", error.message)
   end
 end

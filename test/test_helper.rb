@@ -1,11 +1,16 @@
 # frozen_string_literal: true
 
+require "active_support/test_case"
+require "cgi"
 require "minitest/autorun"
 require "mocha/minitest"
-require "cgi"
+require "open_router"
+require "openai"
+require "raix"
 require "vcr"
 
-require "active_support/test_case"
+# test that the open router client is resolving properly
+OpenRouter::Client.new
 
 # Add the lib directory to the load path
 $LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
