@@ -23,11 +23,11 @@ module Roast
         :session_name,
         :session_timestamp,
         :model,
-        :configuration
+        :workflow_configuration
 
       attr_reader :pre_processing_data
 
-      delegate :api_provider, :openai?, to: :configuration, allow_nil: true
+      delegate :api_provider, :openai?, to: :workflow_configuration, allow_nil: true
       delegate :output, :output=, :append_to_final_output, :final_output, to: :output_manager
 
       def initialize(file = nil, name: nil, context_path: nil, resource: nil, session_name: nil, workflow_configuration: nil, pre_processing_data: nil)
@@ -37,7 +37,7 @@ module Roast
         @resource = resource || Roast::Resources.for(file)
         @session_name = session_name || @name
         @session_timestamp = nil
-        @configuration = workflow_configuration
+        @workflow_configuration = workflow_configuration
         @pre_processing_data = pre_processing_data ? DotAccessHash.new(pre_processing_data).freeze : nil
 
         # Initialize managers
