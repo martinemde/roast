@@ -4,10 +4,6 @@ require "test_helper"
 require "roast/workflow/workflow_initializer"
 require "roast/workflow/configuration"
 
-# Ensure OpenRouter is available since it's a dependency
-require "raix"
-require "open_router"
-
 class RoastWorkflowInitializerTest < ActiveSupport::TestCase
   def setup
     @original_openai_key = ENV.delete("OPENAI_API_KEY")
@@ -29,8 +25,9 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
     @initializer.setup
   end
 
-  def test_includes_tools_when_configured
+  def test_includes_local_tools_when_configured
     @configuration.stubs(:tools).returns(["Roast::Tools::ReadFile", "Roast::Tools::Grep"])
+    @configuration.stubs(:mcp_tools).returns([])
 
     Roast::Workflow::BaseWorkflow.expects(:include).with(Raix::FunctionDispatch)
     Roast::Workflow::BaseWorkflow.expects(:include).with(Roast::Helpers::FunctionCachingInterceptor)
@@ -39,8 +36,33 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
     @initializer.setup
   end
 
-  def test_does_not_include_tools_when_none_configured
+  def test_does_not_include_local_tools_when_none_configured
     @configuration.stubs(:tools).returns([])
+    @configuration.stubs(:mcp_tools).returns([])
+
+    Roast::Workflow::BaseWorkflow.expects(:include).never
+
+    @initializer.setup
+  end
+
+  def test_includes_mcp_tools_when_configured
+    mock_client = mock("client")
+    @configuration.stubs(:tools).returns([])
+    @configuration.stubs(:mcp_tools).returns([
+      Roast::Workflow::Configuration::MCPTool.new(client: mock_client, only: ["get_issue", "get_issue_comments"], except: nil),
+    ])
+
+    Roast::Workflow::BaseWorkflow.expects(:include).with(Raix::FunctionDispatch)
+    Roast::Workflow::BaseWorkflow.expects(:include).with(Roast::Helpers::FunctionCachingInterceptor)
+    Roast::Workflow::BaseWorkflow.expects(:include).with(Raix::MCP)
+    Roast::Workflow::BaseWorkflow.expects(:mcp).with(client: mock_client, only: ["get_issue", "get_issue_comments"], except: nil)
+
+    @initializer.setup
+  end
+
+  def test_does_not_include_mcp_tools_when_none_configured
+    @configuration.stubs(:tools).returns([])
+    @configuration.stubs(:mcp_tools).returns([])
 
     Roast::Workflow::BaseWorkflow.expects(:include).never
 

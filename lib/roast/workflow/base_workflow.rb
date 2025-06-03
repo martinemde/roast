@@ -3,8 +3,9 @@
 require "raix/chat_completion"
 require "raix/function_dispatch"
 
-require "roast/workflow/output_manager"
 require "roast/workflow/context_path_resolver"
+require "roast/workflow/dot_access_hash"
+require "roast/workflow/output_manager"
 
 module Roast
   module Workflow
@@ -21,12 +22,12 @@ module Roast
         :resource,
         :session_name,
         :session_timestamp,
-        :workflow_configuration,
-        :model
+        :model,
+        :workflow_configuration
 
       attr_reader :pre_processing_data
 
-      delegate :api_provider, :openai?, to: :workflow_configuration
+      delegate :api_provider, :openai?, to: :workflow_configuration, allow_nil: true
       delegate :output, :output=, :append_to_final_output, :final_output, to: :output_manager
 
       def initialize(file = nil, name: nil, context_path: nil, resource: nil, session_name: nil, workflow_configuration: nil, pre_processing_data: nil)

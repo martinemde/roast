@@ -1,0 +1,46 @@
+# Multi-MCP Integration Example
+# This workflow combines multiple MCP tools with traditional Roast tools
+
+name: Code Review Assistant
+model: gpt-4o-mini
+target: "{{env.PR_FILES}}"  # Pass files via environment variable
+
+tools:
+  # Traditional Roast tools
+  - Roast::Tools::ReadFile
+  - Roast::Tools::Grep
+  - Roast::Tools::WriteFile
+  
+  # Multiple MCP tools
+  - GitDocs:
+      url: https://gitmcp.io/{{env.REPO_OWNER}}/{{env.REPO_NAME}}/docs
+      env:
+        - "Accept: application/json"
+  
+  - GitHub:
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-github"]
+      env:
+        GITHUB_PERSONAL_ACCESS_TOKEN: "{{env.GITHUB_TOKEN}}"
+      only:
+        - get_pull_request
+        - create_pull_request_comment
+        - get_file_content
+  
+  - Linter:
+      command: ./custom-linter-mcp
+      env:
+        CONFIG_PATH: "{{env.LINTER_CONFIG}}"
+      only:
+        - analyze_code
+        - suggest_fixes
+
+steps:
+  - fetch_pr_context
+  - analyze_changes
+  - check_documentation
+  - generate_review
+  - post_review
+
+generate_review:
+  json: true

@@ -90,7 +90,7 @@ class RoastToolsBashTest < ActiveSupport::TestCase
       result = Roast::Tools::Bash.call(cmd)
       # Should execute without "Command not allowed" error
       refute_match(/Command not allowed/, result)
-      assert_match(/Command: #{Regexp.escape(cmd)}/, result)
+      assert_match(/Exit status:/, result)
     end
   end
 

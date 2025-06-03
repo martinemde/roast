@@ -27,11 +27,21 @@ module Roast
       end
 
       def include_tools
-        return unless @configuration.tools.present?
+        return unless @configuration.tools.present? || @configuration.mcp_tools.present?
 
         BaseWorkflow.include(Raix::FunctionDispatch)
         BaseWorkflow.include(Roast::Helpers::FunctionCachingInterceptor) # Add caching support
-        BaseWorkflow.include(*@configuration.tools.map(&:constantize))
+
+        if @configuration.tools.present?
+          BaseWorkflow.include(*@configuration.tools.map(&:constantize))
+        end
+
+        if @configuration.mcp_tools.present?
+          BaseWorkflow.include(Raix::MCP)
+          @configuration.mcp_tools.each do |tool|
+            BaseWorkflow.mcp(client: tool.client, only: tool.only, except: tool.except)
+          end
+        end
 
         post_configure_tools
       end

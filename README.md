@@ -749,6 +749,64 @@ coding_agent(
 - Useful for tasks that require deep code understanding or multi-step changes
 - Can work across multiple files and languages
 
+### MCP (Model Context Protocol) Tools
+
+Roast supports MCP tools, allowing you to integrate external services and tools through the Model Context Protocol standard. MCP enables seamless connections to databases, APIs, and specialized tools.
+
+#### Configuring MCP Tools
+
+MCP tools are configured in the `tools` section of your workflow YAML alongside traditional Roast tools:
+
+```yaml
+tools:
+  # Traditional Roast tools
+  - Roast::Tools::ReadFile
+  
+  # MCP tools with SSE (Server-Sent Events)
+  - Documentation:
+      url: https://gitmcp.io/myorg/myrepo/docs
+      env:
+        - "Authorization: Bearer {{env.API_TOKEN}}"
+  
+  # MCP tools with stdio
+  - GitHub:
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-github"]
+      env:
+        GITHUB_PERSONAL_ACCESS_TOKEN: "{{env.GITHUB_TOKEN}}"
+      only:
+        - search_repositories
+        - get_issue
+        - create_issue
+```
+
+#### SSE MCP Tools
+
+Connect to HTTP endpoints implementing the MCP protocol:
+
+```yaml
+- Tool Name:
+    url: https://example.com/mcp-endpoint
+    env:
+      - "Authorization: Bearer {{resource.api_token}}"
+    only: [function1, function2]  # Optional whitelist
+    except: [function3]           # Optional blacklist
+```
+
+#### Stdio MCP Tools
+
+Connect to local processes implementing the MCP protocol:
+
+```yaml
+- Tool Name:
+    command: docker
+    args: ["run", "-i", "--rm", "ghcr.io/example/mcp-server"]
+    env:
+      API_KEY: "{{env.API_KEY}}"
+```
+
+See the [MCP tools example](examples/mcp/) for complete documentation and more examples.
+
 ### Custom Tools
 
 You can create your own tools using the [Raix function dispatch pattern](https://github.com/OlympiaAI/raix-rails?tab=readme-ov-file#use-of-toolsfunctions). Custom tools should be placed in `.roast/initializers/` (subdirectories are supported):

@@ -10,7 +10,9 @@ module Roast
     # Encapsulates workflow configuration data and provides structured access
     # to the configuration settings
     class Configuration
-      attr_reader :config_hash, :workflow_path, :name, :steps, :pre_processing, :post_processing, :tools, :tool_configs, :function_configs, :model, :resource
+      MCPTool = Struct.new(:client, :only, :except, keyword_init: true)
+
+      attr_reader :config_hash, :workflow_path, :name, :steps, :pre_processing, :post_processing, :tools, :tool_configs, :mcp_tools, :function_configs, :model, :resource
       attr_accessor :target
 
       delegate :api_provider, :openrouter?, :openai?, :uri_base, to: :api_configuration
@@ -32,6 +34,7 @@ module Roast
         @pre_processing = ConfigurationLoader.extract_pre_processing(@config_hash)
         @post_processing = ConfigurationLoader.extract_post_processing(@config_hash)
         @tools, @tool_configs = ConfigurationLoader.extract_tools(@config_hash)
+        @mcp_tools = ConfigurationLoader.extract_mcp_tools(@config_hash)
         @function_configs = ConfigurationLoader.extract_functions(@config_hash)
         @model = ConfigurationLoader.extract_model(@config_hash)
 

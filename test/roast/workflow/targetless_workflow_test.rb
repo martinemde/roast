@@ -20,10 +20,15 @@ class RoastWorkflowTargetlessWorkflowTest < ActiveSupport::TestCase
     YAML
 
     @original_openai_key = ENV.delete("OPENAI_API_KEY")
+
+    # Stub the WorkflowInitializer to prevent API client validation
+    Roast::Workflow::WorkflowInitializer.any_instance.stubs(:configure_api_client)
+
     @parser = Roast::Workflow::ConfigurationParser.new(@workflow_path)
   end
 
   def teardown
+    Roast::Workflow::WorkflowInitializer.any_instance.unstub(:configure_api_client)
     FileUtils.rm_rf(@tmpdir) if @tmpdir && File.exist?(@tmpdir)
     ENV["OPENAI_API_KEY"] = @original_openai_key
   end

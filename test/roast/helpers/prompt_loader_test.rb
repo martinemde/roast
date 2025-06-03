@@ -8,10 +8,15 @@ class RoastHelpersPromptLoaderTest < ActiveSupport::TestCase
     @original_openai_key = ENV.delete("OPENAI_API_KEY")
     @workflow_file = fixture_file("workflow/workflow.yml")
     @test_file = fixture_file("test.rb")
+
+    # Stub the WorkflowInitializer to prevent API client validation
+    Roast::Workflow::WorkflowInitializer.any_instance.stubs(:configure_api_client)
+
     @workflow = build_workflow(@workflow_file, @test_file)
   end
 
   def teardown
+    Roast::Workflow::WorkflowInitializer.any_instance.unstub(:configure_api_client)
     ENV["OPENAI_API_KEY"] = @original_openai_key
   end
 

@@ -11,7 +11,24 @@ module Roast
         @valid_config = {
           "name" => "test-workflow",
           "steps" => ["step1", "step2"],
-          "tools" => ["Roast::Tools::Grep"],
+          "tools" => [
+            "Roast::Tools::Grep",
+            {
+              "raix Docs" => {
+                "url" => "https://gitmcp.io/OlympiaAI/raix/docs",
+                "env" => { "Authorization" => "Bearer <YOUR_TOKEN>" },
+                "only" => ["get_issue", "get_issue_comments"],
+              },
+            },
+            {
+              "echo command" => {
+                "command" => "echo",
+                "args" => ["hello $NAME"],
+                "env" => { "NAME" => "Marc" },
+                "except" => ["get_issue_comments"],
+              },
+            },
+          ],
           "functions" => { "grep" => { "enabled" => true } },
           "model" => "gpt-4",
           "target" => "test.rb",
@@ -137,6 +154,33 @@ module Roast
       def test_extract_functions
         functions = ConfigurationLoader.extract_functions(@valid_config)
         assert_equal({ "grep" => { "enabled" => true } }, functions)
+      end
+
+      def test_extract_mcp_tools
+        # Stub the MCP client constructors to prevent actual process creation
+        mock_sse_client = mock("sse_client")
+        mock_stdio_client = mock("stdio_client")
+
+        Raix::MCP::SseClient.stubs(:new).with(
+          "https://gitmcp.io/OlympiaAI/raix/docs",
+          headers: { "Authorization" => "Bearer <YOUR_TOKEN>" },
+        ).returns(mock_sse_client)
+
+        Raix::MCP::StdioClient.stubs(:new).with(
+          "echo",
+          "hello $NAME",
+          { "NAME" => "Marc" },
+        ).returns(mock_stdio_client)
+
+        tools = ConfigurationLoader.extract_mcp_tools(@valid_config)
+
+        assert_equal(2, tools.length)
+        assert_equal(tools[0].client, mock_sse_client)
+        assert_equal(tools[0].only, ["get_issue", "get_issue_comments"])
+        assert_nil(tools[0].except)
+        assert_equal(tools[1].client, mock_stdio_client)
+        assert_nil(tools[1].only)
+        assert_equal(tools[1].except, ["get_issue_comments"])
       end
 
       def test_extract_functions_returns_empty_hash_when_missing

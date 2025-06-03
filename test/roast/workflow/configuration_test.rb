@@ -26,6 +26,7 @@ module Roast
         assert_equal("My Workflow", configuration.name)
         assert_kind_of(Array, configuration.steps)
         assert_kind_of(Array, configuration.tools)
+        assert_kind_of(Array, configuration.mcp_tools)
       end
 
       class TargetProvidedTest < ActiveSupport::TestCase
