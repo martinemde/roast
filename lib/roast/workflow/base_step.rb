@@ -53,6 +53,12 @@ module Roast
 
         # If we got tool call results and we want to print the response,
         # we need to make another call to get the AI's final response
+        # Why this second call is necessary:
+        # 1. When tools are called, Raix returns an array of tool results, not the AI's final response
+        # 2. The `loop` parameter in Raix's FunctionDispatch doesn't return the recursive result
+        # 3. Users expect to see the AI's formatted response (e.g., "Here are the first 10 items...")
+        #    not the raw tool output (e.g., full directory listing)
+        # 4. This ensures print_response shows what users expect: the AI's natural language response
         if response.is_a?(Array) && workflow.tools.present? && (auto_loop || print_response)
           # Tool calls were made, get the final response
           response = workflow.chat_completion(openai: workflow.openai? && model, loop: false, model: model, json:, params:)

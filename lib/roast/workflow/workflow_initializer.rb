@@ -41,6 +41,9 @@ module Roast
           BaseWorkflow.include(Raix::MCP)
 
           # Create an interpolator that can evaluate ENV references
+          # We use Object.new as the context because we only need ENV variable interpolation
+          # (e.g., {{ENV['HOME']}}) and don't need access to workflow instance variables.
+          # This provides a clean, minimal context for safe string interpolation.
           interpolator = Interpolator.new(Object.new)
 
           @configuration.mcp_tools.each do |tool|
