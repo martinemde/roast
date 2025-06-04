@@ -98,6 +98,7 @@ class RoastWorkflowBaseStepTest < ActiveSupport::TestCase
 
     Roast::Helpers::PromptLoader.stubs(:load_prompt).returns("Test prompt")
     @workflow.stubs(:openai?).returns(false)
+    @workflow.stubs(:tools).returns({ grep: -> {}, search_file: -> {} })
 
     @workflow.expects(:chat_completion).with(
       openai: false,
@@ -119,6 +120,7 @@ class RoastWorkflowBaseStepTest < ActiveSupport::TestCase
 
     Roast::Helpers::PromptLoader.stubs(:load_prompt).returns("Test prompt")
     @workflow.stubs(:openai?).returns(false)
+    @workflow.stubs(:tools).returns({ grep: -> {}, search_file: -> {} })
 
     @workflow.expects(:chat_completion).with(
       openai: false,
