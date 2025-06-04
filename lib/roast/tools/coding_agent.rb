@@ -120,7 +120,10 @@ module Roast
 
       def handle_result(json)
         if json["type"] == "result"
-          if json["subtype"] == "success"
+          # NOTE: the format of an error response is { "subtype": "success", "is_error": true }
+          if json["is_error"]
+            raise CodingAgentError, json["result"]
+          elsif json["subtype"] == "success"
             json["result"]
           else
             raise CodingAgentError, "CodingAgent did not complete successfully: #{line}"

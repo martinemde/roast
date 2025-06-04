@@ -219,6 +219,30 @@ module Roast
         ENV["CLAUDE_CODE_COMMAND"] = original_env
       end
 
+      test "handles failure when error result returned in json stream" do
+        # NOTE: the command must include '--output-format stream-json' for the coding agent to expect streaming json responses.
+        original_env = ENV["CLAUDE_CODE_COMMAND"]
+        ENV["CLAUDE_CODE_COMMAND"] = "cat test/fixtures/tools/coding_agent/error_result.json_stream # --output-format stream-json"
+
+        expected_log_messages = [
+          "🤖 Running CodingAgent\n",
+          "• 	→ Read(\"path/to/README.md\")\n",
+          "• 	→ Read(\"path/to/file.gemspec\")\n",
+          "• 	→ Read(\"path/to/file.rb\")\n",
+          "• \tLorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur porttitor ac nisi in mollis. ... lots more text ...\n",
+        ]
+
+        Roast::Helpers::Logger.instance.logger.expects(:info).times(expected_log_messages.length).with do |actual|
+          puts actual # This is intentional to ensure that logger output is propagated to the console
+          actual == expected_log_messages.shift
+        end
+
+        result = Roast::Tools::CodingAgent.call("Test prompt")
+        assert_equal(result, "Error running CodingAgent: ERROR TEXT")
+      ensure
+        ENV["CLAUDE_CODE_COMMAND"] = original_env
+      end
+
       test "included method registers coding_agent function" do
         DummyBaseClass.registered_functions = {}
         Roast::Tools::CodingAgent.included(DummyBaseClass)
