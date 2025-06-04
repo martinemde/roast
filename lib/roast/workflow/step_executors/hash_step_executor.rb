@@ -24,7 +24,7 @@ module Roast
             step_config = config_hash[interpolated_name]
             exit_on_error = step_config.is_a?(Hash) ? step_config.fetch("exit_on_error", true) : true
 
-            workflow.output[interpolated_name] = step_runner.execute_step(interpolated_command, exit_on_error: exit_on_error)
+            workflow.output[interpolated_name] = step_runner.execute_step(interpolated_command, exit_on_error: exit_on_error, step_key: interpolated_name)
           end
         end
 

@@ -157,30 +157,36 @@ module Roast
       end
 
       def test_extract_mcp_tools
-        # Stub the MCP client constructors to prevent actual process creation
-        mock_sse_client = mock("sse_client")
-        mock_stdio_client = mock("stdio_client")
-
-        Raix::MCP::SseClient.stubs(:new).with(
-          "https://gitmcp.io/OlympiaAI/raix/docs",
-          headers: { "Authorization" => "Bearer <YOUR_TOKEN>" },
-        ).returns(mock_sse_client)
-
-        Raix::MCP::StdioClient.stubs(:new).with(
-          "echo",
-          "hello $NAME",
-          { "NAME" => "Marc" },
-        ).returns(mock_stdio_client)
-
         tools = ConfigurationLoader.extract_mcp_tools(@valid_config)
 
         assert_equal(2, tools.length)
-        assert_equal(tools[0].client, mock_sse_client)
-        assert_equal(tools[0].only, ["get_issue", "get_issue_comments"])
+
+        # First tool (SSE)
+        assert_equal("raix Docs", tools[0].name)
+        assert_equal(
+          {
+            "url" => "https://gitmcp.io/OlympiaAI/raix/docs",
+            "env" => { "Authorization" => "Bearer <YOUR_TOKEN>" },
+            "only" => ["get_issue", "get_issue_comments"],
+          },
+          tools[0].config,
+        )
+        assert_equal(["get_issue", "get_issue_comments"], tools[0].only)
         assert_nil(tools[0].except)
-        assert_equal(tools[1].client, mock_stdio_client)
+
+        # Second tool (Stdio)
+        assert_equal("echo command", tools[1].name)
+        assert_equal(
+          {
+            "command" => "echo",
+            "args" => ["hello $NAME"],
+            "env" => { "NAME" => "Marc" },
+            "except" => ["get_issue_comments"],
+          },
+          tools[1].config,
+        )
         assert_nil(tools[1].only)
-        assert_equal(tools[1].except, ["get_issue_comments"])
+        assert_equal(["get_issue_comments"], tools[1].except)
       end
 
       def test_extract_functions_returns_empty_hash_when_missing

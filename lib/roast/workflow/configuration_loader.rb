@@ -88,7 +88,7 @@ module Roast
           [tools, tool_configs]
         end
 
-        # Extract MCP tools from the configuration, and convert them to MCP clients
+        # Extract MCP tools from the configuration
         # @param config_hash [Hash] The configuration hash
         # @return [Array] The MCP tools array or empty array
         def extract_mcp_tools(config_hash)
@@ -97,21 +97,15 @@ module Roast
 
           mcp_tools = []
           tools.each do |tool|
-            tool.each do |_tool_name, config|
+            tool.each do |tool_name, config|
               next unless config.is_a?(Hash) && (config["url"] || config["command"])
 
-              client = if config["url"]
-                Raix::MCP::SseClient.new(
-                  config["url"],
-                  headers: config["env"] || {},
-                )
-              elsif config["command"]
-                args = [config["command"]]
-                args += config["args"] if config["args"]
-                Raix::MCP::StdioClient.new(*args, config["env"] || {})
-              end
-
-              mcp_tools << Configuration::MCPTool.new(client:, only: config["only"], except: config["except"])
+              mcp_tools << Configuration::MCPTool.new(
+                name: tool_name,
+                config: config,
+                only: config["only"],
+                except: config["except"],
+              )
             end
           end
 

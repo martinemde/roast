@@ -47,19 +47,24 @@ module Roast
         json = @json if json.nil?
         params = @params if params.nil?
 
-        workflow.chat_completion(openai: workflow.openai? && model, loop: auto_loop, model: model, json:, params:).then do |response|
-          case response
-          in Array if json
-            response.flatten.first
-          in Array
-            # For non-JSON responses, join array elements
-            response.map(&:presence).compact.join("\n")
-          else
-            response
-          end
-        end.tap do |response|
-          process_output(response, print_response:)
+        # Use loop parameter based on whether tools are present and auto_loop is enabled
+        # When tools are present and auto_loop is true, we want Raix to handle the full conversation
+        loop_param = workflow.tools.present? && auto_loop
+
+        response = workflow.chat_completion(openai: workflow.openai? && model, loop: loop_param, model: model, json:, params:)
+
+        # Process the response
+        result = if response.is_a?(Array) && json
+          response.flatten.first
+        elsif response.is_a?(Array)
+          # For non-JSON responses, join array elements
+          response.map(&:presence).compact.join("\n")
+        else
+          response
         end
+
+        process_output(result, print_response:)
+        result
       end
 
       def prompt(text)

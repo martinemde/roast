@@ -35,6 +35,9 @@ module Roast
           return "Path does not exist: #{path}"
         end
 
+        # prefix **/ to the glob pattern if it doesn't already have it
+        glob_pattern = "**/#{glob_pattern}" unless glob_pattern.start_with?("**")
+
         Roast::Helpers::Logger.info("🔍 Searching for: '#{glob_pattern}' in '#{File.expand_path(path)}'\n")
         search_for(glob_pattern, path).then do |results|
           return "No results found for #{glob_pattern} in #{path}" if results.empty?

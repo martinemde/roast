@@ -207,7 +207,8 @@ module Roast
           exit_on_error = context.exit_on_error?(interpolated_name)
 
           # Execute the command directly using the appropriate executor
-          result = execute(interpolated_command, { exit_on_error: exit_on_error })
+          # Pass the original key name for configuration lookup
+          result = execute(interpolated_command, { exit_on_error: exit_on_error, step_key: interpolated_name })
           context.workflow.output[interpolated_name] = result
           result
         end
@@ -227,13 +228,14 @@ module Roast
           execute_command_step(interpolated_step, { exit_on_error: exit_on_error })
         else
           exit_on_error = options.fetch(:exit_on_error, context.exit_on_error?(step))
-          execute_standard_step(interpolated_step, { exit_on_error: exit_on_error })
+          execute_standard_step(interpolated_step, options.merge(exit_on_error: exit_on_error))
         end
       end
 
       def execute_standard_step(step, options)
         exit_on_error = options.fetch(:exit_on_error, true)
-        step_orchestrator.execute_step(step, exit_on_error: exit_on_error)
+        step_key = options[:step_key]
+        step_orchestrator.execute_step(step, exit_on_error: exit_on_error, step_key: step_key)
       end
 
       def validate_each_step!(step)
