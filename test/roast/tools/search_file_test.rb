@@ -79,7 +79,7 @@ class RoastToolsSearchFileTest < ActiveSupport::TestCase
   end
 
   test ".call returns file content for single match" do
-    Roast::Tools::SearchFile.stubs(:search_for).with("test_file1.txt", ".").returns(["test_file1.txt"])
+    Roast::Tools::SearchFile.stubs(:search_for).with("**/test_file1.txt", ".").returns(["test_file1.txt"])
     Roast::Tools::SearchFile.stubs(:read_contents).with("./test_file1.txt").returns("file content")
 
     result = Roast::Tools::SearchFile.call("test_file1.txt")
@@ -87,7 +87,7 @@ class RoastToolsSearchFileTest < ActiveSupport::TestCase
   end
 
   test ".call with path parameter passes path to search_for" do
-    Roast::Tools::SearchFile.expects(:search_for).with("test_file", "nested/deep").returns(["test_file.txt"])
+    Roast::Tools::SearchFile.expects(:search_for).with("**/test_file", "nested/deep").returns(["test_file.txt"])
     Roast::Tools::SearchFile.stubs(:read_contents).with("nested/deep/test_file.txt").returns("file content")
 
     result = Roast::Tools::SearchFile.call("test_file", "nested/deep")
@@ -95,31 +95,31 @@ class RoastToolsSearchFileTest < ActiveSupport::TestCase
   end
 
   test ".call returns file list for multiple matches" do
-    Roast::Tools::SearchFile.stubs(:search_for).with("file", ".").returns(["file1.txt", "file2.txt"])
+    Roast::Tools::SearchFile.stubs(:search_for).with("**/file", ".").returns(["file1.txt", "file2.txt"])
 
     result = Roast::Tools::SearchFile.call("file")
     assert_equal "./file1.txt\n./file2.txt", result
   end
 
   test ".call returns no results message when empty" do
-    Roast::Tools::SearchFile.stubs(:search_for).with("nonexistent", ".").returns([])
+    Roast::Tools::SearchFile.stubs(:search_for).with("**/nonexistent", ".").returns([])
 
     result = Roast::Tools::SearchFile.call("nonexistent")
-    assert_equal "No results found for nonexistent in .", result
+    assert_equal "No results found for **/nonexistent in .", result
   end
 
   test ".call when path doesn't exist" do
-    Roast::Tools::SearchFile.stubs(:search_for).with("test_file", "nonexistent").returns([])
+    Roast::Tools::SearchFile.stubs(:search_for).with("**/test_file", "nonexistent").returns([])
 
     result = Roast::Tools::SearchFile.call("test_file", "nonexistent")
     assert_equal "Path does not exist: nonexistent", result
   end
 
   test ".call handles errors gracefully" do
-    Roast::Tools::SearchFile.stubs(:search_for).with("test_file", ".").raises(StandardError, "Search failed")
+    Roast::Tools::SearchFile.stubs(:search_for).with("**/test_file", ".").raises(StandardError, "Search failed")
 
     result = Roast::Tools::SearchFile.call("test_file")
-    assert_equal "Error searching for 'test_file' in '.': Search failed", result
+    assert_equal "Error searching for '**/test_file' in '.': Search failed", result
   end
 
   class DummyBaseClass
