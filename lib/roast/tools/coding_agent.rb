@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "roast/helpers/logger"
+require "roast/tools/helpers/coding_agent_message_formatter"
+require "json"
 require "open3"
 require "tempfile"
 require "securerandom"
@@ -9,6 +11,8 @@ module Roast
   module Tools
     module CodingAgent
       extend self
+
+      class CodingAgentError < StandardError; end
 
       CONFIG_CODING_AGENT_COMMAND = "coding_agent_command"
       private_constant :CONFIG_CODING_AGENT_COMMAND
@@ -62,13 +66,33 @@ module Roast
           temp_file.write(prompt)
           temp_file.close
 
-          # Run Claude Code CLI using the temp file as input
-          stdout, stderr, status = Open3.capture3("cat #{temp_file.path} | #{claude_code_command}")
+          # Run Claude Code CLI using the temp file as input with streaming output
+          expect_json_output = claude_code_command.include?("--output-format stream-json") ||
+            claude_code_command.include?("--output-format json")
+          command = "cat #{temp_file.path} | #{claude_code_command}"
+          result = ""
 
-          if status.success?
-            stdout
-          else
-            "Error running ClaudeCode: #{stderr}"
+          Open3.popen3(command) do |stdin, stdout, stderr, wait_thread|
+            stdin.close
+            if expect_json_output
+              stdout.each_line do |line|
+                json = parse_json(line)
+                next unless json
+
+                handle_intermediate_message(json)
+                result += handle_result(json) || ""
+              end
+            else
+              result = stdout.read
+            end
+
+            status = wait_thread.value
+            if status.success?
+              return result
+            else
+              error_output = stderr.read
+              return "Error running CodingAgent: #{error_output}"
+            end
           end
         ensure
           # Always clean up the temp file
@@ -76,8 +100,45 @@ module Roast
         end
       end
 
+      def parse_json(line)
+        JSON.parse(line)
+      rescue JSON::ParserError => e
+        Roast::Helpers::Logger.warn("🤖 Error parsing JSON response: #{e}\n")
+        nil
+      end
+
+      def handle_intermediate_message(json)
+        case json["type"]
+        when "assistant", "user"
+          CodingAgentMessageFormatter.format_messages(json).each(&method(:log_message))
+        when "result", "system"
+          # Ignore these message types
+        else
+          Roast::Helpers::Logger.debug("🤖 Encountered unexpected message type: #{json["type"]}\n")
+        end
+      end
+
+      def handle_result(json)
+        if json["type"] == "result"
+          if json["subtype"] == "success"
+            json["result"]
+          else
+            raise CodingAgentError, "CodingAgent did not complete successfully: #{line}"
+          end
+        end
+      end
+
+      def log_message(text)
+        return if text.blank?
+
+        text = text.lines.map do |line|
+          "\t#{line}"
+        end.join
+        Roast::Helpers::Logger.info("• " + text.chomp + "\n")
+      end
+
       def claude_code_command
-        CodingAgent.configured_command || ENV["CLAUDE_CODE_COMMAND"] || "claude -p"
+        CodingAgent.configured_command || ENV["CLAUDE_CODE_COMMAND"] || "claude -p --verbose --output-format stream-json"
       end
     end
   end

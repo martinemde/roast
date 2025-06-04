@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "roast/tools/coding_agent"
+require "open3"
+require "stringio"
 
 module Roast
   module Tools
@@ -30,13 +33,17 @@ module Roast
         original_env = ENV["CLAUDE_CODE_COMMAND"]
         ENV.delete("CLAUDE_CODE_COMMAND")
 
-        # Mock Open3.capture3 to prevent actual command execution
-        mock_stdout = "AI response"
-        mock_stderr = ""
+        # Mock Open3.popen3 to prevent actual command execution
+        mock_stdin = mock
+        mock_stdout = StringIO.new('{"type":"result","subtype":"success","result":"AI response"}')
+        mock_stderr = StringIO.new("")
+        mock_wait_thread = mock
         mock_status = mock
+        mock_stdin.expects(:close)
         mock_status.expects(:success?).returns(true)
+        mock_wait_thread.expects(:value).returns(mock_status)
 
-        Open3.expects(:capture3).with { |cmd| cmd =~ /cat .* \| claude -p$/ }.returns([mock_stdout, mock_stderr, mock_status])
+        Open3.expects(:popen3).with { |cmd| cmd =~ /cat .* \| claude -p --verbose --output-format stream-json$/ }.yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
 
         result = Roast::Tools::CodingAgent.call("Test prompt")
         assert_equal("AI response", result)
@@ -48,13 +55,17 @@ module Roast
         original_env = ENV["CLAUDE_CODE_COMMAND"]
         ENV["CLAUDE_CODE_COMMAND"] = "claude --model opus"
 
-        # Mock Open3.capture3
-        mock_stdout = "AI response"
-        mock_stderr = ""
+        # Mock Open3.popen3
+        mock_stdin = mock
+        mock_stdout = StringIO.new("AI response")
+        mock_stderr = StringIO.new("")
+        mock_wait_thread = mock
         mock_status = mock
+        mock_stdin.expects(:close)
         mock_status.expects(:success?).returns(true)
+        mock_wait_thread.expects(:value).returns(mock_status)
 
-        Open3.expects(:capture3).with { |cmd| cmd =~ /cat .* \| claude --model opus$/ }.returns([mock_stdout, mock_stderr, mock_status])
+        Open3.expects(:popen3).with { |cmd| cmd =~ /cat .* \| claude --model opus$/ }.yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
 
         result = Roast::Tools::CodingAgent.call("Test prompt")
         assert_equal("AI response", result)
@@ -73,14 +84,18 @@ module Roast
         config = { "coding_agent_command" => "claude --model opus -p --allowedTools \"Bash, Batch, Glob, Grep, LS, Read\"" }
         Roast::Tools::CodingAgent.post_configuration_setup(DummyBaseClass, config)
 
-        # Mock Open3.capture3
-        mock_stdout = "AI response with custom config"
-        mock_stderr = ""
+        # Mock Open3.popen3
+        mock_stdin = mock
+        mock_stdout = StringIO.new("AI response with custom config")
+        mock_stderr = StringIO.new("")
+        mock_wait_thread = mock
         mock_status = mock
+        mock_stdin.expects(:close)
         mock_status.expects(:success?).returns(true)
+        mock_wait_thread.expects(:value).returns(mock_status)
 
         expected_command = /cat .* \| claude --model opus -p --allowedTools "Bash, Batch, Glob, Grep, LS, Read"$/
-        Open3.expects(:capture3).with { |cmd| cmd =~ expected_command }.returns([mock_stdout, mock_stderr, mock_status])
+        Open3.expects(:popen3).with { |cmd| cmd =~ expected_command }.yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
 
         result = Roast::Tools::CodingAgent.call("Test prompt")
         assert_equal "AI response with custom config", result
@@ -93,14 +108,18 @@ module Roast
         config = { "coding_agent_command" => "claude --model opus" }
         Roast::Tools::CodingAgent.post_configuration_setup(DummyBaseClass, config)
 
-        # Mock Open3.capture3
-        mock_stdout = "AI response"
-        mock_stderr = ""
+        # Mock Open3.popen3
+        mock_stdin = mock
+        mock_stdout = StringIO.new("AI response")
+        mock_stderr = StringIO.new("")
+        mock_wait_thread = mock
         mock_status = mock
+        mock_stdin.expects(:close)
         mock_status.expects(:success?).returns(true)
+        mock_wait_thread.expects(:value).returns(mock_status)
 
         # Should use configured command, not environment variable
-        Open3.expects(:capture3).with { |cmd| cmd =~ /cat .* \| claude --model opus$/ }.returns([mock_stdout, mock_stderr, mock_status])
+        Open3.expects(:popen3).with { |cmd| cmd =~ /cat .* \| claude --model opus$/ }.yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
 
         result = Roast::Tools::CodingAgent.call("Test prompt")
         assert_equal("AI response", result)
@@ -109,20 +128,25 @@ module Roast
       end
 
       test "handles command execution errors gracefully" do
-        mock_stdout = ""
-        mock_stderr = "Command not found: claude"
+        # Mock Open3.popen3
+        mock_stdin = mock
+        mock_stdout = StringIO.new("")
+        mock_stderr = StringIO.new("Command not found: claude")
+        mock_wait_thread = mock
         mock_status = mock
+        mock_stdin.expects(:close)
         mock_status.expects(:success?).returns(false)
+        mock_wait_thread.expects(:value).returns(mock_status)
 
-        Open3.expects(:capture3).returns([mock_stdout, mock_stderr, mock_status])
+        Open3.expects(:popen3).yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
 
         result = Roast::Tools::CodingAgent.call("Test prompt")
-        assert_equal "Error running ClaudeCode: Command not found: claude", result
+        assert_equal "Error running CodingAgent: Command not found: claude", result
       end
 
       test "cleans up temporary files even on error" do
         # Force an error during command execution
-        Open3.expects(:capture3).raises(StandardError, "Execution failed")
+        Open3.expects(:popen3).raises(StandardError, "Execution failed")
 
         # Track temp file creation and deletion
         tempfile_deleted = false
@@ -141,6 +165,58 @@ module Roast
 
         assert_match(/Error running CodingAgent/, result)
         assert tempfile_deleted, "Temporary file should be cleaned up even on error"
+      end
+
+      test "runs Claude with simple prompt and gets simple result" do
+        skip "Testing with actual Claude is expensive"
+
+        # Use a prompt that should hopefully work pretty consistently on each invocation
+        prompt = "What is today's date, in yyyy-mm-dd format?"
+        result = Roast::Tools::CodingAgent.call(prompt)
+        assert_includes(result, Date.today.strftime("%Y-%m-%d"))
+      end
+
+      test "logs streaming output with sensible formatting" do
+        # NOTE: the command must include '--output-format stream-json' for the coding agent to expect streaming json responses.
+        original_env = ENV["CLAUDE_CODE_COMMAND"]
+        ENV["CLAUDE_CODE_COMMAND"] = "cat test/fixtures/tools/coding_agent/simple_responses.json_stream # --output-format stream-json"
+
+        expected_log_messages = [
+          "🤖 Running CodingAgent\n",
+          "• 	→ Read(\"path/to/README.md\")\n",
+          "• 	→ Read(\"path/to/file.gemspec\")\n",
+          "• 	→ Read(\"path/to/file.rb\")\n",
+          "• \tLorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur porttitor ac nisi in mollis. ... lots more text ...\n",
+        ]
+
+        Roast::Helpers::Logger.instance.logger.expects(:info).times(expected_log_messages.length).with do |actual|
+          puts actual # This is intentional to ensure that logger output is propagated to the console
+          actual == expected_log_messages.shift
+        end
+
+        result = Roast::Tools::CodingAgent.call("Test prompt")
+        assert_equal(result, "RESULT TEXT")
+      ensure
+        ENV["CLAUDE_CODE_COMMAND"] = original_env
+      end
+
+      test "handles formatting of more cases" do
+        # NOTE: the command must include '--output-format stream-json' for the coding agent to expect streaming json responses.
+        original_env = ENV["CLAUDE_CODE_COMMAND"]
+        ENV["CLAUDE_CODE_COMMAND"] = "cat test/fixtures/tools/coding_agent/complex_responses.json_stream # --output-format stream-json"
+
+        expected_log_messages_file = "test/fixtures/tools/coding_agent/complex_responses.expected_log"
+        expected_log_messages = File.readlines(expected_log_messages_file).map { |line| JSON.parse(line) }
+
+        Roast::Helpers::Logger.instance.logger.expects(:info).times(expected_log_messages.length).with do |actual|
+          puts actual # This is intentional to ensure that logger output is propagated to the console
+          actual == expected_log_messages.shift
+        end
+
+        result = Roast::Tools::CodingAgent.call("Test prompt")
+        assert_equal(result, "RESULT TEXT")
+      ensure
+        ENV["CLAUDE_CODE_COMMAND"] = original_env
       end
 
       test "included method registers coding_agent function" do
