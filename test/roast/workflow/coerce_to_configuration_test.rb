@@ -33,7 +33,7 @@ module Roast
         assert_equal true, result
       end
 
-      test "step with coerce_to boolean returns false for nil" do
+      test "step with coerce_to boolean returns false for empty string" do
         config_hash = {
           "check status" => {
             "coerce_to" => "boolean",
@@ -42,7 +42,7 @@ module Roast
 
         executor = WorkflowExecutor.new(@workflow, config_hash, "/tmp/test")
 
-        @workflow.expects(:chat_completion).returns(nil)
+        @workflow.expects(:chat_completion).returns("")
 
         result = executor.execute_step("check status")
         assert_equal false, result
@@ -79,7 +79,7 @@ module Roast
         assert_equal ["file1.txt", "file2.txt", "file3.txt"], result
       end
 
-      test "step with coerce_to iterable returns array unchanged" do
+      test "step with coerce_to iterable returns array from JSON string" do
         config_hash = {
           "get items" => {
             "coerce_to" => "iterable",
@@ -88,9 +88,8 @@ module Roast
 
         executor = WorkflowExecutor.new(@workflow, config_hash, "/tmp/test")
 
-        @workflow.expects(:chat_completion).returns(["item1", "item2", "item3"])
-        # Since response is an array, BaseStep will check for tools
-        @workflow.expects(:tools).returns(nil)
+        # Raix 1.0 returns strings, even for JSON
+        @workflow.expects(:chat_completion).returns('["item1", "item2", "item3"]')
 
         result = executor.execute_step("get items")
         assert_equal ["item1", "item2", "item3"], result
@@ -127,7 +126,6 @@ module Roast
         mock_step = mock("repeat_step")
         mock_step.stubs(:coerce_to=).with(:llm_boolean)
         mock_step.stubs(:model=)
-        mock_step.stubs(:auto_loop=)
         mock_step.stubs(:print_response=)
         mock_step.stubs(:json=)
         mock_step.stubs(:params=)

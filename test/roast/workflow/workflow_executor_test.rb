@@ -46,7 +46,8 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
     @config_hash["model"] = "gpt-4o"
     @executor = Roast::Workflow::WorkflowExecutor.new(@workflow, @config_hash, @context_path)
 
-    @workflow.stubs(:transcript).returns([])
+    transcript = []
+    @workflow.stubs(:transcript).returns(transcript)
     @workflow.stubs(:resource).returns(nil)
     @workflow.stubs(:append_to_final_output)
     @workflow.stubs(:openai?).returns(true)
@@ -57,7 +58,6 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
     @workflow.expects(:chat_completion).with(
       openai: "gpt-4o",
       model: "gpt-4o",
-      loop: false, # Changed from true - new BaseStep behavior
       json: false,
       params: {},
     ).returns("Test response")

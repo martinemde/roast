@@ -14,23 +14,20 @@ module Roast
         step = BaseStep.new(@workflow, name: "test_step")
         step.json = true
 
-        # Create a JSON array response
-        json_array = [
-          { "id" => 1, "name" => "Item 1" },
-          { "id" => 2, "name" => "Item 2" },
-        ]
+        # Raix 1.0 returns JSON as string
+        json_response = '[{"id": 1, "name": "Item 1"}, {"id": 2, "name": "Item 2"}]'
 
         # Stub workflow methods
         @workflow.stub(:openai?, false) do
-          @workflow.stub(:chat_completion, json_array) do
+          @workflow.stub(:chat_completion, json_response) do
             # Stub read_sidecar_prompt to return a simple prompt
             step.stub(:read_sidecar_prompt, "Test prompt") do
               result = step.call
 
-              # Result should be the first element of the array
-              assert_instance_of Hash, result
-              assert_equal 1, result["id"]
-              assert_equal "Item 1", result["name"]
+              # Result should be the parsed JSON array
+              assert_instance_of Array, result
+              assert_equal 1, result[0]["id"]
+              assert_equal "Item 1", result[0]["name"]
             end
           end
         end
@@ -40,11 +37,11 @@ module Roast
         step = BaseStep.new(@workflow, name: "test_step")
         step.json = false
 
-        # Create a string array response
-        string_array = ["Line 1", "Line 2", "Line 3"]
+        # Raix 1.0 returns a string
+        string_response = "Line 1\nLine 2\nLine 3"
 
         @workflow.stub(:openai?, false) do
-          @workflow.stub(:chat_completion, string_array) do
+          @workflow.stub(:chat_completion, string_response) do
             step.stub(:read_sidecar_prompt, "Test prompt") do
               result = step.call
 
@@ -56,51 +53,44 @@ module Roast
         end
       end
 
-      test "JSON array with nil first element returns nil" do
+      test "JSON array with nil first element returns array" do
         step = BaseStep.new(@workflow, name: "test_step")
         step.json = true
 
-        # Array with nil as first element
-        json_array = [
-          nil,
-          { "id" => 2, "name" => "Item 2" },
-          { "id" => 3, "name" => "Item 3" },
-        ]
+        # Raix 1.0 returns JSON as string
+        json_response = '[null, {"id": 2, "name": "Item 2"}, {"id": 3, "name": "Item 3"}]'
 
         @workflow.stub(:openai?, false) do
-          @workflow.stub(:chat_completion, json_array) do
+          @workflow.stub(:chat_completion, json_response) do
             step.stub(:read_sidecar_prompt, "Test prompt") do
               result = step.call
 
-              # Should return nil since flatten.first returns the first element
-              assert_nil result
+              # Should return the parsed array
+              assert_instance_of Array, result
+              assert_nil result[0]
+              assert_equal 2, result[1]["id"]
             end
           end
         end
       end
 
-      test "Nested JSON array response flattens and returns first element" do
+      test "Nested JSON array response returns parsed array" do
         step = BaseStep.new(@workflow, name: "test_step")
         step.json = true
 
-        # Create a nested array response
-        json_array = [
-          [
-            { "id" => 1, "name" => "Nested Item 1" },
-            { "id" => 2, "name" => "Nested Item 2" },
-          ],
-          { "id" => 3, "name" => "Item 3" },
-        ]
+        # Raix 1.0 returns JSON as string
+        json_response = '[[{"id": 1, "name": "Nested Item 1"}, {"id": 2, "name": "Nested Item 2"}], {"id": 3, "name": "Item 3"}]'
 
         @workflow.stub(:openai?, false) do
-          @workflow.stub(:chat_completion, json_array) do
+          @workflow.stub(:chat_completion, json_response) do
             step.stub(:read_sidecar_prompt, "Test prompt") do
               result = step.call
 
-              # Should flatten and return the first element
-              assert_instance_of Hash, result
-              assert_equal 1, result["id"]
-              assert_equal "Nested Item 1", result["name"]
+              # Should return the parsed nested array
+              assert_instance_of Array, result
+              assert_instance_of Array, result[0]
+              assert_equal 1, result[0][0]["id"]
+              assert_equal "Nested Item 1", result[0][0]["name"]
             end
           end
         end
@@ -110,19 +100,15 @@ module Roast
         step = BaseStep.new(@workflow, name: "test_step")
         step.json = true
 
-        # Create a hash response
-        json_hash = {
-          "status" => "success",
-          "data" => { "count" => 42 },
-          "items" => ["a", "b", "c"],
-        }
+        # Raix 1.0 returns JSON as string
+        json_response = '{"status": "success", "data": {"count": 42}, "items": ["a", "b", "c"]}'
 
         @workflow.stub(:openai?, false) do
-          @workflow.stub(:chat_completion, json_hash) do
+          @workflow.stub(:chat_completion, json_response) do
             step.stub(:read_sidecar_prompt, "Test prompt") do
               result = step.call
 
-              # Result should be the hash itself
+              # Result should be the parsed hash
               assert_instance_of Hash, result
               assert_equal "success", result["status"]
               assert_equal 42, result["data"]["count"]

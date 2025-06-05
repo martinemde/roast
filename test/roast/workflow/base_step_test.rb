@@ -39,6 +39,9 @@ class RoastWorkflowBaseStepTest < ActiveSupport::TestCase
     @workflow.stubs(:openai?)
       .returns(true)
 
+    @workflow.stubs(:tools)
+      .returns(nil)
+
     result = @step.call
     assert_equal({ user: "Test prompt" }, @workflow.transcript.last)
     assert_equal "Test chat completion response", result
