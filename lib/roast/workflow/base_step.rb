@@ -51,6 +51,7 @@ module Roast
           begin
             if json
               return nil if result.strip.empty? # Explicitly handle empty string
+
               return JSON.parse(result)
             end
           rescue JSON::ParserError
