@@ -270,6 +270,31 @@ Roast supports several types of steps:
    ```
    This creates a simple prompt-response interaction without tool calls or looping. It's detected by the presence of spaces in the step name and is useful for summarization or simple questions at the end of a workflow.
 
+#### Step Configuration
+
+Steps can be configured with various options to control their behavior:
+
+```yaml
+steps:
+  - analyze_code           # Simple step reference
+  - generate_report:       # Step with configuration
+      model: gpt-4o        # Override the global model for this step
+      print_response: true # Explicitly control output printing
+      json: true           # Request JSON-formatted response
+      params:              # Additional parameters for the API call
+        temperature: 0.8
+```
+
+**Configuration options:**
+- `model`: Override the workflow's default model for this specific step
+- `print_response`: Control whether the step's response is included in the final output (default: `false`, except for the last step which defaults to `true` as of v0.3.1)
+- `json`: Request a JSON-formatted response from the model
+- `params`: Additional parameters passed to the model API (temperature, max_tokens, etc.)
+- `path`: Custom directory path for the step's prompt files
+- `coerce_to`: Type coercion for the step result (`:boolean`, `:llm_boolean`, `:iterable`)
+
+**Automatic Last Step Output**: As of version 0.3.1, the last step in a workflow automatically has `print_response: true` unless explicitly configured otherwise. This ensures that newcomers to Roast see output from their workflows by default.
+
 #### Shared Configuration
 
 Roast supports sharing common configuration and steps across multiple workflows using a `shared.yml` file.
