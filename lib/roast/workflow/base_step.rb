@@ -49,7 +49,10 @@ module Roast
           process_output(result, print_response:)
 
           begin
-            return JSON.parse(result) if json
+            if json
+              return nil if result.strip.empty? # Explicitly handle empty string
+              return JSON.parse(result)
+            end
           rescue JSON::ParserError
             # If JSON parsing fails, leave it as a string
           end
