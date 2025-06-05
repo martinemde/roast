@@ -9,7 +9,8 @@ module Roast
       def setup
         @workflow = mock("workflow")
         @workflow.stubs(:output).returns({})
-        @workflow.stubs(:transcript).returns([])
+        @transcript = []
+        @workflow.stubs(:transcript).returns(@transcript)
         @workflow.stubs(:resource).returns(nil)
         @workflow.stubs(:append_to_final_output)
         @workflow.stubs(:openai?).returns(false)
@@ -19,7 +20,6 @@ module Roast
         @config_hash = {
           "analyze the code" => {
             "model" => "gpt-4o",
-            "loop" => false,
             "print_response" => true,
             "json" => true,
             "params" => { "temperature" => 0.7 },
@@ -34,14 +34,13 @@ module Roast
         # The inline prompt should receive the configuration
         @workflow.expects(:chat_completion).with(
           openai: false,
-          loop: false,
           model: "gpt-4o",
           json: true,
           params: { "temperature" => 0.7 },
-        ).returns("Test response")
+        ).returns('{"result": "Test response"}')
 
         result = @executor.execute_step("analyze the code")
-        assert_equal "Test response", result
+        assert_equal({ "result" => "Test response" }, result)
       end
 
       test "inline prompt uses defaults when no configuration provided" do
@@ -51,7 +50,6 @@ module Roast
         # Now expects loop: false due to new BaseStep behavior
         @workflow.expects(:chat_completion).with(
           openai: false,
-          loop: false, # Changed from true - new BaseStep behavior
           model: "openai/gpt-4o-mini", # Default model
           json: false,
           params: {},
@@ -70,7 +68,6 @@ module Roast
         # Now expects loop: false due to new BaseStep behavior
         @workflow.expects(:chat_completion).with(
           openai: false,
-          loop: false, # Changed from true - new BaseStep behavior
           model: "claude-3-opus",
           json: false,
           params: {},
@@ -83,17 +80,14 @@ module Roast
       test "inline prompt step-specific config overrides global config" do
         config_with_both = {
           "model" => "global-model",
-          "loop" => true,
           "specific prompt" => {
             "model" => "step-specific-model",
-            "loop" => false,
           },
         }
         executor = WorkflowExecutor.new(@workflow, config_with_both, @context_path)
 
         @workflow.expects(:chat_completion).with(
           openai: false,
-          loop: false, # Step-specific overrides global
           model: "step-specific-model", # Step-specific overrides global
           json: false,
           params: {},

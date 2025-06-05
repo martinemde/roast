@@ -30,4 +30,5 @@ show_env:
   print_response: true
 
 list_home:
+  model: gpt-4o-mini
   print_response: true

@@ -34,53 +34,65 @@ module Roast
         def model
           "test-model"
         end
+
+        def chat_completion(**kwargs)
+          # Don't call super, return nil to trigger the stub
+          nil
+        end
       end
 
       test "print_response with tool calls displays tool results instead of final AI response" do
         workflow = MockWorkflowWithTools.new
 
-        # Mock chat_completion to return an array (simulating tool call results)
-        workflow.stub(:chat_completion, ["Tool result 1", "Tool result 2"]) do
-          step = PromptStep.new(workflow, name: "test_step")
-          step.print_response = true
-          step.auto_loop = true
+        step = PromptStep.new(workflow, name: "test_step")
+        step.print_response = true
 
-          result = step.call
-
-          # The bug: tool results are joined and displayed
-          assert_equal "Tool result 1\nTool result 2", result
-          assert_equal 1, workflow.appended_output.size
-          assert_equal "Tool result 1\nTool result 2", workflow.appended_output.first
+        # Mock chat_completion to return string response
+        def workflow.chat_completion(**kwargs)
+          "Tool result 1\nTool result 2"
         end
+
+        result = step.call
+
+        # The result should be the assistant response from transcript
+        assert_equal "Tool result 1\nTool result 2", result
+        assert_equal 1, workflow.appended_output.size
+        assert_equal "Tool result 1\nTool result 2", workflow.appended_output.first
       end
 
       test "print_response false with tool calls does not append output" do
         workflow = MockWorkflowWithTools.new
 
-        workflow.stub(:chat_completion, ["Tool result 1", "Tool result 2"]) do
-          step = PromptStep.new(workflow, name: "test_step")
-          step.print_response = false
+        step = PromptStep.new(workflow, name: "test_step")
+        step.print_response = false
 
-          result = step.call
-
-          assert_equal "Tool result 1\nTool result 2", result
-          assert_empty workflow.appended_output
+        # Mock chat_completion to return string response
+        def workflow.chat_completion(**kwargs)
+          "Tool result 1\nTool result 2"
         end
+
+        result = step.call
+
+        assert_equal "Tool result 1\nTool result 2", result
+        assert_empty workflow.appended_output
       end
 
       test "print_response with string response works correctly" do
         workflow = MockWorkflowWithTools.new
 
-        workflow.stub(:chat_completion, "This is the final AI response") do
-          step = PromptStep.new(workflow, name: "test_step")
-          step.print_response = true
+        step = PromptStep.new(workflow, name: "test_step")
+        step.print_response = true
 
-          result = step.call
-
-          assert_equal "This is the final AI response", result
-          assert_equal 1, workflow.appended_output.size
-          assert_equal "This is the final AI response", workflow.appended_output.first
+        # Mock chat_completion for string response
+        def workflow.chat_completion(**kwargs)
+          "This is the final AI response"
         end
+
+        result = step.call
+
+        assert_equal "This is the final AI response", result
+        assert_equal 1, workflow.appended_output.size
+        assert_equal "This is the final AI response", workflow.appended_output.first
       end
     end
   end

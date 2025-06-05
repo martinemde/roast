@@ -9,7 +9,7 @@ module Roast
     class BaseStep
       extend Forwardable
 
-      attr_accessor :model, :print_response, :auto_loop, :json, :params, :resource, :coerce_to
+      attr_accessor :model, :print_response, :json, :params, :resource, :coerce_to
       attr_reader :workflow, :name, :context_path
 
       def_delegator :workflow, :append_to_final_output
@@ -17,13 +17,12 @@ module Roast
       def_delegator :workflow, :transcript
 
       # TODO: is this really the model we want to default to, and is this the right place to set it?
-      def initialize(workflow, model: "anthropic:claude-opus-4", name: nil, context_path: nil, auto_loop: true)
+      def initialize(workflow, model: "anthropic:claude-opus-4", name: nil, context_path: nil)
         @workflow = workflow
         @model = model
         @name = name || self.class.name.underscore.split("/").last
         @context_path = context_path || ContextPathResolver.resolve(self.class)
         @print_response = false
-        @auto_loop = auto_loop
         @json = false
         @params = {}
         @coerce_to = nil
@@ -32,7 +31,7 @@ module Roast
 
       def call
         prompt(read_sidecar_prompt)
-        result = chat_completion(print_response:, auto_loop:, json:, params:)
+        result = chat_completion(print_response:, json:, params:)
 
         # Apply coercion if configured
         apply_coercion(result)
@@ -40,31 +39,25 @@ module Roast
 
       protected
 
-      def chat_completion(print_response: nil, auto_loop: nil, json: nil, params: nil)
+      def chat_completion(print_response: nil, json: nil, params: nil)
         # Use instance variables as defaults if parameters are not provided
         print_response = @print_response if print_response.nil?
-        auto_loop = @auto_loop if auto_loop.nil?
         json = @json if json.nil?
         params = @params if params.nil?
 
-        # Use loop parameter based on whether tools are present and auto_loop is enabled
-        # When tools are present and auto_loop is true, we want Raix to handle the full conversation
-        loop_param = workflow.tools.present? && auto_loop
+        workflow.chat_completion(openai: workflow.openai? && model, model: model, json:, params:).tap do |result|
+          process_output(result, print_response:)
 
-        response = workflow.chat_completion(openai: workflow.openai? && model, loop: loop_param, model: model, json:, params:)
+          begin
+            if json
+              return nil if result.strip.empty? # Explicitly handle empty string
 
-        # Process the response
-        result = if response.is_a?(Array) && json
-          response.flatten.first
-        elsif response.is_a?(Array)
-          # For non-JSON responses, join array elements
-          response.map(&:presence).compact.join("\n")
-        else
-          response
+              return JSON.parse(result)
+            end
+          rescue JSON::ParserError
+            # If JSON parsing fails, leave it as a string
+          end
         end
-
-        process_output(result, print_response:)
-        result
       end
 
       def prompt(text)
@@ -96,11 +89,11 @@ module Roast
       private
 
       def apply_coercion(result)
-        return result unless @coerce_to
-
         case @coerce_to
         when :boolean
-          # Simple boolean coercion
+          # Simple boolean coercion - empty string is false
+          return false if result.nil? || result == ""
+
           !!result
         when :llm_boolean
           # Use LLM boolean coercer for natural language responses
@@ -110,9 +103,19 @@ module Roast
           # Ensure result is iterable
           return result if result.respond_to?(:each)
 
+          # Try to parse as JSON array first
+          if result.is_a?(String) && result.strip.start_with?("[")
+            begin
+              parsed = JSON.parse(result)
+              return parsed if parsed.is_a?(Array)
+            rescue JSON::ParserError
+              # Fall through to split by newlines
+            end
+          end
+
           result.to_s.split("\n")
         else
-          # Unknown coercion type, return as-is
+          # Unknown or nil coercion type, return as-is
           result
         end
       end

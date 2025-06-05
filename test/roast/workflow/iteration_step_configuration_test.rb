@@ -24,7 +24,6 @@ module Roast
           "until" => "done",
           "steps" => ["test step"],
           "model" => "gpt-4o",
-          "loop" => false,
           "print_response" => true,
           "json" => true,
           "params" => { "temperature" => 0.5 },
@@ -33,7 +32,6 @@ module Roast
         # Mock the RepeatStep to verify configuration was applied
         mock_step = mock("repeat_step")
         mock_step.expects(:model=).with("gpt-4o")
-        mock_step.expects(:auto_loop=).with(false)
         mock_step.expects(:print_response=).with(true)
         mock_step.expects(:json=).with(true)
         mock_step.expects(:params=).with({ "temperature" => 0.5 })
@@ -58,14 +56,12 @@ module Roast
           "as" => "item",
           "steps" => ["process item"],
           "model" => "claude-opus",
-          "loop" => true,
           "print_response" => false,
         }
 
         # Mock the EachStep to verify configuration was applied
         mock_step = mock("each_step")
         mock_step.expects(:model=).with("claude-opus")
-        mock_step.expects(:auto_loop=).with(true)
         mock_step.expects(:print_response=).with(false)
         mock_step.expects(:call).returns("result")
 

@@ -55,6 +55,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Guidance and Expectations
 
 - Do not decide unilaterally to leave code for the sake of "backwards compatibility"... always run those decisions by me first.
+- Don't ever commit and push changes unless directly told to do so
 
 ## Git Workflow Practices
 
@@ -166,3 +167,4 @@ gh pr diff {pr_number}
     - Avoid premature optimization outside of hot paths
     - Consider the tradeoff between readability and performance
     - Suggest optimizations that improve both clarity and performance
+```

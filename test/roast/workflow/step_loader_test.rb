@@ -26,7 +26,6 @@ module Roast
 
         assert_instance_of(PromptStep, step)
         assert_equal("analyze the code", step.name)
-        assert(step.auto_loop)
       end
 
       def test_loads_ruby_step_from_context_path
@@ -122,7 +121,6 @@ module Roast
       def test_applies_step_configuration
         @config_hash["test"] = {
           "print_response" => true,
-          "loop" => true,
           "json" => true,
           "params" => { "key" => "value" },
         }
@@ -130,7 +128,6 @@ module Roast
         step = @step_loader.load("test")
 
         assert_equal(true, step.print_response)
-        assert_equal(true, step.auto_loop)
         assert_equal(true, step.json)
         assert_equal({ "key" => "value" }, step.params)
       end

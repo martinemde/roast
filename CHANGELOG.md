@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-06-04
+
+### Changed
+- **BREAKING**: Upgraded to Raix 1.0.0 (#141)
+  - Removed the deprecated `loop` parameter from chat_completion calls
+  - Raix 1.0 automatically continues after tool calls until providing a text response
+  - All chat completions now return strings (no longer arrays or complex structures)
+  - JSON responses are automatically parsed when `json: true` is specified
+- **BREAKING**: Removed configurable `loop` and `auto_loop` options from workflow configuration (#140)
+  - The `loop:` and `auto_loop:` YAML configuration options have been removed entirely
+  - Looping behavior is now automatic: always enabled when tools are present, disabled when no tools exist
+  - This simplifies the codebase and makes behavior more predictable
+  - To migrate: remove any `loop: true/false` or `auto_loop: true/false` settings from your workflow YAML files
+
+### Fixed
+- Enhanced boolean coercion to treat empty strings as false
+- Improved iterable coercion to handle JSON array strings
+- Fixed all tests to work with Raix 1.0's string-only responses
+
 ## [0.2.3] - 2025-05-29
 
 ### Fixed

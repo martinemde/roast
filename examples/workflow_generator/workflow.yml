@@ -23,7 +23,6 @@ steps:
 get_user_input:
   print_response: false
   json: true
-  auto_loop: false
 
 analyze_user_request:
   print_response: true

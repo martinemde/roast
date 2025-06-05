@@ -3,12 +3,10 @@ description: Demonstrates how to configure various step types including inline p
 
 # Global configuration that applies to all steps
 model: openai/gpt-4o-mini
-loop: true
 
 # Configuration for specific steps
 summarize the code:
   model: claude-3-opus  # Override global model
-  loop: false          # Disable auto-loop for this step
   print_response: true # Print the response
   json: false          # Don't expect JSON response
   params:
@@ -25,7 +23,6 @@ each:
   each: "{{files}}"
   as: file
   model: gpt-3.5-turbo # Use a faster model for iteration
-  loop: false          # Don't loop on each iteration
   steps:
     - process {{file}}
 

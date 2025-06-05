@@ -10,7 +10,6 @@ This example demonstrates how to configure various step types in Roast workflows
 All step types support the following configuration options:
 
 - `model`: The AI model to use (e.g., "gpt-4o", "claude-3-opus")
-- `loop`: Whether to enable auto-looping (true/false)
 - `print_response`: Whether to print the response to stdout (true/false)
 - `json`: Whether to expect a JSON response (true/false)
 - `params`: Additional parameters to pass to the model (e.g., temperature, max_tokens)
@@ -30,7 +29,6 @@ Inline prompts can be configured in two ways:
 ```yaml
 analyze the code:
   model: gpt-4o
-  loop: false
   print_response: true
 ```
 
@@ -52,7 +50,6 @@ each:
   each: "{{files}}"
   as: file
   model: gpt-3.5-turbo
-  loop: false
   steps:
     - process {{file}}
 
