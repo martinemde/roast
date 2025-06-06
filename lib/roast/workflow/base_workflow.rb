@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require "raix/chat_completion"
-require "raix/function_dispatch"
-
 module Roast
   module Workflow
     class BaseWorkflow

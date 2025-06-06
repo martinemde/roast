@@ -26,8 +26,11 @@ require "active_support/core_ext/string/inflections"
 require "active_support/isolated_execution_state"
 require "active_support/notifications"
 require "cli/ui"
+require "diff/lcs"
 require "json-schema"
 require "raix"
+require "raix/chat_completion"
+require "raix/function_dispatch"
 require "thor"
 
 # Autoloading setup

@@ -93,11 +93,9 @@ module Roast
       attr_reader :api_configuration
 
       def process_resource
-        if defined?(Roast::Resources)
-          @resource = ResourceResolver.resolve(@target, context_path)
-          # Update target with processed value for backward compatibility
-          @target = @resource.value if has_target?
-        end
+        @resource = ResourceResolver.resolve(@target, context_path)
+        # Update target with processed value for backward compatibility
+        @target = @resource.value if has_target?
       end
 
       def mark_last_step_for_output

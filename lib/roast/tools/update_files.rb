@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "diff/lcs"
-
 module Roast
   module Tools
     module UpdateFiles
