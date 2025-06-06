@@ -1,32 +1,37 @@
 # frozen_string_literal: true
 
-require "active_support"
-require "active_support/cache"
-require "active_support/notifications"
-require "active_support/core_ext/hash/indifferent_access"
-require "active_support/core_ext/string"
-require "active_support/core_ext/string/inflections"
-require "active_support/core_ext/module/delegation"
-require "active_support/isolated_execution_state"
-require "English"
+# Standard library requires
 require "digest"
+require "English"
 require "erb"
 require "fileutils"
+require "forwardable"
 require "json"
+require "logger"
+require "net/http"
+require "open3"
+require "pathname"
+require "securerandom"
+require "tempfile"
+require "uri"
+require "yaml"
+
+# Third-party gem requires
+require "active_support"
+require "active_support/cache"
+require "active_support/core_ext/hash/indifferent_access"
+require "active_support/core_ext/module/delegation"
+require "active_support/core_ext/string"
+require "active_support/core_ext/string/inflections"
+require "active_support/isolated_execution_state"
+require "active_support/notifications"
 require "cli/ui"
+require "json-schema"
 require "raix"
 require "thor"
+
+# Autoloading setup
 require "zeitwerk"
-require "open3"
-require "tempfile"
-require "securerandom"
-require "pathname"
-require "yaml"
-require "logger"
-require "forwardable"
-require "net/http"
-require "uri"
-require "json-schema"
 
 # Set up Zeitwerk autoloader
 loader = Zeitwerk::Loader.for_gem
