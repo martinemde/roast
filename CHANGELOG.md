@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2025-06-05
+
+### Added
+- Default `print_response: true` for the last step in a workflow (#100)
+  - The last step now automatically prints its response unless explicitly configured otherwise
+  - Helps newcomers who would otherwise see no output from their workflows
+  - Works with all step types: string steps, hash steps with variable assignment, and conditional steps
+  - Parallel steps and iteration steps are intelligently handled (no automatic output since there's no single "last" step)
+
+### Fixed
+- PromptStep now properly passes `print_response`, `json`, and `params` parameters to chat_completion
+
 ## [0.3.0] - 2025-06-04
 
 ### Changed

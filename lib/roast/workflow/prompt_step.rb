@@ -9,7 +9,7 @@ module Roast
 
       def call
         prompt(name)
-        result = chat_completion
+        result = chat_completion(print_response:, json:, params:)
 
         # Apply coercion if configured
         apply_coercion(result)
