@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "fileutils"
-require "roast/helpers/logger"
 require "diff/lcs"
 
 module Roast

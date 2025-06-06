@@ -1,33 +1,18 @@
 # frozen_string_literal: true
 
+$LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
+require "roast"
+
 require "active_support/test_case"
-require "cgi"
 require "minitest/autorun"
 require "minitest/rg"
 require "mocha/minitest"
-require "open_router"
-require "openai"
-require "raix"
+require "tmpdir"
 require "vcr"
 
 # Turn on color during CI since GitHub Actions supports it
 if ENV["CI"]
   Minitest::RG.rg!(color: true)
-end
-
-# not sure why this workaround is needed
-def ActiveSupport.test_order = :random
-
-# Add the lib directory to the load path
-$LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
-
-# Require the main file
-require "roast"
-
-module Minitest
-  class << self
-    alias_method :at_exit, :original_at_exit
-  end
 end
 
 # Require test helpers

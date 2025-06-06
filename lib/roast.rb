@@ -8,17 +8,29 @@ require "active_support/core_ext/string"
 require "active_support/core_ext/string/inflections"
 require "active_support/core_ext/module/delegation"
 require "active_support/isolated_execution_state"
+require "English"
+require "digest"
+require "erb"
 require "fileutils"
+require "json"
 require "cli/ui"
 require "raix"
 require "thor"
-require "roast/errors"
-require "roast/helpers"
-require "roast/initializers"
-require "roast/resources"
-require "roast/tools"
-require "roast/version"
-require "roast/workflow"
+require "zeitwerk"
+require "open3"
+require "tempfile"
+require "securerandom"
+require "pathname"
+require "yaml"
+require "logger"
+require "forwardable"
+require "net/http"
+require "uri"
+require "json-schema"
+
+# Set up Zeitwerk autoloader
+loader = Zeitwerk::Loader.for_gem
+loader.setup
 
 module Roast
   ROOT = File.expand_path("../..", __FILE__)
