@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    roast-ai (0.3.0)
+    roast-ai (0.3.1)
       activesupport (>= 7.0)
       cli-ui
       diff-lcs (~> 1.5)
