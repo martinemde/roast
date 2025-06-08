@@ -45,19 +45,10 @@ module Roast
         json = @json if json.nil?
         params = @params if params.nil?
 
-        workflow.chat_completion(openai: workflow.openai? && model, model: model, json:, params:).tap do |result|
-          process_output(result, print_response:)
+        result = workflow.chat_completion(openai: workflow.openai? && model, model: model, json:, params:)
+        process_output(result, print_response:)
 
-          begin
-            if json
-              return nil if result.strip.empty? # Explicitly handle empty string
-
-              return JSON.parse(result)
-            end
-          rescue JSON::ParserError
-            # If JSON parsing fails, leave it as a string
-          end
-        end
+        result
       end
 
       def prompt(text)

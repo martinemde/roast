@@ -37,7 +37,7 @@ module Roast
           model: "gpt-4o",
           json: true,
           params: { "temperature" => 0.7 },
-        ).returns('{"result": "Test response"}')
+        ).returns({ "result" => "Test response" })
 
         result = @executor.execute_step("analyze the code")
         assert_equal({ "result" => "Test response" }, result)

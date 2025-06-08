@@ -10,12 +10,12 @@ module Roast
         @workflow.output = {}
       end
 
-      test "JSON array response returns first element when json is true" do
+      test "JSON array response returns parsed array when json is true" do
         step = BaseStep.new(@workflow, name: "test_step")
         step.json = true
 
-        # Raix 1.0 returns JSON as string
-        json_response = '[{"id": 1, "name": "Item 1"}, {"id": 2, "name": "Item 2"}]'
+        # When json: true, chat_completion returns parsed JSON
+        json_response = [{ "id" => 1, "name" => "Item 1" }, { "id" => 2, "name" => "Item 2" }]
 
         # Stub workflow methods
         @workflow.stub(:openai?, false) do
@@ -57,8 +57,8 @@ module Roast
         step = BaseStep.new(@workflow, name: "test_step")
         step.json = true
 
-        # Raix 1.0 returns JSON as string
-        json_response = '[null, {"id": 2, "name": "Item 2"}, {"id": 3, "name": "Item 3"}]'
+        # When json: true, chat_completion returns parsed JSON
+        json_response = [nil, { "id" => 2, "name" => "Item 2" }, { "id" => 3, "name" => "Item 3" }]
 
         @workflow.stub(:openai?, false) do
           @workflow.stub(:chat_completion, json_response) do
@@ -78,8 +78,8 @@ module Roast
         step = BaseStep.new(@workflow, name: "test_step")
         step.json = true
 
-        # Raix 1.0 returns JSON as string
-        json_response = '[[{"id": 1, "name": "Nested Item 1"}, {"id": 2, "name": "Nested Item 2"}], {"id": 3, "name": "Item 3"}]'
+        # When json: true, chat_completion returns parsed JSON
+        json_response = [[{ "id" => 1, "name" => "Nested Item 1" }, { "id" => 2, "name" => "Nested Item 2" }], { "id" => 3, "name" => "Item 3" }]
 
         @workflow.stub(:openai?, false) do
           @workflow.stub(:chat_completion, json_response) do
@@ -100,8 +100,8 @@ module Roast
         step = BaseStep.new(@workflow, name: "test_step")
         step.json = true
 
-        # Raix 1.0 returns JSON as string
-        json_response = '{"status": "success", "data": {"count": 42}, "items": ["a", "b", "c"]}'
+        # When json: true, chat_completion returns parsed JSON
+        json_response = { "status" => "success", "data" => { "count" => 42 }, "items" => ["a", "b", "c"] }
 
         @workflow.stub(:openai?, false) do
           @workflow.stub(:chat_completion, json_response) do
