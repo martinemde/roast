@@ -11,9 +11,9 @@ module Roast
     def test_with_invalid_initializers_folder
       initializer_path = path_for_initializers("invalid")
 
-      Roast::Config::Initializers.stub(:path, initializer_path) do
+      Roast::DotRoast::Initializers.stub(:path, initializer_path) do
         out, err = capture_io do
-          Roast::Config::Initializers.load_all
+          Roast::DotRoast::Initializers.load_all
         end
 
         assert_equal("", out)
@@ -24,9 +24,9 @@ module Roast
     def test_with_no_initializer_files
       initializer_path = path_for_initializers("empty")
 
-      Roast::Config::Initializers.stub(:path, initializer_path) do
+      Roast::DotRoast::Initializers.stub(:path, initializer_path) do
         out, err = capture_io do
-          Roast::Config::Initializers.load_all
+          Roast::DotRoast::Initializers.load_all
         end
 
         assert_equal("", out)
@@ -40,9 +40,9 @@ module Roast
     def test_with_initializer_file_that_raises
       initializer_path = path_for_initializers("raises")
 
-      Roast::Config::Initializers.stub(:path, initializer_path) do
+      Roast::DotRoast::Initializers.stub(:path, initializer_path) do
         out, err = capture_io do
-          Roast::Config::Initializers.load_all
+          Roast::DotRoast::Initializers.load_all
         end
 
         expected_output = <<~OUTPUT
@@ -60,9 +60,9 @@ module Roast
     def test_with_an_initializer_file
       initializer_path = path_for_initializers("single")
 
-      Roast::Config::Initializers.stub(:path, initializer_path) do
+      Roast::DotRoast::Initializers.stub(:path, initializer_path) do
         out, err = capture_io do
-          Roast::Config::Initializers.load_all
+          Roast::DotRoast::Initializers.load_all
         end
 
         assert_equal("", out)
@@ -77,9 +77,9 @@ module Roast
     def test_with_multiple_initializer_files
       initializer_path = path_for_initializers("multiple")
 
-      Roast::Config::Initializers.stub(:path, initializer_path) do
+      Roast::DotRoast::Initializers.stub(:path, initializer_path) do
         out, err = capture_io do
-          Roast::Config::Initializers.load_all
+          Roast::DotRoast::Initializers.load_all
         end
 
         assert_equal("", out)

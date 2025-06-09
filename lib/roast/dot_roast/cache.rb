@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Roast
-  class Config
+  class DotRoast
     class Cache
       class << self
         def for(key = "")
@@ -16,7 +16,7 @@ module Roast
         end
 
         def path
-          File.join(Config.root, "cache")
+          File.join(DotRoast.root, "cache")
         end
 
         def ensure_exists

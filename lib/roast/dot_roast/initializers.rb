@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 module Roast
-  class Config
+  class DotRoast
     class Initializers
       class << self
         def path
-          File.join(Config.root, "initializers")
+          File.join(DotRoast.root, "initializers")
         end
 
         def load_all

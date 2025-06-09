@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "raix"
-require "roast/config"
+require "roast/dot_roast"
 require "roast/helpers/function_caching_interceptor"
 require "roast/helpers/logger"
 require "roast/workflow/base_workflow"
@@ -24,7 +24,7 @@ module Roast
       private
 
       def load_roast_initializers
-        Roast::Config::Initializers.load_all
+        Roast::DotRoast::Initializers.load_all
       end
 
       def include_tools
