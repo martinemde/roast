@@ -20,8 +20,8 @@ module Roast
 
         def chat_completion(**kwargs)
           @chat_completion_calls << kwargs
-          # Raix 1.0 always returns a string
-          response = kwargs[:json] ? '{"result": "json response"}' : "Test response"
+          # When json: true, return parsed JSON; otherwise return string
+          response = kwargs[:json] ? { "result" => "json response" } : "Test response"
           # Simulate adding assistant response to transcript
           @transcript << { assistant: response }
           response
