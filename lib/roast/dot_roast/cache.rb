@@ -1,18 +1,25 @@
 # frozen_string_literal: true
 
+require "digest"
+
 module Roast
   class DotRoast
     class Cache
       class << self
-        def for(key = "")
+        def for_workflow(workflow_name, workflow_path)
+          namespace = workflow_name + Digest::MD5.hexdigest(workflow_path).first(4)
+          for_namespace(namespace)
+        end
+
+        def for_namespace(namespace)
           ensure_exists
           ensure_gitignore_exists
-          @cache = ActiveSupport::Cache::FileStore.new(path_for(key))
+          @cache = ActiveSupport::Cache::FileStore.new(path_for_namespace(namespace))
           @cache
         end
 
-        def path_for(key)
-          key.empty? ? path : File.join(path, key)
+        def path_for_namespace(namespace)
+          namespace.empty? ? path : File.join(path, namespace)
         end
 
         def path
