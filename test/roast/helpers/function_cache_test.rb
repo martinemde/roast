@@ -101,6 +101,13 @@ module Roast
         end
       end
 
+      def test_namespace_from_workflow_returns_sanitized_name_and_sha
+        workflow_name = "Test Workflow"
+        workflow_path = "/path/to/workflow.yml"
+        expected_namespace = "test_workflow_#{Digest::MD5.hexdigest(workflow_path).first(4)}"
+        assert_equal(expected_namespace, FunctionCache.namespace_from_workflow(workflow_name, workflow_path))
+      end
+
       private
 
       def with_fake_dot_roast_dir
