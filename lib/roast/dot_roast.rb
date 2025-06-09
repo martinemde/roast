@@ -20,13 +20,14 @@ module Roast
         end
 
         candidate = starting_path
-        while candidate != ending_path
-          break if Dir.exist?(File.join(candidate, ".roast"))
+        until candidate == ending_path
+          dot_roast_candidate = File.join(candidate, ".roast")
+          return dot_roast_candidate if Dir.exist?(dot_roast_candidate)
 
           candidate = File.dirname(candidate)
         end
 
-        File.join(candidate, ".roast")
+        File.join(starting_path, ".roast")
       end
     end
   end

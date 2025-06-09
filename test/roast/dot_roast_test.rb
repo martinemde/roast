@@ -11,7 +11,7 @@ module Roast
     def test_with_no_roast_folder
       starting_path = File.join(ending_path, "empty")
       path = Roast::DotRoast.root(starting_path, ending_path)
-      expected_path = File.join(ending_path, ".roast")
+      expected_path = File.join(starting_path, ".roast")
       assert_equal(expected_path, path)
     end
 
@@ -27,6 +27,18 @@ module Roast
       path = Roast::DotRoast.root(starting_path, ending_path)
       expected_path = File.join(ending_path, "deeply", ".roast")
       assert_equal(expected_path, path)
+    end
+
+    def test_starting_path_not_subdir_of_ending_path
+      Dir.mktmpdir do |tmpdir|
+        starting_path = tmpdir
+
+        Roast::Helpers::Logger.expects(:warn).once
+
+        path = Roast::DotRoast.root(starting_path, ending_path)
+        expected_path = File.join(starting_path, ".roast")
+        assert_equal(expected_path, path)
+      end
     end
   end
 end
