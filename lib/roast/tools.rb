@@ -12,7 +12,6 @@ require "roast/tools/read_file"
 require "roast/tools/search_file"
 require "roast/tools/update_files"
 require "roast/tools/write_file"
-require "roast/dot_roast"
 
 module Roast
   module Tools

@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 module Roast
-  class DotRoast
+  module Workflow
     class Initializers
       class << self
         def path
-          File.join(DotRoast.root, "initializers")
+          File.join(Roast.dot_roast_dir, "initializers")
         end
 
         def load_all
@@ -21,7 +21,6 @@ module Roast
         rescue => e
           puts "ERROR: Error loading initializers: #{e.message}"
           Roast::Helpers::Logger.error("Error loading initializers: #{e.message}")
-          # Don't fail the workflow if initializers can't be loaded
         end
       end
     end

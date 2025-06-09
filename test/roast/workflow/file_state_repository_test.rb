@@ -18,8 +18,8 @@ module Roast
         # Create test file and stub pwd
         FileUtils.touch(@file)
         Dir.stubs(:pwd).returns(@temp_dir)
-        # Stub DotRoast.root to return a testable location in temp dir
-        Roast::DotRoast.stubs(:root).returns(File.join(@temp_dir, ".roast"))
+        # Stub Roast.dot_roast_dir to return a testable location in temp dir
+        Roast.stubs(:dot_roast_dir).returns(File.join(@temp_dir, ".roast"))
 
         # Create a mock workflow
         @workflow = mock
@@ -35,7 +35,7 @@ module Roast
       def teardown
         FileUtils.remove_entry(@temp_dir) if @temp_dir && File.exist?(@temp_dir)
         Dir.unstub(:pwd)
-        Roast::DotRoast.unstub(:root)
+        Roast.unstub(:dot_roast_dir)
       end
 
       test "#save_state creates directory structure and saves state" do
