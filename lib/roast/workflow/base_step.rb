@@ -15,7 +15,7 @@ module Roast
       def initialize(workflow, model: "anthropic:claude-opus-4", name: nil, context_path: nil)
         @workflow = workflow
         @model = model
-        @name = normalize_name(name)
+        @name = name || self.class.name.underscore.split("/").last
         @context_path = context_path || ContextPathResolver.resolve(self.class)
         @print_response = false
         @json = false
@@ -65,21 +65,19 @@ module Roast
       def process_output(response, print_response:)
         output_path = File.join(context_path, "output.txt")
         if File.exist?(output_path) && print_response
-          # TODO: use the workflow binding or the step?
-          append_to_final_output(ERB.new(File.read(output_path), trim_mode: "-").result(binding))
+          # Wrap Hash responses in DotAccessHash for template access
+          template_response = response.is_a?(Hash) ? DotAccessHash.new(response) : response
+          # Create a binding that includes the wrapped response
+          template_binding = binding
+          template_binding.local_variable_set(:response, template_response)
+          
+          append_to_final_output(ERB.new(File.read(output_path), trim_mode: "-").result(template_binding))
         elsif print_response
           append_to_final_output(response)
         end
       end
 
       private
-
-      def normalize_name(name)
-        return name if name.is_a?(Roast::ValueObjects::StepName)
-
-        name_value = name || self.class.name.underscore.split("/").last
-        Roast::ValueObjects::StepName.new(name_value)
-      end
 
       def apply_coercion(result)
         case @coerce_to

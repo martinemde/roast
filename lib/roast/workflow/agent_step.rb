@@ -6,8 +6,8 @@ module Roast
       def call
         # For inline prompts (detected by plain text step names), use the name as the prompt
         # For file-based steps, load from the prompt file
-        prompt_content = if name.plain_text?
-          name.to_s
+        prompt_content = if name.include?(" ")
+          name
         else
           read_sidecar_prompt
         end
