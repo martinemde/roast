@@ -658,6 +658,52 @@ tools:
 
 Custom descriptions help the LLM understand when and how to use each command, making your workflows more effective.
 
+### Step-Level Tool Filtering
+
+You can restrict which tools are available to specific steps using the `available_tools` configuration:
+
+```yaml
+# Define all tools globally
+tools:
+  - Roast::Tools::Grep
+  - Roast::Tools::ReadFile
+  - Roast::Tools::WriteFile
+  - Roast::Tools::Cmd:
+      allowed_commands:
+        - pwd
+        - ls
+        - echo
+
+# Configure steps with specific tool access
+explore_directory:
+  available_tools:
+    - pwd
+    - ls
+
+analyze_files:
+  available_tools:
+    - grep
+    - read_file
+
+write_summary:
+  available_tools:
+    - write_file
+    - echo
+```
+
+This feature provides:
+- **Security**: Each step only has access to the tools it needs
+- **Performance**: Reduces the tool list sent to the LLM
+- **Clarity**: Makes tool usage explicit for each step
+
+Key points:
+- Use snake_case tool names (e.g., `read_file` for `Roast::Tools::ReadFile`)
+- For `Cmd` tool, use the specific command names (e.g., `pwd`, `ls`)
+- When `available_tools` is not specified, all tools remain available (backward compatible)
+- Empty array (`available_tools: []`) means no tools for that step
+
+See the [available_tools_demo](examples/available_tools_demo/) for a complete example.
+
 #### ReadFile
 
 Reads the contents of a file from the filesystem.

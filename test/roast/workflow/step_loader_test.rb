@@ -127,6 +127,37 @@ module Roast
         assert_equal({ "key" => "value" }, step.params)
       end
 
+      def test_applies_available_tools_configuration
+        @config_hash["test"] = {
+          "available_tools" => ["grep", "search_file"],
+        }
+
+        step = @step_loader.load("test")
+
+        assert_equal(["grep", "search_file"], step.available_tools)
+      end
+
+      def test_does_not_set_available_tools_when_not_configured
+        @config_hash["test"] = {
+          "json" => true,
+          "print_response" => true,
+        }
+
+        step = @step_loader.load("test")
+
+        assert_nil(step.available_tools)
+      end
+
+      def test_handles_empty_available_tools_array
+        @config_hash["test"] = {
+          "available_tools" => [],
+        }
+
+        step = @step_loader.load("test")
+
+        assert_equal([], step.available_tools)
+      end
+
       def test_sets_resource_when_supported
         @workflow.resource = Roast::Resources::FileResource.new("test.txt")
 

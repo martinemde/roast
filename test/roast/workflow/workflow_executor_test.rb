@@ -58,6 +58,7 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
       model: "gpt-4o",
       json: false,
       params: {},
+      available_tools: nil,
     ).returns("Test response")
 
     result = @executor.execute_step("this is a plain text prompt")
