@@ -120,13 +120,16 @@ module Roast
       end
 
       def test_multiple_matchers_first_match_wins
-        matcher1 = ->(step) { step.is_a?(String) && step.include?("test") }
-        matcher2 = ->(step) { step.is_a?(String) && step.include?("es") }
+        @workflow_executor.stubs(:workflow).returns(mock("workflow"))
+        @workflow_executor.stubs(:config_hash).returns({})
+        
+        matcher1 = ->(step) { step.is_a?(Symbol) && step.to_s.include?("test") }
+        matcher2 = ->(step) { step.is_a?(Symbol) && step.to_s.include?("es") }
 
         StepExecutorRegistry.register_with_matcher(matcher1, TestExecutor)
         StepExecutorRegistry.register_with_matcher(matcher2, AnotherTestExecutor)
 
-        executor = StepExecutorRegistry.for("test", @workflow_executor)
+        executor = StepExecutorRegistry.for(:test, @workflow_executor)
         assert_instance_of(TestExecutor, executor)
       end
 

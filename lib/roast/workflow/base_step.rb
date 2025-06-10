@@ -5,7 +5,7 @@ module Roast
     class BaseStep
       extend Forwardable
 
-      attr_accessor :model, :print_response, :json, :params, :resource, :coerce_to
+      attr_accessor :model, :print_response, :json, :params, :resource, :coerce_to, :available_tools
       attr_reader :workflow, :name, :context_path
 
       def_delegator :workflow, :append_to_final_output
@@ -21,12 +21,13 @@ module Roast
         @json = false
         @params = {}
         @coerce_to = nil
+        @available_tools = nil
         @resource = workflow.resource if workflow.respond_to?(:resource)
       end
 
       def call
         prompt(read_sidecar_prompt)
-        result = chat_completion(print_response:, json:, params:)
+        result = chat_completion(print_response:, json:, params:, available_tools:)
 
         # Apply coercion if configured
         apply_coercion(result)
@@ -34,13 +35,14 @@ module Roast
 
       protected
 
-      def chat_completion(print_response: nil, json: nil, params: nil)
+      def chat_completion(print_response: nil, json: nil, params: nil, available_tools: nil)
         # Use instance variables as defaults if parameters are not provided
         print_response = @print_response if print_response.nil?
         json = @json if json.nil?
         params = @params if params.nil?
+        available_tools = @available_tools if available_tools.nil?
 
-        result = workflow.chat_completion(openai: workflow.openai? && model, model: model, json:, params:)
+        result = workflow.chat_completion(openai: workflow.openai? && model, model: model, json:, params:, available_tools:)
         process_output(result, print_response:)
 
         result
