@@ -4,9 +4,6 @@ require "test_helper"
 
 class RoastWorkflowAgentStepTest < ActiveSupport::TestCase
   def setup
-    # Mock the CodingAgent call
-    Roast::Tools::CodingAgent.stubs(:call).returns("Agent response")
-
     # Mock chat completion for regular prompt
     @mock_openai_client = mock
     @mock_openai_client.stubs(:chat).returns({
@@ -20,7 +17,6 @@ class RoastWorkflowAgentStepTest < ActiveSupport::TestCase
   end
 
   def teardown
-    Roast::Tools::CodingAgent.unstub(:call)
     OpenAI::Client.unstub(:new)
     ENV["OPENAI_API_KEY"] = @original_openai_key
   end
@@ -64,11 +60,11 @@ class RoastWorkflowAgentStepTest < ActiveSupport::TestCase
       step_loader = Roast::Workflow::StepLoader.new(workflow, {}, tmpdir)
 
       # Load regular prompt step (with directory, it loads BaseStep)
-      regular_step = step_loader.load("regular_prompt", agent: false)
+      regular_step = step_loader.load("regular_prompt")
       assert_instance_of Roast::Workflow::BaseStep, regular_step
 
-      # Load agent step (with directory and agent flag, it loads AgentStep)
-      agent_step = step_loader.load("agent_prompt", agent: true)
+      # Load agent step (with directory and agent_type option, it loads AgentStep)
+      agent_step = step_loader.load("agent_prompt", agent_type: :coding_agent)
       assert_instance_of Roast::Workflow::AgentStep, agent_step
     end
   end
@@ -88,15 +84,14 @@ class RoastWorkflowAgentStepTest < ActiveSupport::TestCase
     # Mock the prompt loader to return our test prompt
     Roast::Helpers::PromptLoader.stubs(:load_prompt).returns("Test agent prompt")
 
+    # Set expectation that CodingAgent will be called with the prompt
+    Roast::Tools::CodingAgent.expects(:call).with("Test agent prompt").returns("Agent response")
+
     # Execute the step
     result = agent_step.call
 
     # Verify the result
     assert_equal "Agent response", result
-
-    # Verify CodingAgent was called - we stubbed it in setup
-    # Since we're using mocha stubs, we can't use received method
-    # The test passes if the call doesn't raise an error
   end
 
   test "step executor coordinator handles agent steps" do
@@ -114,7 +109,7 @@ class RoastWorkflowAgentStepTest < ActiveSupport::TestCase
     error_handler.stubs(:with_error_handling).yields
 
     step_orchestrator = mock
-    step_orchestrator.expects(:execute_step).with("my_prompt", exit_on_error: true, step_key: nil, agent: true).returns("agent result")
+    step_orchestrator.expects(:execute_step).with("my_prompt", exit_on_error: true, step_key: nil, agent_type: :coding_agent).returns("agent result")
 
     context = Roast::Workflow::WorkflowContext.new(
       workflow:,

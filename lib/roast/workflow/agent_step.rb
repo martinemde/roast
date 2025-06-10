@@ -3,10 +3,6 @@
 module Roast
   module Workflow
     class AgentStep < BaseStep
-      def initialize(workflow, **kwargs)
-        super(workflow, **kwargs)
-      end
-
       def call
         # Load the prompt content
         prompt_content = read_sidecar_prompt

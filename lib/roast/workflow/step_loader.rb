@@ -42,9 +42,9 @@ module Roast
       #
       # @param step_name [String, StepName] The name of the step to load
       # @param step_key [String] The configuration key for the step (optional)
-      # @param agent [Boolean] Whether this is an agent step
+      # @param options [Hash] Additional options for step loading
       # @return [BaseStep] The loaded step instance
-      def load(step_name, step_key: nil, agent: false)
+      def load(step_name, step_key: nil, **options)
         name = step_name.is_a?(Roast::ValueObjects::StepName) ? step_name : Roast::ValueObjects::StepName.new(step_name)
 
         # Get step config for per-step path
@@ -53,8 +53,7 @@ module Roast
 
         # First check for a prompt step (contains spaces)
         if name.plain_text?
-          step_class = agent ? Roast::Workflow::AgentStep : Roast::Workflow::PromptStep
-          step = step_class.new(workflow, name: name.to_s)
+          step = StepFactory.create(workflow, name, options)
           # Use step_key for configuration if provided, otherwise use name
           config_key = step_key || name.to_s
           configure_step(step, config_key)
@@ -73,9 +72,10 @@ module Roast
           raise StepNotFoundError.new("Step directory or file not found: #{name}", step_name: name.to_s)
         end
 
-        # Choose the appropriate step class based on agent flag
-        step_class = agent ? Roast::Workflow::AgentStep : Roast::Workflow::BaseStep
-        create_step_instance(step_class, name.to_s, step_directory)
+        # Use factory to create the appropriate step instance
+        step = StepFactory.create(workflow, name, options.merge(context_path: step_directory))
+        configure_step(step, name.to_s)
+        step
       end
 
       private
@@ -153,12 +153,15 @@ module Roast
 
         step_class = step_name.classify.constantize
         context = File.dirname(file_path)
-        create_step_instance(step_class, step_name, context)
+        # For Ruby steps, we instantiate the specific class directly
+        step = step_class.new(workflow, name: step_name, context_path: context)
+        configure_step(step, step_name)
+        step
       end
 
       # Create and configure a step instance
-      def create_step_instance(step_class, step_name, context_path)
-        step = step_class.new(workflow, name: step_name, context_path: context_path)
+      def create_step_instance(step_class, step_name, context_path, options = {})
+        step = StepFactory.create(workflow, step_name, options.merge(context_path: context_path))
         configure_step(step, step_name)
         step
       end

@@ -174,7 +174,7 @@ module Roast
 
         # Load and execute the agent step
         exit_on_error = options.fetch(:exit_on_error, context.exit_on_error?(step))
-        step_orchestrator.execute_step(step_name, exit_on_error:, step_key: options[:step_key], agent: true)
+        step_orchestrator.execute_step(step_name, exit_on_error:, step_key: options[:step_key], agent_type: :coding_agent)
       end
 
       def execute_glob_step(step)
