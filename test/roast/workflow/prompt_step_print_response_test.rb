@@ -54,6 +54,7 @@ module Roast
             model: "anthropic:claude-opus-4",
             json: false,
             params: {},
+            available_tools: nil,
           },
           workflow.chat_completion_calls.first,
         )
@@ -90,6 +91,7 @@ module Roast
             model: "anthropic:claude-opus-4",
             json: true,
             params: { temperature: 0.5 },
+            available_tools: nil,
           },
           workflow.chat_completion_calls.first,
         )

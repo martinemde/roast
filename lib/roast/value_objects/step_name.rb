@@ -24,12 +24,23 @@ module Roast
         @value
       end
 
-      def ==(other)
-        return false unless other.is_a?(StepName)
+      # Enables implicit conversion to String
+      alias_method :to_str, :to_s
 
-        value == other.value
+      def ==(other)
+        case other
+        when StepName
+          value == other.value
+        when String
+          value == other
+        else
+          false
+        end
       end
-      alias_method :eql?, :==
+
+      def eql?(other)
+        other.is_a?(StepName) && value == other.value
+      end
 
       def hash
         [self.class, @value].hash

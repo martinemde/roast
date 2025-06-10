@@ -270,6 +270,15 @@ Roast supports several types of steps:
    ```
    This creates a simple prompt-response interaction without tool calls or looping. It's detected by the presence of spaces in the step name and is useful for summarization or simple questions at the end of a workflow.
 
+8. **Agent step**: Direct pass-through to coding agents (e.g., Claude Code)
+   ```yaml
+   steps:
+     - ^fix_linting_errors                                    # File-based agent prompt
+     - ^Review the code and identify any performance issues   # Inline agent prompt
+     - regular_analysis                                       # Normal step through LLM
+   ```
+   Agent steps are prefixed with `^` and send the prompt content directly to the CodingAgent tool without LLM translation. This is useful when you want to give precise instructions to a coding agent without the intermediate interpretation layer. Agent steps support both file-based prompts (`fix_linting_errors/prompt.md`) and inline prompts (text with spaces).
+
 #### Step Configuration
 
 Steps can be configured with various options to control their behavior:
@@ -657,6 +666,52 @@ tools:
 ```
 
 Custom descriptions help the LLM understand when and how to use each command, making your workflows more effective.
+
+### Step-Level Tool Filtering
+
+You can restrict which tools are available to specific steps using the `available_tools` configuration:
+
+```yaml
+# Define all tools globally
+tools:
+  - Roast::Tools::Grep
+  - Roast::Tools::ReadFile
+  - Roast::Tools::WriteFile
+  - Roast::Tools::Cmd:
+      allowed_commands:
+        - pwd
+        - ls
+        - echo
+
+# Configure steps with specific tool access
+explore_directory:
+  available_tools:
+    - pwd
+    - ls
+
+analyze_files:
+  available_tools:
+    - grep
+    - read_file
+
+write_summary:
+  available_tools:
+    - write_file
+    - echo
+```
+
+This feature provides:
+- **Security**: Each step only has access to the tools it needs
+- **Performance**: Reduces the tool list sent to the LLM
+- **Clarity**: Makes tool usage explicit for each step
+
+Key points:
+- Use snake_case tool names (e.g., `read_file` for `Roast::Tools::ReadFile`)
+- For `Cmd` tool, use the specific command names (e.g., `pwd`, `ls`)
+- When `available_tools` is not specified, all tools remain available (backward compatible)
+- Empty array (`available_tools: []`) means no tools for that step
+
+See the [available_tools_demo](examples/available_tools_demo/) for a complete example.
 
 #### ReadFile
 
