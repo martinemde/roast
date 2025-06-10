@@ -9,7 +9,7 @@ module Roast
 
       def [](key)
         value = @hash[key.to_sym] || @hash[key.to_s]
-        value.is_a?(Hash) ? DotAccessHash.new(value) : value
+        wrap_value(value)
       end
 
       def []=(key, value)
@@ -193,6 +193,21 @@ module Roast
       end
 
       alias_method :member?, :has_key?
+
+      private
+
+      def wrap_value(value)
+        case value
+        when Hash
+          DotAccessHash.new(value)
+        when Array
+          # Don't create a new array - return the original array
+          # Only wrap Hash elements within the array when needed
+          value
+        else
+          value
+        end
+      end
     end
   end
 end

@@ -58,6 +58,8 @@ module Roast
         when StepTypeResolver::COMMAND_STEP
           # Command steps should also go through interpolation
           execute_string_step(step, options)
+        when StepTypeResolver::AGENT_STEP
+          execute_agent_step(step, options)
         when StepTypeResolver::GLOB_STEP
           execute_glob_step(step)
         when StepTypeResolver::ITERATION_STEP
@@ -164,6 +166,15 @@ module Roast
             raise
           end
         end
+      end
+
+      def execute_agent_step(step, options = {})
+        # Extract the step name without the ^ prefix
+        step_name = StepTypeResolver.extract_name(step)
+
+        # Load and execute the agent step
+        exit_on_error = options.fetch(:exit_on_error, context.exit_on_error?(step))
+        step_orchestrator.execute_step(step_name, exit_on_error:, step_key: options[:step_key], agent_type: :coding_agent)
       end
 
       def execute_glob_step(step)

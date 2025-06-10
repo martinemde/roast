@@ -1,0 +1,1 @@
+Please write a simple "Hello, World!" Ruby script.

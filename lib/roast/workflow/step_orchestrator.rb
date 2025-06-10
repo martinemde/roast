@@ -22,7 +22,7 @@ module Roast
         @workflow_executor = workflow_executor
       end
 
-      def execute_step(name, exit_on_error: true, step_key: nil)
+      def execute_step(name, exit_on_error: true, step_key: nil, **options)
         resource_type = @workflow.respond_to?(:resource) ? @workflow.resource&.type : nil
 
         @error_handler.with_error_handling(name, resource_type: resource_type) do
@@ -30,7 +30,7 @@ module Roast
 
           # Use step_key for loading if provided, otherwise use name
           load_key = step_key || name
-          step_object = @step_loader.load(name, step_key: load_key)
+          step_object = @step_loader.load(name, step_key: load_key, **options)
           step_result = step_object.call
 
           # Store result in workflow output

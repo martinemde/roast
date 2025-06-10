@@ -161,7 +161,7 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
       events << { name: name, payload: payload }
     end
 
-    @executor.step_loader.expects(:load).with(anything, anything).raises(StandardError.new("test error"))
+    @executor.step_loader.expects(:load).with(anything, anything, anything).raises(StandardError.new("test error"))
 
     assert_raises(Roast::Workflow::WorkflowExecutor::StepExecutionError) do
       @executor.execute_step("failing_step")
