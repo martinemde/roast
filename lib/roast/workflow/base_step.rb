@@ -3,14 +3,10 @@
 module Roast
   module Workflow
     class BaseStep
-      extend Forwardable
-
       attr_accessor :model, :print_response, :json, :params, :resource, :coerce_to, :available_tools
       attr_reader :workflow, :name, :context_path
 
-      def_delegator :workflow, :append_to_final_output
-      def_delegator :workflow, :transcript
-
+      delegate :append_to_final_output, :transcript, to: :workflow
       # TODO: is this really the model we want to default to, and is this the right place to set it?
       def initialize(workflow, model: "anthropic:claude-opus-4", name: nil, context_path: nil)
         @workflow = workflow

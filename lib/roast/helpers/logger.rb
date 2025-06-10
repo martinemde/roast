@@ -4,48 +4,23 @@ module Roast
   module Helpers
     # Central logger for the Roast application
     class Logger
-      extend Forwardable
       VALID_LOG_LEVELS = ["DEBUG", "INFO", "WARN", "ERROR", "FATAL"].freeze
 
-      attr_reader :logger, :log_level
+      delegate_missing_to :@logger
 
-      # Delegate info and warn methods to the underlying logger
-      def_delegators :logger, :info, :warn
-
-      # Create a specialized debug method that ensures proper functionality
-      def debug(message)
-        logger.debug(message)
-      end
-
-      def error(message)
-        # Add any custom error handling logic here
-        logger.error(message)
-      end
-
-      def fatal(message)
-        # Add any custom fatal error handling logic here
-        logger.fatal(message)
-      end
-
-      def initialize(stdout: $stdout, log_level: ENV["ROAST_LOG_LEVEL"] || "INFO")
-        @log_level = validate_log_level(log_level)
-        @logger = create_logger(stdout)
-      end
-
-      def log_level=(level)
-        @log_level = validate_log_level(level)
-        logger.level = ::Logger.const_get(@log_level)
-      end
+      attr_reader :logger
 
       class << self
-        extend Forwardable
+        delegate_missing_to :instance
 
         def instance
           @instance ||= new
         end
 
-        # Delegate logging methods to the singleton instance
-        def_delegators :instance, :debug, :info, :warn, :error, :fatal
+        # Override Kernel#warn to ensure proper delegation
+        def warn(*args)
+          instance.warn(*args)
+        end
 
         # For testing purposes
         def reset
@@ -54,6 +29,11 @@ module Roast
       end
 
       private
+
+      def initialize(stdout: $stdout, log_level: ENV["ROAST_LOG_LEVEL"] || "INFO")
+        @log_level = validate_log_level(log_level)
+        @logger = create_logger(stdout)
+      end
 
       def validate_log_level(level)
         level_str = level.to_s.upcase

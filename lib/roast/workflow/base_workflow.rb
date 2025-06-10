@@ -22,6 +22,7 @@ module Roast
 
       delegate :api_provider, :openai?, to: :workflow_configuration, allow_nil: true
       delegate :output, :output=, :append_to_final_output, :final_output, to: :output_manager
+      delegate_missing_to :output
 
       def initialize(file = nil, name: nil, context_path: nil, resource: nil, session_name: nil, workflow_configuration: nil, pre_processing_data: nil)
         @file = file
@@ -96,19 +97,6 @@ module Roast
 
       # Expose output manager for state management
       attr_reader :output_manager
-
-      # Allow direct access to output values without 'output.' prefix
-      def method_missing(method_name, *args, &block)
-        if output.respond_to?(method_name)
-          output.send(method_name, *args, &block)
-        else
-          super
-        end
-      end
-
-      def respond_to_missing?(method_name, include_private = false)
-        output.respond_to?(method_name) || super
-      end
 
       private
 

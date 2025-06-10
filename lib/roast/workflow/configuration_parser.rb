@@ -3,11 +3,9 @@
 module Roast
   module Workflow
     class ConfigurationParser
-      extend Forwardable
-
       attr_reader :configuration, :options, :files, :current_workflow
 
-      def_delegator :current_workflow, :output
+      delegate :output, to: :current_workflow
 
       def initialize(workflow_path, files = [], options = {})
         @configuration = Configuration.new(workflow_path, options)
