@@ -23,12 +23,14 @@ class RoastWorkflowAgentStepTest < ActiveSupport::TestCase
 
   test "agent step type is recognized correctly" do
     assert Roast::Workflow::StepTypeResolver.agent_step?("^my_prompt")
+    assert Roast::Workflow::StepTypeResolver.agent_step?("^Review the code and identify issues")
     refute Roast::Workflow::StepTypeResolver.agent_step?("my_prompt")
     refute Roast::Workflow::StepTypeResolver.agent_step?("$(command)")
   end
 
   test "extract_name strips ^ prefix for agent steps" do
     assert_equal "my_prompt", Roast::Workflow::StepTypeResolver.extract_name("^my_prompt")
+    assert_equal "Review the code and identify issues", Roast::Workflow::StepTypeResolver.extract_name("^Review the code and identify issues")
     assert_equal "regular_prompt", Roast::Workflow::StepTypeResolver.extract_name("regular_prompt")
   end
 
@@ -129,5 +131,68 @@ class RoastWorkflowAgentStepTest < ActiveSupport::TestCase
     # Execute an agent step
     result = coordinator.execute("^my_prompt")
     assert_equal "agent result", result
+  end
+
+  test "inline agent prompts work with ^ prefix" do
+    # Create mock dependencies
+    workflow = mock
+    workflow.stubs(:output).returns({})
+    config_mock = mock
+    config_mock.stubs(:workflow_path).returns("/test/workflow.yml")
+    workflow.stubs(:config).returns(config_mock)
+
+    state_manager = mock
+    state_manager.stubs(:save_state)
+
+    error_handler = mock
+    error_handler.stubs(:with_error_handling).yields
+
+    step_orchestrator = mock
+
+    # The inline prompt should have the ^ prefix stripped
+    expected_prompt = "Review the code and identify any code smells"
+    step_orchestrator.expects(:execute_step).with(expected_prompt, exit_on_error: true, step_key: nil, agent_type: :coding_agent).returns("agent result")
+
+    context = Roast::Workflow::WorkflowContext.new(
+      workflow:,
+      config_hash: {},
+      context_path: "/test",
+    )
+
+    dependencies = {
+      workflow_executor: mock,
+      state_manager:,
+      error_handler:,
+      step_orchestrator:,
+    }
+
+    coordinator = Roast::Workflow::StepExecutorCoordinator.new(context:, dependencies:)
+
+    # Execute an inline agent step
+    result = coordinator.execute("^Review the code and identify any code smells")
+    assert_equal "agent result", result
+  end
+
+  test "agent step handles inline prompts correctly" do
+    # Create a mock workflow
+    workflow = mock
+    workflow.stubs(:resource).returns(nil)
+    workflow.stubs(:output).returns({})
+    workflow.stubs(:transcript).returns([])
+    workflow.stubs(:append_to_final_output)
+    workflow.stubs(:file).returns(nil)
+
+    # Create agent step with inline prompt
+    inline_prompt = "Review this code and identify performance bottlenecks"
+    agent_step = Roast::Workflow::AgentStep.new(workflow, name: inline_prompt)
+
+    # Set up expectation for CodingAgent call with the inline prompt
+    Roast::Tools::CodingAgent.expects(:call).with(inline_prompt).returns("Found 3 bottlenecks")
+
+    # Execute the step
+    result = agent_step.call
+
+    # Verify the result
+    assert_equal "Found 3 bottlenecks", result
   end
 end

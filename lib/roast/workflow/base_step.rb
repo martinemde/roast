@@ -15,7 +15,7 @@ module Roast
       def initialize(workflow, model: "anthropic:claude-opus-4", name: nil, context_path: nil)
         @workflow = workflow
         @model = model
-        @name = name || self.class.name.underscore.split("/").last
+        @name = normalize_name(name)
         @context_path = context_path || ContextPathResolver.resolve(self.class)
         @print_response = false
         @json = false
@@ -73,6 +73,13 @@ module Roast
       end
 
       private
+
+      def normalize_name(name)
+        return name if name.is_a?(Roast::ValueObjects::StepName)
+
+        name_value = name || self.class.name.underscore.split("/").last
+        Roast::ValueObjects::StepName.new(name_value)
+      end
 
       def apply_coercion(result)
         case @coerce_to

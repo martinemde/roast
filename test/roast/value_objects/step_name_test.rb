@@ -39,7 +39,9 @@ module Roast
 
         assert_equal(step1, step2)
         refute_equal(step1, step3)
-        refute_equal(step1, "test_step")
+        assert_equal(step1, "test_step")  # StepName should equal its string value
+        assert_equal("test_step", step1)  # And it should work both ways
+        refute_equal(step1, "other_step")
         refute_equal(step1, nil)
       end
 

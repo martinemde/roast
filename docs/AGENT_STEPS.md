@@ -8,9 +8,16 @@ Agent steps are denoted by prefixing a step name with `^`. They bypass the norma
 
 ```yaml
 steps:
+  # File-based prompts
   - analyze_code       # Regular step - processed by LLM first
   - ^implement_fix     # Agent step - direct to CodingAgent
+  
+  # Inline prompts
+  - Analyze the code quality and suggest improvements          # Regular inline
+  - ^Fix all ESLint errors and apply Prettier formatting       # Agent inline
 ```
+
+Both file-based prompts (with directories like `implement_fix/prompt.md`) and inline prompts (text with spaces) are supported.
 
 ## When to Use Agent Steps
 

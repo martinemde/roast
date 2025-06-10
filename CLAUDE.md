@@ -52,6 +52,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - ConditionalExecutor handles conditionals (if, unless)
   - Don't combine different responsibilities in one class
 - **Do not implement prompts "inline" using a prompt: attribute nested under step names, that violates the primary design architecture of Roast**
+- When faced with the choice between working around an architectural issue or code smell versus actually diving into fixing the design issue or code smell, choose the latter more principled approach
+- When fixing code smells, you don't have to worry about internal backwards compatibility 
 
 ## Guidance and Expectations
 
@@ -168,4 +170,3 @@ gh pr diff {pr_number}
     - Avoid premature optimization outside of hot paths
     - Consider the tradeoff between readability and performance
     - Suggest optimizations that improve both clarity and performance
-```
