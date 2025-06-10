@@ -122,7 +122,7 @@ module Roast
       def test_multiple_matchers_first_match_wins
         @workflow_executor.stubs(:workflow).returns(mock("workflow"))
         @workflow_executor.stubs(:config_hash).returns({})
-        
+
         matcher1 = ->(step) { step.is_a?(Symbol) && step.to_s.include?("test") }
         matcher2 = ->(step) { step.is_a?(Symbol) && step.to_s.include?("es") }
 
