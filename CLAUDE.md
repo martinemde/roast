@@ -4,6 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## About the codebase
 - This is a Ruby gem called Roast. Its purpose is to run AI workflows defined in a YAML file.
+- Note that this project now uses Zeitwerk, which means you don't have to manually require project files anymore
 
 ## Commands
 

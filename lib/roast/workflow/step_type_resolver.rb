@@ -14,6 +14,7 @@ module Roast
       PARALLEL_STEP = :parallel
       STRING_STEP = :string
       STANDARD_STEP = :standard
+      AGENT_STEP = :agent
 
       # Special step names for iterations
       ITERATION_STEPS = ["repeat", "each"].freeze
@@ -47,6 +48,13 @@ module Roast
         # @return [Boolean] true if it's a command step
         def command_step?(step)
           step.is_a?(String) && step.start_with?("$(")
+        end
+
+        # Check if a step is an agent step
+        # @param step [String] The step to check
+        # @return [Boolean] true if it's an agent step
+        def agent_step?(step)
+          step.is_a?(String) && step.start_with?("^")
         end
 
         # Check if a step is a glob pattern
@@ -96,7 +104,8 @@ module Roast
         def extract_name(step)
           case step
           when String
-            step
+            # Strip ^ prefix for agent steps
+            agent_step?(step) ? step[1..] : step
           when Hash
             step.keys.first
           when Array
@@ -109,6 +118,8 @@ module Roast
         def resolve_string_step(step, context)
           if command_step?(step)
             COMMAND_STEP
+          elsif agent_step?(step)
+            AGENT_STEP
           elsif glob_step?(step, context)
             GLOB_STEP
           else

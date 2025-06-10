@@ -31,7 +31,7 @@ module Roast
         @workflow.expects(:output).returns({})
 
         step_object = mock("step_object")
-        @step_loader.expects(:load).with(step_name, step_key: step_name).returns(step_object)
+        @step_loader.expects(:load).with(step_name, step_key: step_name, agent: false).returns(step_object)
         step_object.expects(:call).returns(step_result)
 
         @state_manager.expects(:save_state).with(step_name, step_result)
@@ -50,7 +50,7 @@ module Roast
         @workflow.expects(:output).returns({})
 
         step_object = mock("step_object")
-        @step_loader.expects(:load).with(step_name, step_key: step_name).returns(step_object)
+        @step_loader.expects(:load).with(step_name, step_key: step_name, agent: false).returns(step_object)
         step_object.expects(:call).returns(step_result)
 
         @state_manager.expects(:save_state).with(step_name, step_result)
@@ -70,7 +70,7 @@ module Roast
         @workflow.expects(:output).returns(output_hash)
 
         step_object = mock("step_object")
-        @step_loader.expects(:load).with(step_name, step_key: step_name).returns(step_object)
+        @step_loader.expects(:load).with(step_name, step_key: step_name, agent: false).returns(step_object)
         step_object.expects(:call).returns(step_result)
 
         @state_manager.expects(:save_state).with(step_name, step_result)
@@ -87,7 +87,7 @@ module Roast
         @workflow.expects(:output).returns({})
 
         step_object = mock("step_object")
-        @step_loader.expects(:load).with(step_name, step_key: step_name).returns(step_object)
+        @step_loader.expects(:load).with(step_name, step_key: step_name, agent: false).returns(step_object)
         step_object.expects(:call).returns("result")
 
         @state_manager.expects(:save_state)
@@ -103,7 +103,7 @@ module Roast
         @workflow.expects(:output).returns({})
 
         step_object = mock("step_object")
-        @step_loader.expects(:load).with(step_name, step_key: step_name).returns(step_object)
+        @step_loader.expects(:load).with(step_name, step_key: step_name, agent: false).returns(step_object)
         step_object.expects(:call).returns("result")
 
         @state_manager.expects(:save_state)
@@ -130,7 +130,7 @@ module Roast
         @workflow.expects(:output).returns({})
 
         step_object = mock("step_object")
-        @step_loader.expects(:load).with(step_name, step_key: step_key).returns(step_object)
+        @step_loader.expects(:load).with(step_name, step_key: step_key, agent: false).returns(step_object)
         step_object.expects(:call).returns(step_result)
 
         @state_manager.expects(:save_state).with(step_name, step_result)

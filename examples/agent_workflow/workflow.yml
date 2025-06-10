@@ -1,0 +1,14 @@
+description: Example workflow demonstrating agent steps
+
+# Agent steps send prompts directly to CodingAgent (e.g., Claude Code)
+# without the intermediate LLM translation layer
+
+steps:
+  # Regular step - goes through LLM first
+  - analyze_code
+  
+  # Agent step - direct to CodingAgent
+  - ^fix_issues
+  
+  # Another regular step
+  - verify_fixes

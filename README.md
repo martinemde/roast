@@ -270,6 +270,14 @@ Roast supports several types of steps:
    ```
    This creates a simple prompt-response interaction without tool calls or looping. It's detected by the presence of spaces in the step name and is useful for summarization or simple questions at the end of a workflow.
 
+8. **Agent step**: Direct pass-through to coding agents (e.g., Claude Code)
+   ```yaml
+   steps:
+     - ^fix_linting_errors    # Sends prompt directly to CodingAgent
+     - regular_analysis       # Normal step through LLM
+   ```
+   Agent steps are prefixed with `^` and send the prompt content directly to the CodingAgent tool without LLM translation. This is useful when you want to give precise instructions to a coding agent without the intermediate interpretation layer. The prompt file (`fix_linting_errors/prompt.md`) is passed directly to the agent.
+
 #### Step Configuration
 
 Steps can be configured with various options to control their behavior:

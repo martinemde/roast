@@ -16,7 +16,7 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
   test "executes string steps" do
     step_obj = mock("step")
     step_obj.expects(:call).returns("result")
-    @executor.step_loader.expects(:load).with("step1", step_key: "step1").returns(step_obj)
+    @executor.step_loader.expects(:load).with("step1", step_key: "step1", agent: false).returns(step_obj)
     @executor.execute_steps(["step1"])
   end
 
@@ -24,7 +24,7 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
     @workflow.stubs(pause_step_name: "step1")
     step_obj = mock("step")
     step_obj.expects(:call).returns("result")
-    @executor.step_loader.expects(:load).with("step1", step_key: "step1").returns(step_obj)
+    @executor.step_loader.expects(:load).with("step1", step_key: "step1", agent: false).returns(step_obj)
     mock_binding = mock("mock_binding")
     Kernel.stubs(:binding).returns(mock_binding)
     mock_binding.expects(:irb)
@@ -35,7 +35,7 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
     @workflow.expects(:instance_eval).with("file").returns("test.rb")
     step_obj = mock("step")
     step_obj.expects(:call).returns("result")
-    @executor.step_loader.expects(:load).with("step test.rb", step_key: "step test.rb").returns(step_obj)
+    @executor.step_loader.expects(:load).with("step test.rb", step_key: "step test.rb", agent: false).returns(step_obj)
     @executor.execute_steps(["step {{file}}"])
   end
 
@@ -68,7 +68,7 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
   test "executes hash steps" do
     step_obj = mock("step")
     step_obj.expects(:call).returns("result")
-    @executor.step_loader.expects(:load).with("command1", step_key: "var1").returns(step_obj)
+    @executor.step_loader.expects(:load).with("command1", step_key: "var1", agent: false).returns(step_obj)
     @executor.execute_steps([{ "var1" => "command1" }])
     assert_equal "result", @output["var1"]
   end
@@ -77,7 +77,7 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
     @workflow.expects(:instance_eval).with("var_name").returns("test_var")
     step_obj = mock("step")
     step_obj.expects(:call).returns("result")
-    @executor.step_loader.expects(:load).with("command1", step_key: "test_var").returns(step_obj)
+    @executor.step_loader.expects(:load).with("command1", step_key: "test_var", agent: false).returns(step_obj)
     @executor.execute_steps([{ "{{var_name}}" => "command1" }])
     assert_equal "result", @output["test_var"]
   end
@@ -86,7 +86,7 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
     @workflow.expects(:instance_eval).with("cmd").returns("test_command")
     step_obj = mock("step")
     step_obj.expects(:call).returns("result")
-    @executor.step_loader.expects(:load).with("test_command", step_key: "var1").returns(step_obj)
+    @executor.step_loader.expects(:load).with("test_command", step_key: "var1", agent: false).returns(step_obj)
     @executor.execute_steps([{ "var1" => "{{cmd}}" }])
     assert_equal "result", @output["var1"]
   end
@@ -96,7 +96,7 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
     @workflow.expects(:instance_eval).with("cmd").returns("test_command")
     step_obj = mock("step")
     step_obj.expects(:call).returns("result")
-    @executor.step_loader.expects(:load).with("test_command", step_key: "test_var").returns(step_obj)
+    @executor.step_loader.expects(:load).with("test_command", step_key: "test_var", agent: false).returns(step_obj)
     @executor.execute_steps([{ "{{var_name}}" => "{{cmd}}" }])
     assert_equal "result", @output["test_var"]
   end
@@ -134,7 +134,7 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
 
     step_obj = mock("step")
     step_obj.expects(:call).returns("result")
-    @executor.step_loader.expects(:load).with(anything, anything).returns(step_obj)
+    @executor.step_loader.expects(:load).with(anything, anything, anything).returns(step_obj)
 
     @executor.execute_step("test_step")
 
@@ -160,7 +160,7 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
       events << { name: name, payload: payload }
     end
 
-    @executor.step_loader.expects(:load).with(anything, anything).raises(StandardError.new("test error"))
+    @executor.step_loader.expects(:load).with(anything, anything, anything).raises(StandardError.new("test error"))
 
     assert_raises(Roast::Workflow::WorkflowExecutor::StepExecutionError) do
       @executor.execute_step("failing_step")

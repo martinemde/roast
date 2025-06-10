@@ -42,8 +42,9 @@ module Roast
       #
       # @param step_name [String, StepName] The name of the step to load
       # @param step_key [String] The configuration key for the step (optional)
+      # @param agent [Boolean] Whether this is an agent step
       # @return [BaseStep] The loaded step instance
-      def load(step_name, step_key: nil)
+      def load(step_name, step_key: nil, agent: false)
         name = step_name.is_a?(Roast::ValueObjects::StepName) ? step_name : Roast::ValueObjects::StepName.new(step_name)
 
         # Get step config for per-step path
@@ -52,7 +53,8 @@ module Roast
 
         # First check for a prompt step (contains spaces)
         if name.plain_text?
-          step = Roast::Workflow::PromptStep.new(workflow, name: name.to_s)
+          step_class = agent ? Roast::Workflow::AgentStep : Roast::Workflow::PromptStep
+          step = step_class.new(workflow, name: name.to_s)
           # Use step_key for configuration if provided, otherwise use name
           config_key = step_key || name.to_s
           configure_step(step, config_key)
@@ -71,7 +73,9 @@ module Roast
           raise StepNotFoundError.new("Step directory or file not found: #{name}", step_name: name.to_s)
         end
 
-        create_step_instance(Roast::Workflow::BaseStep, name.to_s, step_directory)
+        # Choose the appropriate step class based on agent flag
+        step_class = agent ? Roast::Workflow::AgentStep : Roast::Workflow::BaseStep
+        create_step_instance(step_class, name.to_s, step_directory)
       end
 
       private
