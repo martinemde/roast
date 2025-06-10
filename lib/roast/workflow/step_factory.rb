@@ -42,7 +42,7 @@ module Roast
 
         def build_step_instance(step_class, workflow, name, options)
           step_params = {
-            name: name.to_s,
+            name:,
           }
 
           # Add context path if provided

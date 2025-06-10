@@ -15,7 +15,7 @@ module Roast
       def initialize(workflow, model: "anthropic:claude-opus-4", name: nil, context_path: nil)
         @workflow = workflow
         @model = model
-        @name = name || self.class.name.underscore.split("/").last
+        @name = normalize_name(name)
         @context_path = context_path || ContextPathResolver.resolve(self.class)
         @print_response = false
         @json = false
@@ -65,12 +65,19 @@ module Roast
       def process_output(response, print_response:)
         output_path = File.join(context_path, "output.txt")
         if File.exist?(output_path) && print_response
-          # Wrap Hash responses in DotAccessHash for template access
-          template_response = response.is_a?(Hash) ? DotAccessHash.new(response) : response
+          # Deep wrap the response for template access
+          template_response = deep_wrap_for_templates(response)
+
+          # Debug output
+          if template_response.is_a?(DotAccessHash) && template_response.recommendations&.is_a?(Array)
+            $stderr.puts "DEBUG: recommendations array has #{template_response.recommendations.size} items"
+            $stderr.puts "DEBUG: first item class: #{template_response.recommendations.first.class}" if template_response.recommendations.first
+          end
+
           # Create a binding that includes the wrapped response
           template_binding = binding
           template_binding.local_variable_set(:response, template_response)
-          
+
           append_to_final_output(ERB.new(File.read(output_path), trim_mode: "-").result(template_binding))
         elsif print_response
           append_to_final_output(response)
@@ -78,6 +85,35 @@ module Roast
       end
 
       private
+
+      def normalize_name(name)
+        return name if name.is_a?(Roast::ValueObjects::StepName)
+
+        name_value = name || self.class.name.underscore.split("/").last
+        Roast::ValueObjects::StepName.new(name_value)
+      end
+
+      # Deep wrap response for ERB templates
+      # This creates a new structure where:
+      # - Hashes are wrapped in DotAccessHash
+      # - Arrays are cloned with their Hash elements wrapped
+      def deep_wrap_for_templates(obj)
+        case obj
+        when Hash
+          # Convert the hash to a new hash with wrapped values
+          wrapped_hash = {}
+          obj.each do |key, value|
+            wrapped_hash[key] = deep_wrap_for_templates(value)
+          end
+          DotAccessHash.new(wrapped_hash)
+        when Array
+          # Create a new array with wrapped elements
+          # This allows the template to use dot notation on array elements
+          obj.map { |item| deep_wrap_for_templates(item) }
+        else
+          obj
+        end
+      end
 
       def apply_coercion(result)
         case @coerce_to

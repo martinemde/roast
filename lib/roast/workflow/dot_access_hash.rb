@@ -201,7 +201,9 @@ module Roast
         when Hash
           DotAccessHash.new(value)
         when Array
-          value.map { |item| item.is_a?(Hash) ? DotAccessHash.new(item) : item }
+          # Don't create a new array - return the original array
+          # Only wrap Hash elements within the array when needed
+          value
         else
           value
         end

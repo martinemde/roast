@@ -154,7 +154,9 @@ module Roast
         step_class = step_name.classify.constantize
         context = File.dirname(file_path)
         # For Ruby steps, we instantiate the specific class directly
-        step = step_class.new(workflow, name: step_name, context_path: context)
+        # Convert step_name to StepName value object
+        step_name_obj = Roast::ValueObjects::StepName.new(step_name)
+        step = step_class.new(workflow, name: step_name_obj, context_path: context)
         configure_step(step, step_name)
         step
       end
