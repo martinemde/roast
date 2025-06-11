@@ -108,7 +108,122 @@ module Roast
       puts "Run a workflow with: roast execute <workflow_name>"
     end
 
+    desc "validate [WORKFLOW_CONFIGURATION_FILE]", "Validate a workflow configuration"
+    option :strict, type: :boolean, aliases: "-s", desc: "Treat warnings as errors"
+    def validate(workflow_path = nil)
+      if workflow_path.nil?
+        # If no path provided, validate all workflows in roast/ directory
+        roast_dir = File.join(Dir.pwd, "roast")
+        unless File.directory?(roast_dir)
+          raise Thor::Error, "No roast/ directory found in current path"
+        end
+
+        workflow_files = Dir.glob(File.join(roast_dir, "**/workflow.yml")).sort
+        if workflow_files.empty?
+          raise Thor::Error, "No workflow.yml files found in roast/ directory"
+        end
+
+        validate_multiple_workflows(workflow_files)
+      else
+        # Validate single workflow
+        expanded_workflow_path = if workflow_path.end_with?(".yml", ".yaml") || workflow_path.include?("/")
+          File.expand_path(workflow_path)
+        else
+          File.expand_path("roast/#{workflow_path}/workflow.yml")
+        end
+
+        unless File.exist?(expanded_workflow_path)
+          raise Thor::Error, "Workflow file not found: #{expanded_workflow_path}"
+        end
+
+        validate_single_workflow(expanded_workflow_path)
+      end
+    end
+
     private
+
+    def validate_single_workflow(workflow_path)
+      puts ::CLI::UI.fmt("{{bold:Validating}} #{workflow_path}")
+
+      yaml_content = File.read(workflow_path)
+      validator = Roast::Workflow::ComprehensiveValidator.new(yaml_content, workflow_path)
+
+      if validator.valid?
+        if validator.warnings.empty?
+          puts ::CLI::UI.fmt("{{green:✓}} Workflow is valid")
+        else
+          puts ::CLI::UI.fmt("{{green:✓}} Workflow is valid with {{yellow:#{validator.warnings.size} warning(s)}}")
+          display_validation_warnings(validator.warnings)
+
+          if options[:strict]
+            exit(1)
+          end
+        end
+      else
+        puts ::CLI::UI.fmt("{{red:✗}} Workflow validation failed with {{red:#{validator.errors.size} error(s)}}")
+        display_validation_errors(validator.errors)
+        exit(1)
+      end
+    end
+
+    def validate_multiple_workflows(workflow_files)
+      total_errors = 0
+      total_warnings = 0
+
+      ::CLI::UI::Frame.open("Validating #{workflow_files.size} workflow(s)") do
+        workflow_files.each do |workflow_path|
+          workflow_name = workflow_path.sub("#{Dir.pwd}/roast/", "").sub("/workflow.yml", "")
+
+          yaml_content = File.read(workflow_path)
+          validator = Roast::Workflow::ComprehensiveValidator.new(yaml_content, workflow_path)
+
+          if validator.valid?
+            if validator.warnings.empty?
+              puts ::CLI::UI.fmt("{{green:✓}} {{bold:#{workflow_name}}}")
+            else
+              puts ::CLI::UI.fmt("{{green:✓}} {{bold:#{workflow_name}}} ({{yellow:#{validator.warnings.size} warning(s)}})")
+              total_warnings += validator.warnings.size
+            end
+          else
+            puts ::CLI::UI.fmt("{{red:✗}} {{bold:#{workflow_name}}} ({{red:#{validator.errors.size} error(s)}})")
+            total_errors += validator.errors.size
+          end
+        end
+      end
+
+      puts
+      if total_errors == 0 && total_warnings == 0
+        puts ::CLI::UI.fmt("{{green:All workflows are valid!}}")
+      elsif total_errors == 0
+        puts ::CLI::UI.fmt("{{green:All workflows are valid}} with {{yellow:#{total_warnings} total warning(s)}}")
+        if options[:strict]
+          exit(1)
+        end
+      else
+        puts ::CLI::UI.fmt("{{red:Validation failed:}} #{total_errors} error(s), #{total_warnings} warning(s)")
+        exit(1)
+      end
+    end
+
+    def display_validation_errors(errors)
+      ::CLI::UI::Frame.open("Errors", color: :red) do
+        errors.each do |error|
+          puts ::CLI::UI.fmt("{{red:• #{error[:message]}}}")
+          puts ::CLI::UI.fmt("  {{gray:→ #{error[:suggestion]}}}") if error[:suggestion]
+          puts
+        end
+      end
+    end
+
+    def display_validation_warnings(warnings)
+      ::CLI::UI::Frame.open("Warnings", color: :yellow) do
+        warnings.each do |warning|
+          puts ::CLI::UI.fmt("{{yellow:• #{warning[:message]}}}")
+          puts ::CLI::UI.fmt("  {{gray:→ #{warning[:suggestion]}}}") if warning[:suggestion]
+          puts
+        end
+      end
+    end
 
     def show_example_picker
       examples = available_examples
