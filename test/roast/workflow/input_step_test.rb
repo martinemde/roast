@@ -208,7 +208,8 @@ module Roast
 
         step = InputStep.new(@workflow, config: config)
 
-        ::CLI::UI.expects(:ask).with("Enter password:", is_file: false, hide_input: true).returns("secret123")
+        # Mock the prompt_password_with_echo_off method directly
+        step.expects(:prompt_password_with_echo_off).returns("secret123")
 
         result = step.call
 

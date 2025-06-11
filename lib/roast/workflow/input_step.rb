@@ -91,11 +91,13 @@ module Roast
       end
 
       def prompt_password
+        require "io/console"
+
         loop do
           result = if timeout
-            with_timeout { ::CLI::UI.ask(prompt_text, is_file: false, hide_input: true) }
+            with_timeout { prompt_password_with_echo_off }
           else
-            ::CLI::UI.ask(prompt_text, is_file: false, hide_input: true)
+            prompt_password_with_echo_off
           end
 
           if required && result.to_s.strip.empty?
@@ -104,6 +106,24 @@ module Roast
           end
 
           return result
+        end
+      end
+
+      def prompt_password_with_echo_off
+        ::CLI::UI.with_frame_color(:blue) do
+          print("🔒 #{prompt_text} ")
+
+          password = if $stdin.tty?
+            # Use noecho for TTY environments
+            $stdin.noecho { $stdin.gets }.chomp
+          else
+            # Fall back to regular input for non-TTY environments
+            warn("[WARNING] Password will be visible (not running in TTY)")
+            $stdin.gets.chomp
+          end
+
+          puts # Add newline after password input
+          password
         end
       end
 
