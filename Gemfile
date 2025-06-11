@@ -18,3 +18,5 @@ gem "rubocop-shopify", require: false
 gem "vcr", require: false
 gem "webmock", require: false
 gem "minitest-rg"
+
+gem "claude_swarm"
