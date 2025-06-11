@@ -66,9 +66,6 @@ Validates file resources:
 - Warns about workflows with too many steps (>20)
 - Detects excessive nesting depth (>5 levels)
 
-#### Security Warnings
-- Detects hardcoded API keys, passwords, tokens, and secrets
-- Suggests using inputs or environment variables
 
 #### Best Practices
 - Warns about missing error handling
@@ -158,6 +155,18 @@ else
   end
 end
 ```
+
+## Architecture
+
+The validation system follows SOLID principles with a modular design:
+
+- **ValidationOrchestrator**: Coordinates all validators and aggregates results
+- **SchemaValidator**: Handles YAML parsing and JSON schema validation
+- **DependencyValidator**: Validates tools, step references, and resources
+- **LintingValidator**: Enforces best practices and code quality standards
+- **StepCollector**: Provides efficient caching for step traversal
+
+This architecture makes it easy to extend validation with new rules or customize existing behavior.
 
 ## Future Enhancements
 

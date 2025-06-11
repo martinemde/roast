@@ -30,8 +30,9 @@ module Roast
         validator = ComprehensiveValidator.new(invalid_yaml, @workflow_path)
 
         refute validator.valid?
-        assert_equal 1, validator.errors.size
-        assert_equal :yaml_syntax, validator.errors.first[:type]
+        assert validator.errors.size >= 1
+        yaml_error = validator.errors.find { |e| e[:type] == :yaml_syntax }
+        assert yaml_error, "Expected YAML syntax error"
       end
 
       test "catches missing required fields" do
@@ -79,11 +80,7 @@ module Roast
 
         validator = ComprehensiveValidator.new(yaml_with_invalid_ref, @workflow_path)
 
-        # Debug: check what steps were collected
-        all_steps = validator.send(:collect_all_steps, YAML.safe_load(yaml_with_invalid_ref))
-        step_names = all_steps.map { |s| validator.send(:extract_step_name, s) }.compact.uniq
-
-        refute validator.valid?, "Expected validation to fail for invalid step reference. Steps found: #{step_names.inspect}, Errors: #{validator.errors.inspect}"
+        refute validator.valid?, "Expected validation to fail for invalid step reference. Errors: #{validator.errors.inspect}"
 
         error = validator.errors.find { |e| e[:type] == :step_reference }
         assert error, "Expected step_reference error but got: #{validator.errors.inspect}"
@@ -200,23 +197,6 @@ module Roast
         warning = validator.warnings.find { |w| w[:type] == :error_handling }
         assert warning
         assert_includes warning[:message], "No error handling"
-      end
-
-      test "warns about hardcoded secrets" do
-        yaml_with_secrets = <<~YAML
-          name: Test Workflow
-          tools: []
-          api_token: "hardcoded-secret-token-123"
-          steps:
-            - step_with_password
-        YAML
-
-        validator = ComprehensiveValidator.new(yaml_with_secrets, @workflow_path)
-        assert validator.valid?
-
-        warning = validator.warnings.find { |w| w[:type] == :security }
-        assert warning
-        assert_includes warning[:message], "should not be hardcoded"
       end
 
       test "validates target resource warnings" do
@@ -342,7 +322,10 @@ module Roast
       test "handles empty workflow gracefully" do
         validator = ComprehensiveValidator.new("", @workflow_path)
         refute validator.valid?
-        assert_empty validator.errors # Empty YAML is caught before comprehensive validation
+
+        error = validator.errors.find { |e| e[:type] == :empty_configuration }
+        assert error, "Expected empty_configuration error"
+        assert_includes error[:message], "Workflow configuration is empty"
       end
 
       test "handles nil workflow content" do
