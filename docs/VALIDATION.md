@@ -137,7 +137,7 @@ You can also use the validator programmatically:
 require 'roast'
 
 yaml_content = File.read('workflow.yml')
-validator = Roast::Workflow::ComprehensiveValidator.new(yaml_content, 'workflow.yml')
+validator = Roast::Workflow::Validators::ValidationOrchestrator.new(yaml_content, 'workflow.yml')
 
 if validator.valid?
   puts "Workflow is valid!"

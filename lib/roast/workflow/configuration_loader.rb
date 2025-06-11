@@ -26,7 +26,7 @@ module Roast
 
           # Use comprehensive validation if requested
           if options[:comprehensive_validation]
-            validator = ComprehensiveValidator.new(yaml_content, workflow_path)
+            validator = Validators::ValidationOrchestrator.new(yaml_content, workflow_path)
             unless validator.valid?
               raise_validation_errors(validator)
             end

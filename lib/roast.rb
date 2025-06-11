@@ -146,7 +146,7 @@ module Roast
       puts ::CLI::UI.fmt("{{bold:Validating}} #{workflow_path}")
 
       yaml_content = File.read(workflow_path)
-      validator = Roast::Workflow::ComprehensiveValidator.new(yaml_content, workflow_path)
+      validator = Roast::Workflow::Validators::ValidationOrchestrator.new(yaml_content, workflow_path)
 
       if validator.valid?
         if validator.warnings.empty?
@@ -175,7 +175,7 @@ module Roast
           workflow_name = workflow_path.sub("#{Dir.pwd}/roast/", "").sub("/workflow.yml", "")
 
           yaml_content = File.read(workflow_path)
-          validator = Roast::Workflow::ComprehensiveValidator.new(yaml_content, workflow_path)
+          validator = Roast::Workflow::Validators::ValidationOrchestrator.new(yaml_content, workflow_path)
 
           if validator.valid?
             if validator.warnings.empty?
