@@ -66,7 +66,7 @@ module Roast
           end
 
           if required && result.to_s.strip.empty?
-            ::CLI::UI.puts("This field is required. Please provide a value.", color: :red)
+            puts ::CLI::UI.fmt("{{red:This field is required. Please provide a value.}}")
             next
           end
 
@@ -101,7 +101,7 @@ module Roast
           end
 
           if required && result.to_s.strip.empty?
-            ::CLI::UI.puts("This field is required. Please provide a value.", color: :red)
+            puts ::CLI::UI.fmt("{{red:This field is required. Please provide a value.}}")
             next
           end
 
@@ -141,10 +141,10 @@ module Roast
       end
 
       def handle_timeout
-        ::CLI::UI.puts("Input timed out after #{timeout} seconds", color: :yellow)
+        puts ::CLI::UI.fmt("{{yellow:Input timed out after #{timeout} seconds}}")
 
         if default
-          ::CLI::UI.puts("Using default value: #{default}", color: :yellow)
+          puts ::CLI::UI.fmt("{{yellow:Using default value: #{default}}}")
           default
         elsif required
           raise_config_error("Required input timed out with no default value")
