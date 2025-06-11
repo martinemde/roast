@@ -40,3 +40,4 @@ bin/ruby-rewrite
 bin/thor
 
 gemfiles/*.lock
+bin/claude-swarm
