@@ -30,7 +30,8 @@ module Roast
 
           # Use step_key for loading if provided, otherwise use name
           load_key = step_key || name
-          step_object = @step_loader.load(name, step_key: load_key, **options)
+          is_last_step = options[:is_last_step]
+          step_object = @step_loader.load(name, step_key: load_key, is_last_step:, **options)
           step_result = step_object.call
 
           # Store result in workflow output

@@ -1,6 +1,6 @@
 # Validate Changes
 
-Validate the changes made to {{file}}:
+Validate the changes made to <%= file %>:
 
 1. **Run the updated tests** and ensure they all pass
 2. **Check coverage metrics** to verify improvements
@@ -11,7 +11,7 @@ Validate the changes made to {{file}}:
 Store the validation results in the workflow state:
 ```json
 {
-  "file": "{{file}}",
+  "file": "<%= file %>",
   "tests_passed": true,
   "coverage_before": 0.0,
   "coverage_after": 0.0,

@@ -1,5 +1,6 @@
 name: interactive_deployment
 description: Interactive deployment workflow with user confirmations
+model: gpt-4o
 
 steps:
   # Collect deployment information
@@ -25,31 +26,31 @@ steps:
         echo "==================================="
         echo "       DEPLOYMENT PLAN"
         echo "==================================="
-        echo "Environment: #{environment}"
-        echo "Version: #{deploy_tag}"
-        echo "Timestamp: $(date)"
+        echo "Environment: {{workflow.output.environment}}"
+        echo "Version: {{workflow.output.deploy_tag}}"
+        echo "Timestamp: {{Date.today}}"
         echo "==================================="
   
   # Confirm deployment
   - input:
-      prompt: "Deploy #{deploy_tag} to #{environment}?"
+      prompt: "Deploy {{workflow.output.deploy_tag}} to {{workflow.output.environment}}?"
       type: boolean
       default: false
       name: confirm_deploy
   
   # Execute deployment if confirmed
-  - if: "#{confirm_deploy}"
+  - if: "{{workflow.output.confirm_deploy}}"
     then:
       - bash:
-          command: echo "🚀 Starting deployment to #{environment}..."
+          command: echo "🚀 Starting deployment to {{workflow.output.environment}}..."
       
       # Simulate deployment steps
       - bash:
           command: |
-            echo "🚀 Deploying version #{deploy_tag} to #{environment}"
-            echo "📦 Pulling Docker image: myapp:#{deploy_tag}"
+            echo "🚀 Deploying version {{workflow.output.deploy_tag}} to {{workflow.output.environment}}"
+            echo "📦 Pulling Docker image: myapp:{{workflow.output.deploy_tag}}"
             sleep 2
-            echo "🔄 Rolling out to #{environment} cluster"
+            echo "🔄 Rolling out to {{workflow.output.environment}} cluster"
             sleep 2
             echo "✅ Deployment completed successfully!"
       
@@ -60,7 +61,7 @@ steps:
           default: true
           name: run_tests
       
-      - if: "#{run_tests}"
+      - if: "{{workflow.output.run_tests}}"
         then:
           - bash:
               command: |

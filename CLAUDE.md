@@ -59,6 +59,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Do not decide unilaterally to leave code for the sake of "backwards compatibility"... always run those decisions by me first.
 - Don't ever commit and push changes unless directly told to do so
+- You can't test input steps yourself, ask me to do it
 
 ## Git Workflow Practices
 

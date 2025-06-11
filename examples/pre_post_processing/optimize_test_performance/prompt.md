@@ -1,6 +1,6 @@
 # Optimize Test Performance
 
-Optimize the performance of {{file}} by:
+Optimize the performance of <%= file %> by:
 
 1. **Reduce Setup Overhead**:
    - Move expensive operations out of individual test setup

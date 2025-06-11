@@ -48,7 +48,7 @@ steps:
       default: true
       name: wants_feedback
   
-  - if: "#{state.wants_feedback}"
+  - if: "{{workflow.output.wants_feedback}}"
     then:
       - input:
           prompt: "Please share your feedback (press Enter twice when done):"
@@ -60,7 +60,7 @@ steps:
           default: false
           name: allow_contact
       
-      - if: "#{state.allow_contact}"
+      - if: "{{workflow.output.allow_contact}}"
         then:
           - input:
               prompt: "Please enter your email:"

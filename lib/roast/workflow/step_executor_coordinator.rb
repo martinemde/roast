@@ -24,20 +24,21 @@ module Roast
 
       # Execute a list of steps
       def execute_steps(workflow_steps)
-        workflow_steps.each do |step|
+        workflow_steps.each_with_index do |step, index|
+          is_last_step = (index == workflow_steps.length - 1)
           case step
           when Hash
-            execute(step)
+            execute(step, is_last_step: is_last_step)
           when Array
-            execute(step)
+            execute(step, is_last_step: is_last_step)
           when String
-            execute(step)
+            execute(step, is_last_step: is_last_step)
             # Handle pause after string steps
             if @context.workflow.pause_step_name == step
               Kernel.binding.irb # rubocop:disable Lint/Debugger
             end
           else
-            step_orchestrator.execute_step(step)
+            step_orchestrator.execute_step(step, is_last_step: is_last_step)
           end
         end
       end
@@ -256,7 +257,8 @@ module Roast
       def execute_standard_step(step, options)
         exit_on_error = options.fetch(:exit_on_error, true)
         step_key = options[:step_key]
-        step_orchestrator.execute_step(step, exit_on_error: exit_on_error, step_key: step_key)
+        is_last_step = options[:is_last_step]
+        step_orchestrator.execute_step(step, exit_on_error:, step_key:, is_last_step:)
       end
 
       def validate_each_step!(step)

@@ -3,8 +3,8 @@
 Aggregate all the metrics collected during the workflow execution:
 
 Available data:
-- Pre-processing baseline metrics: {{pre_processing.gather_baseline_metrics}}
-- Results from all processed test files: {{output.targets}}
+- Pre-processing baseline metrics: <%= pre_processing.gather_baseline_metrics %>
+- Results from all processed test files: <%= output.targets %>
 
 Please calculate and provide:
 

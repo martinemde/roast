@@ -2,12 +2,12 @@ I'll select the next highest priority issue to fix from our prioritized list.
 
 Here is the current prioritized list of issues:
 ```json
-{{output.prioritize_issues}}
+<%= output.prioritize_issues %>
 ```
 
 And here is the count of fixes we've already applied:
 ```
-{{output.update_fix_count || '0'}}
+<%= output.update_fix_count || '0' %>
 ```
 
 I'll select the highest priority issue that hasn't yet been addressed. I'll consider:

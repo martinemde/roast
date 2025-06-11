@@ -12,10 +12,18 @@ module Roast
       end
 
       def execute_input(input_config)
+        # Interpolate the prompt if workflow executor is available
+        if @workflow_executor && input_config["prompt"]
+          interpolated_config = input_config.dup
+          interpolated_config["prompt"] = @workflow_executor.interpolate(input_config["prompt"])
+        else
+          interpolated_config = input_config
+        end
+
         # Create and execute an InputStep
         input_step = InputStep.new(
           @workflow,
-          config: input_config,
+          config: interpolated_config,
           name: input_config["name"] || "input_#{Time.now.to_i}",
           context_path: @context_path,
         )

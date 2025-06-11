@@ -21,6 +21,9 @@ module Roast
           "name" => "user_name",
         }
 
+        # Mock interpolation
+        @workflow_executor.expects(:interpolate).with("Enter your name:").returns("Enter your name:")
+
         # Mock InputStep behavior
         InputStep.any_instance.expects(:call).returns("John Doe")
         @state_manager.expects(:save_state).with("previous", "John Doe")
@@ -35,6 +38,9 @@ module Roast
         input_config = {
           "prompt" => "Press enter to continue",
         }
+
+        # Mock interpolation
+        @workflow_executor.expects(:interpolate).with("Press enter to continue").returns("Press enter to continue")
 
         # Mock InputStep behavior
         InputStep.any_instance.expects(:call).returns("")
@@ -53,6 +59,9 @@ module Roast
           "name" => "test_value",
         }
 
+        # Mock interpolation
+        @workflow_executor.expects(:interpolate).with("Enter value:").returns("Enter value:")
+
         InputStep.any_instance.expects(:call).returns("test")
         @state_manager.expects(:save_state).with("previous", "test")
 
@@ -69,9 +78,13 @@ module Roast
           "type" => "boolean",
         }
 
+        # Mock interpolation
+        @workflow_executor.expects(:interpolate).with("Test prompt").returns("Test prompt")
+        interpolated_config = input_config.merge("prompt" => "Test prompt")
+
         InputStep.expects(:new).with(
           @workflow,
-          config: input_config,
+          config: interpolated_config,
           name: "test_name",
           context_path: @context_path,
         ).returns(mock(call: true))
@@ -86,12 +99,16 @@ module Roast
           "prompt" => "Anonymous input",
         }
 
+        # Mock interpolation
+        @workflow_executor.expects(:interpolate).with("Anonymous input").returns("Anonymous input")
+        interpolated_config = input_config.merge("prompt" => "Anonymous input")
+
         # Freeze time to ensure consistent naming
         Time.stubs(:now).returns(Time.at(1234567890))
 
         InputStep.expects(:new).with(
           @workflow,
-          config: input_config,
+          config: interpolated_config,
           name: "input_1234567890",
           context_path: @context_path,
         ).returns(mock(call: "result"))

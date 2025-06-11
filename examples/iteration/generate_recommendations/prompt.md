@@ -1,8 +1,8 @@
-Based on the analysis of complexity for file {{current_file}}, I'll generate specific recommendations for improving code quality.
+Based on the analysis of complexity for file <%= current_file %>, I'll generate specific recommendations for improving code quality.
 
 I'll use the complexity analysis from the previous step:
 ```json
-{{output.analyze_complexity}}
+<%= output.analyze_complexity %>
 ```
 
 For each identified issue, I'll provide detailed, actionable recommendations including:

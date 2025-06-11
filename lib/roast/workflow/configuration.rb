@@ -40,8 +40,6 @@ module Roast
         # Process target and resource
         @target = ConfigurationLoader.extract_target(@config_hash, options)
         process_resource
-
-        mark_last_step_for_output
       end
 
       def context_path
@@ -96,60 +94,6 @@ module Roast
         @resource = ResourceResolver.resolve(@target, context_path)
         # Update target with processed value for backward compatibility
         @target = @resource.value if has_target?
-      end
-
-      def mark_last_step_for_output
-        return if @steps.empty?
-        
-        last_step = find_last_executable_step(@steps.last)
-        return unless last_step
-        
-        # Get the step name/key
-        step_key = extract_step_key(last_step)
-        return unless step_key
-
-        # Ensure config exists for this step
-        @config_hash[step_key] ||= {}
-
-        # Only set print_response if not already explicitly configured
-        @config_hash[step_key]["print_response"] = true unless @config_hash[step_key].key?("print_response")
-      end
-
-      def find_last_executable_step(step)
-        case step
-        when String
-          step
-        when Hash
-          # Check if it's a special step type (if, unless, each, repeat, case)
-          if step.key?("if") || step.key?("unless")
-            # For conditional steps, try to find the last step in the "then" branch
-            then_steps = step["then"] || step["steps"]
-            find_last_executable_step(then_steps.last) if then_steps&.any?
-          elsif step.key?("each") || step.key?("repeat")
-            # For iteration steps, we can't reliably determine the last step
-            nil
-          elsif step.key?("case")
-            # For case steps, we can't reliably determine the last step
-            nil
-          elsif step.size == 1
-            # Regular hash step with variable assignment
-            step
-          end
-        when Array
-          # For parallel steps, we can't determine a single "last" step
-          nil
-        else
-          step
-        end
-      end
-
-      def extract_step_key(step)
-        case step
-        when String
-          step.parameterize.underscore
-        when Hash
-          step.keys.first
-        end
       end
     end
   end

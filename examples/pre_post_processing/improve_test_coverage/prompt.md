@@ -1,6 +1,6 @@
 # Improve Test Coverage
 
-Based on the analysis of {{file}}, implement the following improvements:
+Based on the analysis of <%= file %>, implement the following improvements:
 
 1. **Add Missing Test Cases**: Write tests for uncovered code paths, edge cases, and error conditions
 2. **Improve Test Descriptions**: Make test names more descriptive and follow consistent naming conventions

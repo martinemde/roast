@@ -9,7 +9,7 @@ Provide a high-level overview of the optimization results, key achievements, and
 
 ### Metrics Summary
 Include the aggregated metrics from the previous step:
-{{aggregate_metrics}}
+<%= aggregate_metrics %>
 
 ### Detailed Results by File
 For each processed test file, include:

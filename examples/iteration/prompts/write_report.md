@@ -3,8 +3,8 @@
 You are responsible for creating a formatted report file based on the analysis results.
 
 ## Input
-- Report data: {{ report_data }}
-- Summary: {{ summary }}
+- Report data: <%= report_data %>
+- Summary: <%= summary %>
 
 ## Task
 1. Generate a Markdown report that includes:
@@ -16,7 +16,7 @@ You are responsible for creating a formatted report file based on the analysis r
 Return a JSON object with the following structure:
 ```json
 {
-  "report_content": "# Ruby Method Analysis Report\n\n{{ summary }}\n\n## Detailed Results\n\n| File | Method Count | Methods |\n|------|--------------|--------|\n| file1.rb | 5 | method1, method2, ... |\n| file2.rb | 3 | methodA, methodB, ... |\n...",
+  "report_content": "# Ruby Method Analysis Report\n\n<%= summary %>\n\n## Detailed Results\n\n| File | Method Count | Methods |\n|------|--------------|--------|\n| file1.rb | 5 | method1, method2, ... |\n| file2.rb | 3 | methodA, methodB, ... |\n...",
   "report_file_path": "method_analysis_report.md"
 }
 ```

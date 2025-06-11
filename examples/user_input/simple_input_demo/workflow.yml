@@ -1,5 +1,6 @@
 name: simple_input_demo
 description: Simple demonstration of input step functionality
+model: gpt-4o
 
 steps:
   # Text input
@@ -8,14 +9,12 @@ steps:
       name: user_name
       required: true
   
-  # Boolean input
   - input:
       prompt: "Are you enjoying Roast?"
       type: boolean
       default: true
       name: enjoying_roast
   
-  # Choice input
   - input:
       prompt: "What's your favorite programming language?"
       type: choice
@@ -27,20 +26,10 @@ steps:
         - Other
       name: favorite_language
   
-  # Password input
   - input:
       prompt: "Create a secret password (won't be displayed):"
       type: password
       required: true
       name: secret_password
   
-  # Display results using bash
-  - bash:
-      command: |
-        echo "=== Input Summary ==="
-        echo "Name: #{user_name}"
-        echo "Enjoying Roast: #{enjoying_roast}"
-        echo "Favorite Language: #{favorite_language}"
-        echo "Password Length: $(echo -n '#{secret_password}' | wc -c) characters"
-        echo "=================="
-        echo "Thank you for trying the input demo!"
+  - "Summarize the following inputs: {{workflow.output}}"

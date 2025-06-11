@@ -3,10 +3,10 @@
 You are a code analyzer focusing on analyzing Ruby files to count the number of methods defined.
 
 ## Input
-- File path: {{ file_path }}
+- File path: <%= file_path %>
 - File content:
 ```ruby
-{{ tools.read_file.content(file_path) }}
+<%= read_file(file_path) %>
 ```
 
 ## Task
