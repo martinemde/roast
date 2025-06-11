@@ -68,6 +68,8 @@ module Roast
           execute_conditional_step(step)
         when StepTypeResolver::CASE_STEP
           execute_case_step(step)
+        when StepTypeResolver::INPUT_STEP
+          execute_input_step(step)
         when StepTypeResolver::HASH_STEP
           execute_hash_step(step)
         when StepTypeResolver::PARALLEL_STEP
@@ -107,6 +109,15 @@ module Roast
 
       def case_executor
         @case_executor ||= dependencies[:case_executor] || CaseExecutor.new(
+          context.workflow,
+          context.context_path,
+          dependencies[:state_manager] || dependencies[:workflow_executor].state_manager,
+          workflow_executor,
+        )
+      end
+
+      def input_executor
+        @input_executor ||= dependencies[:input_executor] || InputExecutor.new(
           context.workflow,
           context.context_path,
           dependencies[:state_manager] || dependencies[:workflow_executor].state_manager,
@@ -200,6 +211,10 @@ module Roast
 
       def execute_case_step(step)
         case_executor.execute_case(step)
+      end
+
+      def execute_input_step(step)
+        input_executor.execute_input(step["input"])
       end
 
       def execute_hash_step(step)

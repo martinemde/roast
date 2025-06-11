@@ -10,6 +10,7 @@ module Roast
       ITERATION_STEP = :iteration
       CONDITIONAL_STEP = :conditional
       CASE_STEP = :case
+      INPUT_STEP = :input
       HASH_STEP = :hash
       PARALLEL_STEP = :parallel
       STRING_STEP = :string
@@ -24,6 +25,9 @@ module Roast
 
       # Special step name for case statements
       CASE_STEPS = ["case"].freeze
+
+      # Special step name for input steps
+      INPUT_STEPS = ["input"].freeze
 
       class << self
         # Resolve the type of a step
@@ -98,6 +102,16 @@ module Roast
           CASE_STEPS.include?(step_name)
         end
 
+        # Check if a step is an input step
+        # @param step [Hash] The step to check
+        # @return [Boolean] true if it's an input step
+        def input_step?(step)
+          return false unless step.is_a?(Hash)
+
+          step_name = step.keys.first
+          INPUT_STEPS.include?(step_name)
+        end
+
         # Extract the step name from various step formats
         # @param step [String, Hash, Array] The step
         # @return [String, nil] The step name or nil
@@ -134,6 +148,8 @@ module Roast
             CONDITIONAL_STEP
           elsif case_step?(step)
             CASE_STEP
+          elsif input_step?(step)
+            INPUT_STEP
           else
             HASH_STEP
           end

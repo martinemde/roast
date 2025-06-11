@@ -7,6 +7,7 @@ module Roast
       attr_reader :workflow, :name, :context_path
 
       delegate :append_to_final_output, :transcript, to: :workflow
+      delegate_missing_to :workflow
       # TODO: is this really the model we want to default to, and is this the right place to set it?
       def initialize(workflow, model: "anthropic:claude-opus-4", name: nil, context_path: nil)
         @workflow = workflow
