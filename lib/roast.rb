@@ -12,6 +12,7 @@ require "fileutils"
 require "cli/ui"
 require "raix"
 require "thor"
+require "roast/dot_roast"
 require "roast/errors"
 require "roast/helpers"
 require "roast/resources"
@@ -21,30 +22,6 @@ require "roast/workflow"
 
 module Roast
   ROOT = File.expand_path("../..", __FILE__)
-
-  class << self
-    def dot_roast_dir(starting_path = Dir.pwd, ending_path = File.dirname(Dir.home))
-      unless starting_path.start_with?(ending_path)
-        Roast::Helpers::Logger.warn(<<~WARN)
-          Unexpected ending path when looking for .roast:
-          Starting path #{starting_path} is not a subdir of ending path #{ending_path}
-          Will check all the way up to root.
-        WARN
-
-        ending_path = "/"
-      end
-
-      candidate = starting_path
-      until candidate == ending_path
-        dot_roast_candidate = File.join(candidate, ".roast")
-        return dot_roast_candidate if Dir.exist?(dot_roast_candidate)
-
-        candidate = File.dirname(candidate)
-      end
-
-      File.join(starting_path, ".roast")
-    end
-  end
 
   class CLI < Thor
     desc "execute [WORKFLOW_CONFIGURATION_FILE] [FILES...]", "Run a configured workflow"

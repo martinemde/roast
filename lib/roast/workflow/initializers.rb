@@ -1,16 +1,14 @@
 # frozen_string_literal: true
 
+require "roast/dot_roast"
+
 module Roast
   module Workflow
     class Initializers
       class << self
-        def path
-          File.join(Roast.dot_roast_dir, "initializers")
-        end
-
         def load_all
-          project_initializers = path
-          return unless Dir.exist?(project_initializers)
+          project_initializers = Roast::DotRoast.subdir_path("initializers")
+          return unless project_initializers
 
           $stderr.puts "Loading project initializers from #{project_initializers}"
           pattern = File.join(project_initializers, "**/*.rb")

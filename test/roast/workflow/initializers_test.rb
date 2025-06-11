@@ -59,7 +59,7 @@ module Roast
 
       def with_fake_initializers_dir
         Dir.mktmpdir do |tmpdir|
-          Roast.stubs(:dot_roast_dir).returns(tmpdir)
+          Roast::DotRoast.stubs(:root).returns(tmpdir)
           yield(tmpdir)
         end
       end

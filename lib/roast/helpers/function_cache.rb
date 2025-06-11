@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "digest"
+require "roast/dot_roast"
 
 module Roast
   module Helpers
@@ -13,30 +14,9 @@ module Roast
         end
 
         def for_namespace(namespace)
-          ensure_exists
-          ensure_gitignore_exists
-          @cache = ActiveSupport::Cache::FileStore.new(path_for_namespace(namespace))
-          @cache
-        end
-
-        def path_for_namespace(namespace)
-          namespace.empty? ? path : File.join(path, namespace)
-        end
-
-        def path
-          File.join(Roast.dot_roast_dir, "cache")
-        end
-
-        def ensure_exists
-          FileUtils.mkdir_p(path) unless File.directory?(path)
-        end
-
-        def gitignore_path
-          File.join(path, ".gitignore")
-        end
-
-        def ensure_gitignore_exists
-          File.write(gitignore_path, "*") unless File.exist?(gitignore_path)
+          cache_dir = Roast::DotRoast.ensure_subdir("cache")
+          cache_path = namespace.empty? ? cache_dir : File.join(cache_dir, namespace)
+          ActiveSupport::Cache::FileStore.new(cache_path)
         end
 
         def namespace_from_workflow(workflow_name, workflow_path)
