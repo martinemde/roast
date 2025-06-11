@@ -54,22 +54,40 @@ module Roast
       def validate_workflows(workflow_files)
         results = ValidationResults.new
 
-        if workflow_files.size == 1
-          validate_single_workflow_display(workflow_files.first, results)
-        else
-          validate_multiple_workflows_display(workflow_files, results)
-        end
+        validate_multiple_workflows_display(workflow_files, results)
 
         display_summary(results)
         exit_if_needed(results)
       end
 
-      def validate_single_workflow_display(workflow_path, results)
-        puts ::CLI::UI.fmt("{{bold:Validating}} #{workflow_path}")
+      def validate_multiple_workflows_display(workflow_files, results)
+        if workflow_files.size == 1
+          puts ::CLI::UI.fmt("{{bold:Validating}} #{workflow_files.first}")
+        else
+          ::CLI::UI::Frame.open("Validating #{workflow_files.size} workflow(s)") do
+            validate_each_workflow(workflow_files, results)
+            return
+          end
+        end
 
-        validator = create_validator(workflow_path)
-        results.add_result(workflow_path, validator)
+        validate_each_workflow(workflow_files, results)
+      end
 
+      def validate_each_workflow(workflow_files, results)
+        workflow_files.each do |workflow_path|
+          workflow_name = extract_workflow_name(workflow_path)
+          validator = create_validator(workflow_path)
+          results.add_result(workflow_path, validator)
+
+          if workflow_files.size == 1
+            display_single_workflow_result(validator)
+          else
+            display_multiple_workflow_result(workflow_name, validator)
+          end
+        end
+      end
+
+      def display_single_workflow_result(validator)
         if validator.valid?
           if validator.warnings.empty?
             puts ::CLI::UI.fmt("{{green:✓}} Workflow is valid")
@@ -83,23 +101,15 @@ module Roast
         end
       end
 
-      def validate_multiple_workflows_display(workflow_files, results)
-        ::CLI::UI::Frame.open("Validating #{workflow_files.size} workflow(s)") do
-          workflow_files.each do |workflow_path|
-            workflow_name = extract_workflow_name(workflow_path)
-            validator = create_validator(workflow_path)
-            results.add_result(workflow_path, validator)
-
-            if validator.valid?
-              if validator.warnings.empty?
-                puts ::CLI::UI.fmt("{{green:✓}} {{bold:#{workflow_name}}}")
-              else
-                puts ::CLI::UI.fmt("{{green:✓}} {{bold:#{workflow_name}}} ({{yellow:#{validator.warnings.size} warning(s)}})")
-              end
-            else
-              puts ::CLI::UI.fmt("{{red:✗}} {{bold:#{workflow_name}}} ({{red:#{validator.errors.size} error(s)}})")
-            end
+      def display_multiple_workflow_result(workflow_name, validator)
+        if validator.valid?
+          if validator.warnings.empty?
+            puts ::CLI::UI.fmt("{{green:✓}} {{bold:#{workflow_name}}}")
+          else
+            puts ::CLI::UI.fmt("{{green:✓}} {{bold:#{workflow_name}}} ({{yellow:#{validator.warnings.size} warning(s)}})")
           end
+        else
+          puts ::CLI::UI.fmt("{{red:✗}} {{bold:#{workflow_name}}} ({{red:#{validator.errors.size} error(s)}})")
         end
       end
 
