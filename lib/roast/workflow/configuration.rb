@@ -100,10 +100,10 @@ module Roast
 
       def mark_last_step_for_output
         return if @steps.empty?
-
+        
         last_step = find_last_executable_step(@steps.last)
         return unless last_step
-
+        
         # Get the step name/key
         step_key = extract_step_key(last_step)
         return unless step_key
@@ -146,7 +146,7 @@ module Roast
       def extract_step_key(step)
         case step
         when String
-          step
+          step.parameterize.underscore
         when Hash
           step.keys.first
         end
