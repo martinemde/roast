@@ -4,7 +4,7 @@ module Roast
   module Workflow
     # Handles loading and instantiation of workflow steps
     class StepLoader
-      DEFAULT_MODEL = "openai/gpt-4o-mini"
+      DEFAULT_MODEL = "gpt-4o-mini"
 
       # Custom exception classes
       class StepLoaderError < StandardError
