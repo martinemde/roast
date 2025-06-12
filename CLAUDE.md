@@ -133,6 +133,48 @@ gh pr view {pr_number}
 gh pr diff {pr_number}
 ```
 
+### Issue Labeling and Project Management
+
+When creating GitHub issues, always check available labels, projects, and milestones first:
+
+```bash
+# List all available labels
+gh api repos/Shopify/roast/labels | jq '.[].name'
+
+# List all milestones
+gh api repos/Shopify/roast/milestones | jq '.[] | {title: .title, number: .number, state: .state}'
+
+# List projects linked to the roast repository
+gh api graphql -f query='
+{
+  repository(owner: "Shopify", name: "roast") {
+    projectsV2(first: 10) {
+      nodes {
+        title
+        number
+        url
+      }
+    }
+  }
+}' --jq '.data.repository.projectsV2.nodes[] | {title: .title, number: .number, url: .url}'
+```
+
+**Issue Creation Workflow**:
+1. First check what labels exist and apply appropriate ones when creating the issue
+2. After creating the issue, ask the user if they want it added to an existing milestone
+3. Ask the user if they want it added to a particular project board
+
+```bash
+# Create issue with labels
+gh api repos/Shopify/roast/issues -X POST -F title="Issue Title" -F body="Issue description" -F 'labels=["bug", "enhancement"]'
+
+# Add issue to a milestone (after creation)
+gh api repos/Shopify/roast/issues/{issue_number} -X PATCH -F milestone={milestone_number}
+
+# Add issue to a GitHub Project
+gh project item-add {project_number} --url https://github.com/Shopify/roast/issues/{issue_number}
+```
+
 #### Formatting Tips for GitHub API
 1. Use literal newlines in the body text instead of `\n` escape sequences
 2. When formatting is stripped (like backticks), use alternatives:
