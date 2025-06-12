@@ -2,17 +2,19 @@
 
 module Roast
   class WorkflowDiagramGenerator
-    def initialize(workflow_config)
+    def initialize(workflow_config, workflow_file_path = nil)
       @workflow_config = workflow_config
+      @workflow_file_path = workflow_file_path
       @graph = GraphViz.new(:G, type: :digraph)
       @node_counter = 0
       @nodes = {}
     end
 
-    def generate
+    def generate(custom_output_path = nil)
       configure_graph
       build_graph(@workflow_config.steps)
-      output_path = "workflow_diagram.png"
+      
+      output_path = custom_output_path || generate_output_filename
       @graph.output(png: output_path)
       output_path
     end
@@ -21,12 +23,32 @@ module Roast
 
     def configure_graph
       @graph[:rankdir] = "TB"
-      @graph[:fontname] = "Arial"
+      @graph[:fontname] = "Helvetica"
+      @graph[:fontsize] = "12"
+      @graph[:bgcolor] = "white"
+      @graph[:pad] = "0.5"
+      @graph[:nodesep] = "0.7"
+      @graph[:ranksep] = "0.8"
+      @graph[:splines] = "spline"
+      
+      # Default node styling
       @graph.node[:shape] = "box"
       @graph.node[:style] = "rounded,filled"
-      @graph.node[:fillcolor] = "lightblue"
-      @graph.node[:fontname] = "Arial"
-      @graph.edge[:fontname] = "Arial"
+      @graph.node[:fillcolor] = "#E8F4FD"
+      @graph.node[:color] = "#2563EB"
+      @graph.node[:fontname] = "Helvetica"
+      @graph.node[:fontsize] = "11"
+      @graph.node[:fontcolor] = "#1E293B"
+      @graph.node[:penwidth] = "1.5"
+      @graph.node[:height] = "0.6"
+      @graph.node[:margin] = "0.15"
+      
+      # Edge styling
+      @graph.edge[:fontname] = "Helvetica"
+      @graph.edge[:fontsize] = "10"
+      @graph.edge[:color] = "#64748B"
+      @graph.edge[:penwidth] = "1.5"
+      @graph.edge[:arrowsize] = "0.8"
     end
 
     def build_graph(steps, parent_node = nil)
@@ -63,8 +85,10 @@ module Roast
         @graph.add_nodes(
           node_id,
           label: truncate_label(step_name[7..].strip),
-          fillcolor: "lightyellow",
+          fillcolor: "#FEF3C7",
+          color: "#F59E0B",
           shape: "note",
+          fontsize: "10",
         )
       else
         @graph.add_nodes(node_id, label: label)
@@ -97,7 +121,11 @@ module Roast
         decision_id,
         label: "#{condition_type}: #{condition}",
         shape: "diamond",
-        fillcolor: "lightcoral",
+        fillcolor: "#FEE2E2",
+        color: "#DC2626",
+        fontsize: "10",
+        height: "0.8",
+        width: "1.2",
       )
 
       # Process then branch
@@ -130,7 +158,10 @@ module Roast
         loop_id,
         label: loop_label,
         shape: "box3d",
-        fillcolor: "lightgreen",
+        fillcolor: "#D1FAE5",
+        color: "#10B981",
+        fontsize: "10",
+        penwidth: "2",
       )
 
       # Process loop body
@@ -139,7 +170,13 @@ module Roast
         if loop_steps.any?
           last_loop_node = build_graph(loop_steps, loop_node)
           # Add back edge to show loop
-          @graph.add_edges(last_loop_node, loop_node, style: "dashed", label: "loop")
+          @graph.add_edges(last_loop_node, loop_node, 
+            style: "dashed", 
+            label: "loop",
+            color: "#10B981",
+            fontcolor: "#10B981",
+            arrowhead: "empty",
+          )
         end
       end
 
@@ -153,7 +190,9 @@ module Roast
         input_id,
         label: "input: #{label}",
         shape: "parallelogram",
-        fillcolor: "lightgray",
+        fillcolor: "#F3F4F6",
+        color: "#6B7280",
+        fontsize: "10",
       )
       input_node
     end
@@ -164,7 +203,10 @@ module Roast
         proceed_id,
         label: "proceed?",
         shape: "diamond",
-        fillcolor: "orange",
+        fillcolor: "#FED7AA",
+        color: "#EA580C",
+        fontsize: "10",
+        height: "0.8",
       )
 
       # Process do branch if present
@@ -184,7 +226,11 @@ module Roast
         case_id,
         label: "case: #{case_control["case"]}",
         shape: "diamond",
-        fillcolor: "lavender",
+        fillcolor: "#E9D5FF",
+        color: "#9333EA",
+        fontsize: "10",
+        height: "0.8",
+        width: "1.5",
       )
 
       # Process when branches
@@ -193,7 +239,10 @@ module Roast
         next if when_steps.none?
 
         first_when_node = process_step(when_steps.first)
-        @graph.add_edges(case_node, first_when_node, label: condition.to_s)
+        @graph.add_edges(case_node, first_when_node, 
+          label: condition.to_s,
+          fontcolor: "#9333EA",
+        )
 
         if when_steps.length > 1
           build_graph(when_steps[1..], first_when_node)
@@ -212,6 +261,28 @@ module Roast
       return text if text.length <= max_length
 
       "#{text[0...max_length]}..."
+    end
+
+    def generate_output_filename
+      if @workflow_file_path
+        # Get the directory and base name of the workflow file
+        dir = File.dirname(@workflow_file_path)
+        base = File.basename(@workflow_file_path, ".yml")
+        
+        # Create the diagram filename in the same directory
+        File.join(dir, "#{base}.png")
+      else
+        # Fallback to workflow name if no file path provided
+        workflow_name = @workflow_config.name
+        sanitized_name = workflow_name
+          .downcase
+          .gsub(/[^a-z0-9]+/, "_")
+          .gsub(/^_|_$/, "")
+          .gsub(/_+/, "_")
+        
+        sanitized_name = "workflow" if sanitized_name.empty?
+        "#{sanitized_name}_diagram.png"
+      end
     end
   end
 end

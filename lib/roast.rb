@@ -243,14 +243,15 @@ module Roast
     end
 
     desc "diagram WORKFLOW_FILE", "Generate a visual diagram of a workflow"
+    option :output, type: :string, aliases: "-o", desc: "Output file path (defaults to workflow_name_diagram.png)"
     def diagram(workflow_file)
       unless File.exist?(workflow_file)
         raise Thor::Error, "Workflow file not found: #{workflow_file}"
       end
 
       workflow = Workflow::Configuration.new(workflow_file)
-      generator = WorkflowDiagramGenerator.new(workflow)
-      output_path = generator.generate
+      generator = WorkflowDiagramGenerator.new(workflow, workflow_file)
+      output_path = generator.generate(options[:output])
 
       puts ::CLI::UI.fmt("{{success:✓}} Diagram generated: #{output_path}")
     rescue StandardError => e

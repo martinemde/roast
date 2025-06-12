@@ -7,12 +7,12 @@ module Roast
     test "generates diagram for simple workflow" do
       workflow_path = fixture_file("valid_workflow.yml")
       workflow = Workflow::Configuration.new(workflow_path)
-      generator = WorkflowDiagramGenerator.new(workflow)
+      generator = WorkflowDiagramGenerator.new(workflow, workflow_path)
 
       output_path = generator.generate
 
       assert File.exist?(output_path)
-      assert_equal "workflow_diagram.png", output_path
+      assert_equal File.join(File.dirname(workflow_path), "valid_workflow.png"), output_path
 
       # Cleanup
       File.delete(output_path) if File.exist?(output_path)
