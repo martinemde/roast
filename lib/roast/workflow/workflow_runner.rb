@@ -167,6 +167,8 @@ module Roast
           workflow.verbose = @options[:verbose] if @options[:verbose].present?
           workflow.concise = @options[:concise] if @options[:concise].present?
           workflow.pause_step_name = @options[:pause] if @options[:pause].present?
+          # Set storage type based on CLI option (default is SQLite unless --file-storage is used)
+          workflow.storage_type = @options[:file_storage] ? "file" : nil
         end
       end
 

@@ -9,7 +9,7 @@ module Roast
 
       def initialize(workflow, state_repository: nil)
         @workflow = workflow
-        @state_repository = state_repository || FileStateRepository.new
+        @state_repository = state_repository || StateRepositoryFactory.create(workflow.storage_type)
         @processed = false
       end
 

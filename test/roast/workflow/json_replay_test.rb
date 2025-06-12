@@ -8,8 +8,9 @@ module Roast
       setup do
         @workflow = BaseWorkflow.new(nil, name: "test_workflow")
         @workflow.session_name = "test_session"
-        @state_manager = StateManager.new(@workflow)
-        @state_repository = FileStateRepository.new
+        @workflow.storage_type = "file" # Force file storage for this test
+        @state_repository = StateRepositoryFactory.create("file")
+        @state_manager = StateManager.new(@workflow, state_repository: @state_repository)
       end
 
       test "JSON response preserved as hash through save/load cycle" do
