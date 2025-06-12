@@ -61,48 +61,25 @@ module Roast
       end
 
       def validate_multiple_workflows_display(workflow_files, results)
-        if workflow_files.size == 1
-          puts ::CLI::UI.fmt("{{bold:Validating}} #{workflow_files.first}")
-        else
-          ::CLI::UI::Frame.open("Validating #{workflow_files.size} workflow(s)") do
-            validate_each_workflow(workflow_files, results)
-            return
-          end
+        ::CLI::UI::Frame.open("Validating #{workflow_files.size} workflow(s)") do
+          validate_each_workflow(workflow_files, results)
         end
-
-        validate_each_workflow(workflow_files, results)
       end
 
       def validate_each_workflow(workflow_files, results)
         workflow_files.each do |workflow_path|
           workflow_name = extract_workflow_name(workflow_path)
           validator = create_validator(workflow_path)
+          # Ensure validation is performed to populate errors/warnings
+          is_valid = validator.valid?
           results.add_result(workflow_path, validator)
 
-          if workflow_files.size == 1
-            display_single_workflow_result(validator)
-          else
-            display_multiple_workflow_result(workflow_name, validator)
-          end
+          display_workflow_result(workflow_name, validator, is_valid)
         end
       end
 
-      def display_single_workflow_result(validator)
-        if validator.valid?
-          if validator.warnings.empty?
-            puts ::CLI::UI.fmt("{{green:✓}} Workflow is valid")
-          else
-            puts ::CLI::UI.fmt("{{green:✓}} Workflow is valid with {{yellow:#{validator.warnings.size} warning(s)}}")
-            display_warnings(validator.warnings)
-          end
-        else
-          puts ::CLI::UI.fmt("{{red:✗}} Workflow validation failed with {{red:#{validator.errors.size} error(s)}}")
-          display_errors(validator.errors)
-        end
-      end
-
-      def display_multiple_workflow_result(workflow_name, validator)
-        if validator.valid?
+      def display_workflow_result(workflow_name, validator, is_valid)
+        if is_valid
           if validator.warnings.empty?
             puts ::CLI::UI.fmt("{{green:✓}} {{bold:#{workflow_name}}}")
           else
@@ -129,8 +106,11 @@ module Roast
           puts ::CLI::UI.fmt("{{green:All workflows are valid!}}")
         elsif results.total_errors == 0
           puts ::CLI::UI.fmt("{{green:All workflows are valid}} with {{yellow:#{results.total_warnings} total warning(s)}}")
+          display_all_warnings(results)
         else
           puts ::CLI::UI.fmt("{{red:Validation failed:}} #{results.total_errors} error(s), #{results.total_warnings} warning(s)")
+          display_all_errors(results)
+          display_all_warnings(results) if results.total_warnings > 0
         end
       end
 
@@ -162,6 +142,32 @@ module Roast
         end
       end
 
+      def display_all_errors(results)
+        results.results_with_errors.each do |result|
+          workflow_name = extract_workflow_name(result[:path])
+          ::CLI::UI::Frame.open("Errors in #{workflow_name}", color: :red) do
+            result[:validator].errors.each do |error|
+              puts ::CLI::UI.fmt("{{red:• #{error[:message]}}}")
+              puts ::CLI::UI.fmt("  {{gray:→ #{error[:suggestion]}}}") if error[:suggestion]
+              puts
+            end
+          end
+        end
+      end
+
+      def display_all_warnings(results)
+        results.results_with_warnings.each do |result|
+          workflow_name = extract_workflow_name(result[:path])
+          ::CLI::UI::Frame.open("Warnings in #{workflow_name}", color: :yellow) do
+            result[:validator].warnings.each do |warning|
+              puts ::CLI::UI.fmt("{{yellow:• #{warning[:message]}}}")
+              puts ::CLI::UI.fmt("  {{gray:→ #{warning[:suggestion]}}}") if warning[:suggestion]
+              puts
+            end
+          end
+        end
+      end
+
       # Tracks validation results across multiple workflows
       class ValidationResults
         attr_reader :total_errors, :total_warnings
@@ -176,6 +182,14 @@ module Roast
           @results << { path: workflow_path, validator: validator }
           @total_errors += validator.errors.size
           @total_warnings += validator.warnings.size
+        end
+
+        def results_with_errors
+          @results.select { |result| result[:validator].errors.any? }
+        end
+
+        def results_with_warnings
+          @results.select { |result| result[:validator].warnings.any? }
         end
       end
     end
