@@ -7,15 +7,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Note that this project now uses Zeitwerk, which means you don't have to manually require project files anymore
 
 ## Commands
-
-- Default (tests + lint): `bundle exec rake`
-- Test all: `bundle exec test`
+- Default THE SUITE RUNS FAST SO USE THIS  IN MOST CASES (tests + lint w/autocorrect): `bundle exec rake`
 - Run single test: `bundle exec ruby -Itest test/path/to/test_file.rb`
 - Lint: `bundle exec rubocop`
 - Lint (with autocorrect, preferred): `bundle exec rubocop -A`
 - Whenever you want to run the whole test suite just run `bundle exec rake` to also run linting, and note the linting errors too (most will auto correct but not all)
 - **Run roast locally**: Use `bin/roast` (not `bundle exec roast` which may use the installed gem)
-- Alternative: `bundle exec exe/roast`
 
 ## Tech stack
 - `thor` and `cli-ui` for the CLI tool
@@ -23,7 +20,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Prefer using the more literate `test "this is a test description" do` type of testing that we get from extending ActiveSupport::TestCase over the primitive XUnit-style def test_description headings for tests
 
 ## Code Style Guidelines
-
 - Naming: snake_case for variables/methods, CamelCase for classes/modules, ALL_CAPS for constants
 - Module structure: Use nested modules under the `Roast` namespace
 - Command pattern: Commands implement a `call` method and class-level `help` method
@@ -41,7 +37,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Always leave a blank line after module includes and before the rest of the class
 
 ## Architecture Guidelines
-
+- **SOLID principles are important** - don't violate them
 - **Maintain proper separation of concerns**: Don't mix unrelated concepts in the same class or module
   - Example: Conditional execution (if/unless) should NOT be mixed with iteration execution (each/repeat)
   - Each concept should have its own executor class and be handled separately
@@ -55,14 +51,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - When faced with the choice between working around an architectural issue or code smell versus actually diving into fixing the design issue or code smell, choose the latter more principled approach
 - When fixing code smells, you don't have to worry about internal backwards compatibility 
 
-## Guidance and Expectations
+## Workflow Configuration Syntax
+- The `steps` key in the workflow configuration is an array of step names
+- Only step names, inline prompts, and control flow keywords are allowed in the steps array
+- Additional per-step configuration is provided in a top-level hash with the step name as the key, not within steps!!! (Very important)
+- The reason that steps are not configured "inline" within the steps array is so that the shape of the workflow is as obvious as possible
+- Step labels are inferred for most steps and optional for inline prompts, but required for steps that need custom configuration
+- The result of running a step is stored in the `workflow.output` hash with the step label as the key
 
+## Step Configuration
+- The `path` key in a step configuration is the path to a Ruby file that defines a custom step.
+- The `model` key in a step configuration is the model to use for the step.
+- The `print_response` key in a step configuration is a boolean that determines whether the step's response should be printed to the console.
+
+## Coding Guidance and Expectations
 - Do not decide unilaterally to leave code for the sake of "backwards compatibility"... always run those decisions by me first.
 - Don't ever commit and push changes unless directly told to do so
-- You can't test input steps yourself, ask me to do it
+- You can't test input steps yourself since they block, so ask me to do it manually
 
 ## Git Workflow Practices
-
 1. **Amending Commits**:
    - Use `git commit --amend --no-edit` to add staged changes to the last commit without changing the commit message
    - This is useful for incorporating small fixes or changes that belong with the previous commit
