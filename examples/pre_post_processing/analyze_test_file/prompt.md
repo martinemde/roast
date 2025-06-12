@@ -1,6 +1,6 @@
 # Analyze Test File
 
-Current test file: {{file}}
+Current test file: <%= file %>
 
 Please analyze this test file and identify:
 

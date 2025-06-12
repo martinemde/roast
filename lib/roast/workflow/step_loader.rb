@@ -44,7 +44,7 @@ module Roast
       # @param step_key [String] The configuration key for the step (optional)
       # @param options [Hash] Additional options for step loading
       # @return [BaseStep] The loaded step instance
-      def load(step_name, step_key: nil, **options)
+      def load(step_name, step_key: nil, is_last_step: nil, **options)
         name = step_name.is_a?(Roast::ValueObjects::StepName) ? step_name : Roast::ValueObjects::StepName.new(step_name)
 
         # Get step config for per-step path
@@ -56,14 +56,14 @@ module Roast
           step = StepFactory.create(workflow, name, options)
           # Use step_key for configuration if provided, otherwise use name
           config_key = step_key || name.to_s
-          configure_step(step, config_key)
+          configure_step(step, config_key, is_last_step:)
           return step
         end
 
         # Look for Ruby file in various locations
         step_file_path = find_step_file(name.to_s, per_step_path)
         if step_file_path
-          return load_ruby_step(step_file_path, name.to_s)
+          return load_ruby_step(step_file_path, name.to_s, is_last_step:)
         end
 
         # Look for step directory
@@ -74,7 +74,7 @@ module Roast
 
         # Use factory to create the appropriate step instance
         step = StepFactory.create(workflow, name, options.merge(context_path: step_directory))
-        configure_step(step, name.to_s)
+        configure_step(step, name.to_s, is_last_step:)
         step
       end
 
@@ -140,7 +140,7 @@ module Roast
       end
 
       # Load a Ruby step from a file
-      def load_ruby_step(file_path, step_name)
+      def load_ruby_step(file_path, step_name, is_last_step: nil)
         $stderr.puts "Requiring step file: #{file_path}"
 
         begin
@@ -157,19 +157,20 @@ module Roast
         # Convert step_name to StepName value object
         step_name_obj = Roast::ValueObjects::StepName.new(step_name)
         step = step_class.new(workflow, name: step_name_obj, context_path: context)
-        configure_step(step, step_name)
+        configure_step(step, step_name, is_last_step:)
         step
       end
 
       # Create and configure a step instance
       def create_step_instance(step_class, step_name, context_path, options = {})
+        is_last_step = options[:is_last_step]
         step = StepFactory.create(workflow, step_name, options.merge(context_path: context_path))
-        configure_step(step, step_name)
+        configure_step(step, step_name, is_last_step:)
         step
       end
 
       # Configure a step instance with settings from config_hash
-      def configure_step(step, step_name)
+      def configure_step(step, step_name, is_last_step: nil)
         step_config = config_hash[step_name]
 
         # Always set the model
@@ -180,6 +181,11 @@ module Roast
 
         # Apply additional configuration if present
         apply_step_configuration(step, step_config) if step_config.present?
+
+        # Set print_response to true for the last step if not already configured
+        if is_last_step && !step_config&.key?("print_response")
+          step.print_response = true
+        end
       end
 
       # Determine which model to use for the step

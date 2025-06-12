@@ -8,7 +8,7 @@ I'll analyze all the recommendations I've generated across multiple files and pr
 Let me review all the recommendations collected so far:
 
 ```json
-{{outputs_of.generate_recommendations}}
+<%= outputs_of.generate_recommendations %>
 ```
 
 I'll create a comprehensive prioritized list of all issues across files, combining similar issues where appropriate. The prioritized list will include:

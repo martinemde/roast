@@ -59,6 +59,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Do not decide unilaterally to leave code for the sake of "backwards compatibility"... always run those decisions by me first.
 - Don't ever commit and push changes unless directly told to do so
+- You can't test input steps yourself, ask me to do it
 
 ## Git Workflow Practices
 
@@ -212,3 +213,9 @@ gh project item-add {project_number} --url https://github.com/Shopify/roast/issu
     - Avoid premature optimization outside of hot paths
     - Consider the tradeoff between readability and performance
     - Suggest optimizations that improve both clarity and performance
+
+## CLI::UI Formatting Tips
+- To apply color to terminal output using CLI::UI, use the following syntax:
+  ```ruby
+  puts ::CLI::UI.fmt("{{red:This field is required. Please provide a value.}}")
+  ```

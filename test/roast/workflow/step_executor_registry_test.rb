@@ -58,10 +58,13 @@ module Roast
       end
 
       def test_register_with_matcher
-        matcher = ->(step) { step.is_a?(String) && step.start_with?("custom:") }
+        # Use a custom object type that won't conflict with default registrations
+        custom_step = Struct.new(:type).new("custom")
+
+        matcher = ->(step) { step.respond_to?(:type) && step.type == "custom" }
         StepExecutorRegistry.register_with_matcher(matcher, TestExecutor)
 
-        executor = StepExecutorRegistry.for("custom:step", @workflow_executor)
+        executor = StepExecutorRegistry.for(custom_step, @workflow_executor)
         assert_instance_of(TestExecutor, executor)
       end
 

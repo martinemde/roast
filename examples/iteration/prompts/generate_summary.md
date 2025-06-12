@@ -3,7 +3,7 @@
 You are a report generator responsible for summarizing the method analysis results.
 
 ## Input
-- Report data: {{ report_data }}
+- Report data: <%= report_data %>
 
 ## Task
 1. Parse the report data as JSON

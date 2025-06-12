@@ -1,4 +1,4 @@
-I'll analyze the code complexity of the file {{current_file}}, which I've read in the previous step.
+I'll analyze the code complexity of the file <%= current_file %>, which I've read in the previous step.
 
 I'll examine the following aspects:
 1. Cyclomatic complexity (number of decision paths)
@@ -9,7 +9,7 @@ I'll examine the following aspects:
 6. Opportunities for refactoring
 
 ```ruby
-{{output.read_file}}
+<%= output.read_file %>
 ```
 
 Based on this analysis, I'll provide a structured assessment of the code quality issues found.

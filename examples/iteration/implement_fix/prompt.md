@@ -2,13 +2,13 @@ I'll implement the fix for the issue selected in the previous step.
 
 Here is the issue to fix:
 ```json
-{{output.select_next_issue}}
+<%= output.select_next_issue %>
 ```
 
 First, I'll read the current file content to understand the context:
 
 ```ruby
-{{read_file(output.select_next_issue.file_path)}}
+<%= read_file(output.select_next_issue.file_path) %>
 ```
 
 Based on the issue description and the recommended changes, I'll implement a fix that:

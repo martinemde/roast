@@ -3,9 +3,9 @@
 You are a data updater responsible for adding analysis results to a report.
 
 ## Input
-- File path: {{ file_path }}
-- Method count: {{ method_count }}
-- Current report data: {{ current_report }}
+- File path: <%= file_path %>
+- Method count: <%= method_count %>
+- Current report data: <%= current_report %>
 
 ## Task
 1. Parse the current report data as JSON

@@ -279,6 +279,36 @@ Roast supports several types of steps:
    ```
    Agent steps are prefixed with `^` and send the prompt content directly to the CodingAgent tool without LLM translation. This is useful when you want to give precise instructions to a coding agent without the intermediate interpretation layer. Agent steps support both file-based prompts (`fix_linting_errors/prompt.md`) and inline prompts (text with spaces).
 
+9. **Input step**: Interactive prompts for user input during workflow execution
+   ```yaml
+   steps:
+     - analyze_code
+     - get_user_feedback:
+         prompt: "Should we proceed with the refactoring? (yes/no)"
+         type: confirm
+     - review_changes:
+         prompt: "Enter your review comments"
+         type: text
+     - select_strategy:
+         prompt: "Choose optimization strategy"
+         type: select
+         options:
+           - "Performance optimization"
+           - "Memory optimization"
+           - "Code clarity"
+     - api_configuration:
+         prompt: "Enter API key"
+         type: password
+   ```
+   
+   Input steps pause workflow execution to collect user input. They support several types:
+   - `text`: Free-form text input (default if type not specified)
+   - `confirm`: Yes/No confirmation prompts
+   - `select`: Choice from a list of options
+   - `password`: Masked input for sensitive data
+   
+   The user's input is stored in the workflow output using the step name as the key and can be accessed in subsequent steps via interpolation (e.g., `{{output.get_user_feedback}}`).
+
 #### Step Configuration
 
 Steps can be configured with various options to control their behavior:
@@ -891,14 +921,14 @@ tools:
   - Documentation:
       url: https://gitmcp.io/myorg/myrepo/docs
       env:
-        - "Authorization: Bearer {{env.API_TOKEN}}"
+        - "Authorization: Bearer {{ENV['API_TOKEN']}}"
 
   # MCP tools with stdio
   - GitHub:
       command: npx
       args: ["-y", "@modelcontextprotocol/server-github"]
       env:
-        GITHUB_PERSONAL_ACCESS_TOKEN: "{{env.GITHUB_TOKEN}}"
+        GITHUB_PERSONAL_ACCESS_TOKEN: "{{ENV['GITHUB_TOKEN']}}"
       only:
         - search_repositories
         - get_issue
@@ -927,7 +957,7 @@ Connect to local processes implementing the MCP protocol:
     command: docker
     args: ["run", "-i", "--rm", "ghcr.io/example/mcp-server"]
     env:
-      API_KEY: "{{env.API_KEY}}"
+      API_KEY: "{{ENV['API_KEY']}}"
 ```
 
 See the [MCP tools example](examples/mcp/) for complete documentation and more examples.

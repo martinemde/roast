@@ -9,8 +9,8 @@ Based on the file extension and content, determine the primary programming langu
 
 Return ONLY the language name in lowercase, nothing else.
 
-File: {{ context.resource_uri }}
+File: <%= context.resource_uri %>
 Content:
 ```
-{{ context.resource }}
+<%= context.resource %>
 ```

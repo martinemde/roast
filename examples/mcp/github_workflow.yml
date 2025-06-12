@@ -15,7 +15,7 @@ tools:
         - "-y"
         - "@modelcontextprotocol/server-github"
       env:
-        GITHUB_PERSONAL_ACCESS_TOKEN: "{{env.GITHUB_TOKEN}}"
+        GITHUB_PERSONAL_ACCESS_TOKEN: "{{ENV['GITHUB_TOKEN']}}"
       only:
         - search_repositories
         - get_repository

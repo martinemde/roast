@@ -15,7 +15,7 @@ Extract the workflow name from the user input JSON and create the workflow in th
 
 Steps to complete:
 
-1. **Create the main directory**: Use Cmd to create the "{{ workflow_name }}" directory
+1. **Create the main directory**: Use Cmd to create the "<%= workflow_name %>" directory
 2. **Create step directories**: Create subdirectories for each workflow step  
 3. **Create workflow.yml**: Write the main workflow configuration file
 4. **Create step prompt files**: Write each step's prompt.md file

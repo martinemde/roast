@@ -206,6 +206,52 @@
                 }
               },
               "required": ["case", "when"]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "input": {
+                  "type": "object",
+                  "properties": {
+                    "prompt": {
+                      "type": "string",
+                      "description": "The prompt text to display to the user"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Optional name to store the input value in workflow state"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": ["text", "boolean", "choice", "password"],
+                      "default": "text",
+                      "description": "The type of input to collect"
+                    },
+                    "required": {
+                      "type": "boolean",
+                      "default": false,
+                      "description": "Whether the input is required"
+                    },
+                    "default": {
+                      "description": "Default value for the input"
+                    },
+                    "timeout": {
+                      "type": "number",
+                      "description": "Optional timeout in seconds"
+                    },
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Options for choice type inputs"
+                    }
+                  },
+                  "required": ["prompt"],
+                  "additionalProperties": false
+                }
+              },
+              "required": ["input"]
             }
           ]
         }

@@ -2,17 +2,17 @@ I'll verify that the fix implemented in the previous step correctly addresses th
 
 Here are the details of the issue that was fixed:
 ```json
-{{output.select_next_issue}}
+<%= output.select_next_issue %>
 ```
 
 And here is the implementation of the fix:
 ```json
-{{output.implement_fix}}
+<%= output.implement_fix %>
 ```
 
 Now I'll read the updated file to verify the changes:
 ```ruby
-{{read_file(output.select_next_issue.file_path)}}
+<%= read_file(output.select_next_issue.file_path) %>
 ```
 
 I'll evaluate the fix based on these criteria:
