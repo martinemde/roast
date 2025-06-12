@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-06-12
+
+### Added
+- **Input step type** for collecting user input during workflow execution (#154)
+  - Interactive prompts pause workflow execution to collect user input
+  - Supports multiple input types: `text` (default), `confirm`, `select`, and `password`
+  - `confirm` type provides yes/no prompts with boolean results
+  - `select` type allows choosing from a list of options
+  - `password` type masks input for sensitive data using io/console
+  - Input values are stored in workflow output and accessible via dot notation (e.g., `{{output.step_name}}`)
+  - Integrates with CLI::UI for consistent formatting and user experience
+- **Agent step type** for direct pass-through to coding agents (#151)
+  - Steps prefixed with `^` send prompts directly to the CodingAgent tool
+  - Supports both file-based and inline agent prompts
+  - Bypasses LLM interpretation for precise agent instructions
+
+### Fixed
+- DotAccessHash array wrapping and template response handling
+- CLI::UI formatting and color handling for better terminal output
+
 ## [0.3.1] - 2025-06-05
 
 ### Added
