@@ -24,7 +24,7 @@ module Roast
             return false
           end
 
-          parsed_yaml = schema_validator.instance_variable_get(:@parsed_yaml)
+          parsed_yaml = schema_validator.parsed_yaml
 
           # If schema is valid, run other validators
           if @errors.empty?

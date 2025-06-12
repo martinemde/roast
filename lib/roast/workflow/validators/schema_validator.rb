@@ -5,6 +5,8 @@ module Roast
     module Validators
       # Validates workflow configuration against JSON schema
       class SchemaValidator < BaseValidator
+        attr_reader :parsed_yaml
+
         def initialize(yaml_content, workflow_path = nil) # rubocop:disable Lint/MissingSuper
           @yaml_content = yaml_content&.strip || ""
           @workflow_path = workflow_path
