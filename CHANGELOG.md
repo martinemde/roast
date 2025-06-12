@@ -10,11 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Input step type** for collecting user input during workflow execution (#154)
   - Interactive prompts pause workflow execution to collect user input
-  - Supports multiple input types: `text` (default), `confirm`, `select`, and `password`
-  - `confirm` type provides yes/no prompts with boolean results
-  - `select` type allows choosing from a list of options
+  - Supports multiple input types: `text` (default), `boolean`, `choice`, and `password`
+  - `boolean` type provides yes/no prompts returning true/false
+  - `choice` type allows selecting from a list of options
   - `password` type masks input for sensitive data using io/console
-  - Input values are stored in workflow output and accessible via dot notation (e.g., `{{output.step_name}}`)
+  - Input values are stored in `output.previous` and optionally in `output[name]` if name is provided
   - Integrates with CLI::UI for consistent formatting and user experience
 - **Agent step type** for direct pass-through to coding agents (#151)
   - Steps prefixed with `^` send prompts directly to the CodingAgent tool

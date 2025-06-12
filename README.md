@@ -283,31 +283,44 @@ Roast supports several types of steps:
    ```yaml
    steps:
      - analyze_code
-     - get_user_feedback:
-         prompt: "Should we proceed with the refactoring? (yes/no)"
-         type: confirm
-     - review_changes:
+     - input:
+         prompt: "Should we proceed with the refactoring?"
+         type: boolean
+         name: user_confirmation  # Optional: stores result in output.user_confirmation
+     - input:
          prompt: "Enter your review comments"
          type: text
-     - select_strategy:
+         name: review_comments
+     - input:
          prompt: "Choose optimization strategy"
-         type: select
+         type: choice
+         name: strategy
          options:
            - "Performance optimization"
            - "Memory optimization"
            - "Code clarity"
-     - api_configuration:
+     - input:
          prompt: "Enter API key"
          type: password
+         required: true
    ```
    
    Input steps pause workflow execution to collect user input. They support several types:
    - `text`: Free-form text input (default if type not specified)
-   - `confirm`: Yes/No confirmation prompts
-   - `select`: Choice from a list of options
+   - `boolean`: Yes/No confirmation prompts (returns true/false)
+   - `choice`: Selection from a list of options (requires `options` array)
    - `password`: Masked input for sensitive data
    
-   The user's input is stored in the workflow output using the step name as the key and can be accessed in subsequent steps via interpolation (e.g., `{{output.get_user_feedback}}`).
+   Configuration options:
+   - `prompt`: The question to ask the user (required)
+   - `type`: Input type (optional, defaults to `text`)
+   - `name`: Store result with this name in workflow output (optional)
+   - `required`: Whether input is required (optional, defaults to `false`)
+   - `default`: Default value if user doesn't provide input (optional)
+   - `timeout`: Seconds to wait for input before using default (optional)
+   - `options`: Array of choices for `choice` type (required for choice)
+   
+   The user's input is stored in `output.previous` and optionally in `output[name]` if a name is provided.
 
 #### Step Configuration
 
