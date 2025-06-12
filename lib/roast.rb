@@ -30,6 +30,7 @@ require "json-schema"
 require "raix"
 require "raix/chat_completion"
 require "raix/function_dispatch"
+require "ruby-graphviz"
 require "thor"
 
 # Autoloading setup
@@ -239,6 +240,21 @@ module Roast
           puts "    Data: #{event_data}" if event_data
         end
       end
+    end
+
+    desc "diagram WORKFLOW_FILE", "Generate a visual diagram of a workflow"
+    def diagram(workflow_file)
+      unless File.exist?(workflow_file)
+        raise Thor::Error, "Workflow file not found: #{workflow_file}"
+      end
+
+      workflow = Workflow::Configuration.new(workflow_file)
+      generator = WorkflowDiagramGenerator.new(workflow)
+      output_path = generator.generate
+
+      puts ::CLI::UI.fmt("{{success:✓}} Diagram generated: #{output_path}")
+    rescue StandardError => e
+      raise Thor::Error, "Error generating diagram: #{e.message}"
     end
 
     private
