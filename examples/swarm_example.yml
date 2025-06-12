@@ -1,0 +1,23 @@
+name: Swarm Example Workflow
+
+# Example workflow demonstrating Roast's integration with Claude Swarm
+# This workflow uses the Swarm tool to orchestrate multiple Claude Code instances
+
+tools:
+  - Roast::Tools::Swarm:
+      path: ".swarm.yml"  # Optional - will use default locations if not specified
+
+steps:
+  - run_basic_swarm
+  - run_custom_swarm
+
+# Basic swarm execution using tool-level config
+run_basic_swarm:
+  tool: swarm
+  prompt: "Help me refactor this codebase for better performance"
+
+# Override with a different swarm config for specialized tasks
+run_custom_swarm:
+  tool: swarm
+  path: "./specialized-swarm.yml"
+  prompt: "Run the specialized analysis workflow"
