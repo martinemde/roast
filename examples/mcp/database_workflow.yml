@@ -12,7 +12,7 @@ tools:
         - "-y"
         - "@modelcontextprotocol/server-postgres"
       env:
-        DATABASE_URL: "{{env.DATABASE_URL}}"
+        DATABASE_URL: "{{ENV['DATABASE_URL']}}"
       only:
         - query
         - list_tables

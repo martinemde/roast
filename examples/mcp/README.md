@@ -44,7 +44,7 @@ tools:
         - --rm
         - ghcr.io/example/mcp-server
       env:
-        API_KEY: "{{env.API_KEY}}"
+        API_KEY: "{{ENV['API_KEY']}}"
       except:
         - dangerous_function
 ```
@@ -116,7 +116,7 @@ tools:
       command: npx
       args: ["-y", "@modelcontextprotocol/server-github"]
       env:
-        GITHUB_PERSONAL_ACCESS_TOKEN: "{{env.GITHUB_TOKEN}}"
+        GITHUB_PERSONAL_ACCESS_TOKEN: "{{ENV['GITHUB_TOKEN']}}"
       only:
         - search_repositories
         - get_issue
@@ -131,7 +131,7 @@ tools:
       command: npx
       args: ["-y", "@modelcontextprotocol/server-postgres"]
       env:
-        DATABASE_URL: "{{env.DATABASE_URL}}"
+        DATABASE_URL: "{{ENV['DATABASE_URL']}}"
       only:
         - query
         - list_tables

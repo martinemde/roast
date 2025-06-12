@@ -921,14 +921,14 @@ tools:
   - Documentation:
       url: https://gitmcp.io/myorg/myrepo/docs
       env:
-        - "Authorization: Bearer {{env.API_TOKEN}}"
+        - "Authorization: Bearer {{ENV['API_TOKEN']}}"
 
   # MCP tools with stdio
   - GitHub:
       command: npx
       args: ["-y", "@modelcontextprotocol/server-github"]
       env:
-        GITHUB_PERSONAL_ACCESS_TOKEN: "{{env.GITHUB_TOKEN}}"
+        GITHUB_PERSONAL_ACCESS_TOKEN: "{{ENV['GITHUB_TOKEN']}}"
       only:
         - search_repositories
         - get_issue
@@ -957,7 +957,7 @@ Connect to local processes implementing the MCP protocol:
     command: docker
     args: ["run", "-i", "--rm", "ghcr.io/example/mcp-server"]
     env:
-      API_KEY: "{{env.API_KEY}}"
+      API_KEY: "{{ENV['API_KEY']}}"
 ```
 
 See the [MCP tools example](examples/mcp/) for complete documentation and more examples.
