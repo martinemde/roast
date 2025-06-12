@@ -11,7 +11,7 @@ module Roast
           final_output = workflow.final_output.to_s
           return if final_output.empty?
 
-          state_repository = FileStateRepository.new
+          state_repository = StateRepositoryFactory.create(workflow.storage_type)
           output_file = state_repository.save_final_output(workflow, final_output)
           $stderr.puts "Final output saved to: #{output_file}" if output_file
         rescue => e

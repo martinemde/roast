@@ -6,7 +6,7 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
   def setup
     @workflow = mock("workflow")
     @output = {}
-    @workflow.stubs(output: @output, pause_step_name: nil, verbose: false)
+    @workflow.stubs(output: @output, pause_step_name: nil, verbose: false, storage_type: nil)
     @config_hash = { "step1" => { "model" => "test-model" } }
     @context_path = "/tmp/test"
     @executor = Roast::Workflow::WorkflowExecutor.new(@workflow, @config_hash, @context_path)
@@ -21,7 +21,7 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
   end
 
   test "execute with pause flag will pause on the matching step" do
-    @workflow.stubs(pause_step_name: "step1")
+    @workflow.stubs(pause_step_name: "step1", storage_type: nil)
     step_obj = mock("step")
     step_obj.expects(:call).returns("result")
     @executor.step_loader.expects(:load).returns(step_obj)
@@ -49,6 +49,7 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
     @workflow.stubs(:resource).returns(nil)
     @workflow.stubs(:append_to_final_output)
     @workflow.stubs(:openai?).returns(true)
+    @workflow.stubs(:storage_type).returns(nil)
     @workflow.stubs(:tools).returns(nil)
 
     # Expect chat_completion to be called with the configured model

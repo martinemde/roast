@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **SQLite session storage** as the default storage backend (#252)
+  - Provides better performance and advanced querying capabilities
+  - Sessions are stored in `~/.roast/sessions.db` by default (configurable via `ROAST_SESSIONS_DB`)
+  - New `roast sessions` command to list and filter stored sessions
+  - New `roast session <id>` command to view detailed session information
+  - Session cleanup with `roast sessions --cleanup --older-than <duration>`
+  - Filter sessions by status, workflow name, or age
+  - Maintains full backward compatibility with filesystem storage
+- **`--file-storage` CLI option** to use legacy filesystem storage instead of SQLite
+  - Use `-f` or `--file-storage` flag to opt into filesystem storage
+  - Environment variable `ROAST_STATE_STORAGE=file` still supported for compatibility
+- **Foundation for wait_for_event feature** (#251)
+  - New `roast resume` command infrastructure for resuming paused workflows
+  - Event storage and tracking in SQLite sessions table
+
+### Changed
+- Session storage now defaults to SQLite instead of filesystem
+  - Existing filesystem sessions remain accessible when using `--file-storage` flag
+  - No migration required - both storage backends can coexist
+
 ## [0.4.0] - 2025-06-12
 
 ### Added
