@@ -4,7 +4,14 @@ require "test_helper"
 
 module Roast
   class WorkflowDiagramGeneratorTest < ActiveSupport::TestCase
+    def setup
+      # Check if GraphViz is available
+      @graphviz_available = system("which dot > /dev/null 2>&1")
+    end
+
     test "generates diagram for simple workflow" do
+      skip "GraphViz not installed" unless @graphviz_available
+
       workflow_path = fixture_file("valid_workflow.yml")
       workflow = Workflow::Configuration.new(workflow_path)
       generator = WorkflowDiagramGenerator.new(workflow, workflow_path)
@@ -19,6 +26,8 @@ module Roast
     end
 
     test "handles inline prompts" do
+      skip "GraphViz not installed" unless @graphviz_available
+
       workflow_yaml = {
         "name" => "Test workflow",
         "tools" => ["bash"],
@@ -30,18 +39,18 @@ module Roast
         File.write(workflow_file, workflow_yaml.to_yaml)
 
         workflow = Workflow::Configuration.new(workflow_file)
-        generator = WorkflowDiagramGenerator.new(workflow)
+        generator = WorkflowDiagramGenerator.new(workflow, workflow_file)
 
-        # Temporarily change to tmpdir to generate diagram there
-        Dir.chdir(tmpdir) do
-          output_path = generator.generate
-          assert File.exist?(output_path)
-          File.delete(output_path)
-        end
+        output_path = generator.generate
+        assert File.exist?(output_path)
+        assert_equal File.join(tmpdir, "test_workflow.png"), output_path
+        File.delete(output_path)
       end
     end
 
     test "handles control flow structures" do
+      skip "GraphViz not installed" unless @graphviz_available
+
       workflow_yaml = {
         "name" => "Control flow test",
         "tools" => ["bash"],
@@ -57,14 +66,49 @@ module Roast
         File.write(workflow_file, workflow_yaml.to_yaml)
 
         workflow = Workflow::Configuration.new(workflow_file)
-        generator = WorkflowDiagramGenerator.new(workflow)
+        generator = WorkflowDiagramGenerator.new(workflow, workflow_file)
 
-        Dir.chdir(tmpdir) do
-          output_path = generator.generate
-          assert File.exist?(output_path)
-          File.delete(output_path)
-        end
+        output_path = generator.generate
+        assert File.exist?(output_path)
+        assert_equal File.join(tmpdir, "control_flow_workflow.png"), output_path
+        File.delete(output_path)
       end
+    end
+
+    test "initializes with workflow configuration" do
+      workflow_path = fixture_file("valid_workflow.yml")
+      workflow = Workflow::Configuration.new(workflow_path)
+      
+      generator = WorkflowDiagramGenerator.new(workflow, workflow_path)
+      
+      assert_not_nil generator
+    end
+
+    test "generates correct output filename from workflow path" do
+      workflow = mock("workflow")
+      workflow.stubs(:name).returns("Test Workflow")
+      workflow.stubs(:steps).returns([])
+      
+      generator = WorkflowDiagramGenerator.new(workflow, "/path/to/my_workflow.yml")
+      expected_path = "/path/to/my_workflow.png"
+      
+      # Use send to access private method
+      actual_path = generator.send(:generate_output_filename)
+      
+      assert_equal expected_path, actual_path
+    end
+
+    test "generates fallback filename when no path provided" do
+      workflow = mock("workflow")
+      workflow.stubs(:name).returns("Test Workflow!")
+      workflow.stubs(:steps).returns([])
+      
+      generator = WorkflowDiagramGenerator.new(workflow)
+      
+      # Use send to access private method
+      actual_path = generator.send(:generate_output_filename)
+      
+      assert_equal "test_workflow_diagram.png", actual_path
     end
   end
 end
