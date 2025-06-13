@@ -106,4 +106,3 @@ module Roast
     end
   end
 end
-
