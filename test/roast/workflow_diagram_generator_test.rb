@@ -4,14 +4,7 @@ require "test_helper"
 
 module Roast
   class WorkflowDiagramGeneratorTest < ActiveSupport::TestCase
-    def setup
-      # Check if GraphViz is available
-      @graphviz_available = system("which dot > /dev/null 2>&1")
-    end
-
     test "generates diagram for simple workflow" do
-      skip "GraphViz not installed" unless @graphviz_available
-
       workflow_path = fixture_file("valid_workflow.yml")
       workflow = Workflow::Configuration.new(workflow_path)
       generator = WorkflowDiagramGenerator.new(workflow, workflow_path)
@@ -26,8 +19,6 @@ module Roast
     end
 
     test "handles inline prompts" do
-      skip "GraphViz not installed" unless @graphviz_available
-
       workflow_yaml = {
         "name" => "Test workflow",
         "tools" => ["bash"],
@@ -49,8 +40,6 @@ module Roast
     end
 
     test "handles control flow structures" do
-      skip "GraphViz not installed" unless @graphviz_available
-
       workflow_yaml = {
         "name" => "Control flow test",
         "tools" => ["bash"],
