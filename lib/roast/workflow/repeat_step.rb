@@ -55,7 +55,7 @@ module Roast
       private
 
       def save_iteration_state(iteration)
-        state_repository = FileStateRepository.new
+        state_repository = StateRepositoryFactory.create(workflow.storage_type)
 
         # Save the current iteration count in the state
         state_data = {

@@ -43,6 +43,8 @@ class RoastWorkflowTargetlessWorkflowTest < ActiveSupport::TestCase
       workflow.stubs(:session_timestamp).returns(nil)
       workflow.stubs(:respond_to?).with(:session_name).returns(true)
       workflow.stubs(:respond_to?).with(:final_output).returns(true)
+      workflow.stubs(:storage_type=).with(nil)
+      workflow.stubs(:model=)
 
       # Stub output_manager for the pre/post processing code
       output_manager = mock("output_manager")

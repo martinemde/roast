@@ -14,6 +14,7 @@ module Roast
         @workflow.stubs(:openai?).returns(false)
         @workflow.stubs(:pause_step_name).returns(nil)
         @workflow.stubs(:tools).returns(nil)
+        @workflow.stubs(:storage_type).returns(nil)
       end
 
       test "step with coerce_to boolean returns boolean for truthy string" do
