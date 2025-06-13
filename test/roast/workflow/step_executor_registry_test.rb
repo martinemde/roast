@@ -22,6 +22,8 @@ module Roast
 
       def setup
         @workflow_executor = mock("workflow_executor")
+        @workflow_executor.stubs(:workflow).returns(mock("workflow"))
+        @workflow_executor.stubs(:config_hash).returns({})
         # Clear the registry before each test
         StepExecutorRegistry.clear!
       end

@@ -8,7 +8,7 @@ module Roast
         # Load configuration from a YAML file
         # @param workflow_path [String] Path to the workflow YAML file
         # @return [Hash] The parsed configuration hash
-        def load(workflow_path)
+        def load(workflow_path, options = {})
           validate_path!(workflow_path)
 
           # Load shared.yml if it exists one level above
@@ -23,6 +23,18 @@ module Roast
           end
 
           yaml_content += File.read(workflow_path)
+
+          # Use comprehensive validation if requested
+          if options[:comprehensive_validation]
+            validator = Validators::ValidationOrchestrator.new(yaml_content, workflow_path)
+            unless validator.valid?
+              raise_validation_errors(validator)
+            end
+
+            # Show warnings if any
+            display_warnings(validator.warnings) if validator.warnings.any?
+          end
+
           config_hash = YAML.load(yaml_content, aliases: true)
 
           validate_config!(config_hash)
@@ -142,6 +154,32 @@ module Roast
 
         def validate_config!(config_hash)
           raise ArgumentError, "Invalid workflow configuration" unless config_hash.is_a?(Hash)
+        end
+
+        def raise_validation_errors(validator)
+          error_messages = validator.errors.map do |error|
+            message = "• #{error[:message]}"
+            message += " (#{error[:suggestion]})" if error[:suggestion]
+            message
+          end.join("\n")
+
+          raise CLI::Kit::Abort, <<~ERROR
+            Workflow validation failed with #{validator.errors.size} error(s):
+
+            #{error_messages}
+          ERROR
+        end
+
+        def display_warnings(warnings)
+          return if warnings.empty?
+
+          ::CLI::UI::Frame.open("Validation Warnings", color: :yellow) do
+            warnings.each do |warning|
+              puts ::CLI::UI.fmt("{{yellow:#{warning[:message]}}}")
+              puts ::CLI::UI.fmt("  {{gray:→ #{warning[:suggestion]}}}") if warning[:suggestion]
+              puts
+            end
+          end
         end
       end
     end

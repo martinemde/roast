@@ -147,6 +147,13 @@ module Roast
       puts "Run a workflow with: roast execute <workflow_name>"
     end
 
+    desc "validate [WORKFLOW_CONFIGURATION_FILE]", "Validate a workflow configuration"
+    option :strict, type: :boolean, aliases: "-s", desc: "Treat warnings as errors"
+    def validate(workflow_path = nil)
+      validation_command = Roast::Workflow::ValidationCommand.new(options)
+      validation_command.execute(workflow_path)
+    end
+
     desc "sessions", "List stored workflow sessions"
     option :status, type: :string, aliases: "-s", desc: "Filter by status (running, waiting, completed, failed)"
     option :workflow, type: :string, aliases: "-w", desc: "Filter by workflow name"

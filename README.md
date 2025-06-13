@@ -407,6 +407,32 @@ For typical AI workflows, the continuous conversation history provides seamless 
 - `-r, --replay STEP_NAME`: Resume a workflow from a specific step, optionally with a specific session timestamp
 - `-f, --file-storage`: Use filesystem storage for sessions instead of SQLite (default: SQLite)
 
+#### Workflow Validation
+
+Roast provides a `validate` command to check workflow configuration files for errors and potential issues before execution:
+
+```bash
+# Validate a specific workflow
+roast validate workflow.yml
+
+# Validate a workflow in a subdirectory
+roast validate my_workflow
+
+# Validate with strict mode (treats warnings as errors)
+roast validate workflow.yml --strict
+```
+
+The validator checks for:
+- YAML syntax errors
+- Missing required fields
+- Invalid step references
+- Circular dependencies
+- Tool availability
+- Prompt file existence
+- Configuration consistency
+
+This helps catch configuration errors early and ensures workflows will run smoothly.
+
 #### Session Storage and Management
 
 Roast uses SQLite by default for session storage, providing better performance and advanced querying capabilities. Sessions are automatically saved during workflow execution, capturing each step's state including conversation transcripts and outputs.
