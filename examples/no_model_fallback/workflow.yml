@@ -1,5 +1,4 @@
-name: interpolation_example
-model: gpt-4o-mini
+name: no_model_fallback_example
 
 tools:
   - Roast::Tools::ReadFile
@@ -18,4 +17,3 @@ generate_report_for_rb:
 
 generate_report_for_md:
   print_response: true
-  

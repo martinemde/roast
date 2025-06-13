@@ -51,7 +51,7 @@ module Roast
         # Now expects loop: false due to new BaseStep behavior
         @workflow.expects(:chat_completion).with(
           openai: false,
-          model: "openai/gpt-4o-mini", # Default model
+          model: "gpt-4o-mini", # Default model
           json: false,
           params: {},
           available_tools: nil,
