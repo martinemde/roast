@@ -111,9 +111,10 @@ module Roast
         assert_equal(TestExecutor, executors[String])
         assert_equal(AnotherTestExecutor, executors[Hash])
 
-        # Verify it's a copy
-        executors[Array] = TestExecutor
-        refute(StepExecutorRegistry.registered_executors.key?(Array))
+        # Verify it's a copy by modifying the returned hash
+        # Use Symbol as it's unlikely to be registered by other tests
+        executors[Symbol] = TestExecutor
+        refute(StepExecutorRegistry.registered_executors.key?(Symbol))
       end
 
       def test_executor_receives_workflow_executor_in_constructor
