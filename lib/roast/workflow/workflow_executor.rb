@@ -72,7 +72,7 @@ module Roast
         @step_orchestrator = step_orchestrator || StepOrchestrator.new(workflow, @step_loader, @state_manager, @error_handler, self)
 
         # Initialize coordinator with dependencies
-        @step_executor_coordinator = step_executor_coordinator || StepExecutorCoordinator.new(
+        base_coordinator = step_executor_coordinator || StepExecutorCoordinator.new(
           context: @context,
           dependencies: {
             workflow_executor: self,
@@ -84,6 +84,13 @@ module Roast
             error_handler: @error_handler,
           },
         )
+        
+        # Wrap with reporting decorator if context management is available
+        @step_executor_coordinator = if workflow.respond_to?(:context_manager) && workflow.context_manager
+          StepExecutorWithReporting.new(base_coordinator, @context)
+        else
+          base_coordinator
+        end
       end
 
       # Logger interface methods for backward compatibility
