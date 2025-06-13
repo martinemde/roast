@@ -15,12 +15,40 @@ Encoding.default_internal = Encoding::UTF_8
 require "bundler/setup"
 require "roast/commands/mcp_server"
 
-# Get workflow directories from arguments
+# Parse command line arguments
+require "optparse"
+
+log_level = nil
+workflow_dirs = []
+
+parser = OptionParser.new do |opts|
+  opts.banner = "Usage: roast-mcp [options] [workflow_dirs...]"
+  
+  opts.on("-l", "--log-level LEVEL", "Set log level (DEBUG, INFO, WARN, ERROR)") do |level|
+    log_level = level
+  end
+  
+  opts.on("-h", "--help", "Show this help message") do
+    puts opts
+    exit
+  end
+end
+
+parser.parse!
 workflow_dirs = ARGV
+
+# Get configuration from environment variables if not provided via CLI
+log_level ||= ENV["ROAST_LOG_LEVEL"]
+if workflow_dirs.empty? && ENV["ROAST_WORKFLOW_DIRS"]
+  workflow_dirs = ENV["ROAST_WORKFLOW_DIRS"].split(":")
+end
 
 # Create and run the server
 begin
-  server = Roast::Commands::MCPServer.new(workflow_dirs: workflow_dirs)
+  server = Roast::Commands::MCPServer.new(
+    workflow_dirs: workflow_dirs,
+    log_level: log_level
+  )
   server.run
 rescue StandardError => e
   # Log errors to stderr

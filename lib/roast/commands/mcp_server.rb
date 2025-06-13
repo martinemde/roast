@@ -37,12 +37,22 @@ module Roast
 
       attr_reader :tools, :initialized
 
-      def initialize(workflow_dirs: [])
+      def initialize(workflow_dirs: [], log_level: nil)
         @workflow_dirs = workflow_dirs
         @tools = []
         @tools_map = {}
         @initialized = false
         @logger = Logger.new($stderr)
+
+        # Set log level if provided
+        if log_level
+          level = begin
+            Logger.const_get(log_level.upcase)
+          rescue
+            Logger::INFO
+          end
+          @logger.level = level
+        end
 
         discover_workflows
       end

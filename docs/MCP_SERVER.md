@@ -125,6 +125,23 @@ To use your Roast workflows with Claude Desktop, you have two options:
 }
 ```
 
+Or using environment variables instead of args:
+
+```json
+{
+  "mcpServers": {
+    "roast": {
+      "command": "/path/to/roast/bin/roast-mcp",
+      "env": {
+        "OPENAI_API_KEY": "your-api-key",
+        "ROAST_WORKFLOW_DIRS": "/path/to/workflows1:/path/to/workflows2",
+        "ROAST_LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}
+```
+
 ### Option 2: Using the main roast command
 
 ```json
@@ -144,6 +161,22 @@ To use your Roast workflows with Claude Desktop, you have two options:
 Note: The `roast-mcp` wrapper is recommended as it ensures a clean stdout for the MCP protocol. Claude's MCP configuration works best with positional arguments rather than flags, so specify workflow directories directly in the `args` array.
 
 ## Environment Variables
+
+### MCP Server Configuration
+
+The MCP server can be configured using environment variables:
+
+- `ROAST_WORKFLOW_DIRS`: Colon-separated list of directories to search for workflows (e.g., `/path/to/workflows1:/path/to/workflows2`)
+- `ROAST_LOG_LEVEL`: Set the log level (DEBUG, INFO, WARN, ERROR)
+
+Example:
+```bash
+export ROAST_WORKFLOW_DIRS="/home/user/workflows:/opt/team-workflows"
+export ROAST_LOG_LEVEL=DEBUG
+bin/roast-mcp
+```
+
+### Workflow Execution
 
 When workflows are executed through MCP, arguments are passed as environment variables:
 
