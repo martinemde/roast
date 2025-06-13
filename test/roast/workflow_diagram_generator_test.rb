@@ -67,9 +67,9 @@ module Roast
     test "initializes with workflow configuration" do
       workflow_path = fixture_file("valid_workflow.yml")
       workflow = Workflow::Configuration.new(workflow_path)
-      
+
       generator = WorkflowDiagramGenerator.new(workflow, workflow_path)
-      
+
       assert_not_nil generator
     end
 
@@ -77,13 +77,13 @@ module Roast
       workflow = mock("workflow")
       workflow.stubs(:name).returns("Test Workflow")
       workflow.stubs(:steps).returns([])
-      
+
       generator = WorkflowDiagramGenerator.new(workflow, "/path/to/my_workflow.yml")
       expected_path = "/path/to/my_workflow.png"
-      
+
       # Use send to access private method
       actual_path = generator.send(:generate_output_filename)
-      
+
       assert_equal expected_path, actual_path
     end
 
@@ -91,12 +91,12 @@ module Roast
       workflow = mock("workflow")
       workflow.stubs(:name).returns("Test Workflow!")
       workflow.stubs(:steps).returns([])
-      
+
       generator = WorkflowDiagramGenerator.new(workflow)
-      
+
       # Use send to access private method
       actual_path = generator.send(:generate_output_filename)
-      
+
       assert_equal "test_workflow_diagram.png", actual_path
     end
   end

@@ -13,7 +13,7 @@ module Roast
     def generate(custom_output_path = nil)
       configure_graph
       build_graph(@workflow_config.steps)
-      
+
       output_path = custom_output_path || generate_output_filename
       @graph.output(png: output_path)
       output_path
@@ -30,7 +30,7 @@ module Roast
       @graph[:nodesep] = "0.7"
       @graph[:ranksep] = "0.8"
       @graph[:splines] = "spline"
-      
+
       # Default node styling
       @graph.node[:shape] = "box"
       @graph.node[:style] = "rounded,filled"
@@ -42,7 +42,7 @@ module Roast
       @graph.node[:penwidth] = "1.5"
       @graph.node[:height] = "0.6"
       @graph.node[:margin] = "0.15"
-      
+
       # Edge styling
       @graph.edge[:fontname] = "Helvetica"
       @graph.edge[:fontsize] = "10"
@@ -170,8 +170,10 @@ module Roast
         if loop_steps.any?
           last_loop_node = build_graph(loop_steps, loop_node)
           # Add back edge to show loop
-          @graph.add_edges(last_loop_node, loop_node, 
-            style: "dashed", 
+          @graph.add_edges(
+            last_loop_node,
+            loop_node,
+            style: "dashed",
             label: "loop",
             color: "#10B981",
             fontcolor: "#10B981",
@@ -239,7 +241,9 @@ module Roast
         next if when_steps.none?
 
         first_when_node = process_step(when_steps.first)
-        @graph.add_edges(case_node, first_when_node, 
+        @graph.add_edges(
+          case_node,
+          first_when_node,
           label: condition.to_s,
           fontcolor: "#9333EA",
         )
@@ -268,7 +272,7 @@ module Roast
         # Get the directory and base name of the workflow file
         dir = File.dirname(@workflow_file_path)
         base = File.basename(@workflow_file_path, ".yml")
-        
+
         # Create the diagram filename in the same directory
         File.join(dir, "#{base}.png")
       else
@@ -279,7 +283,7 @@ module Roast
           .gsub(/[^a-z0-9]+/, "_")
           .gsub(/^_|_$/, "")
           .gsub(/_+/, "_")
-        
+
         sanitized_name = "workflow" if sanitized_name.empty?
         "#{sanitized_name}_diagram.png"
       end
