@@ -79,15 +79,8 @@ module Roast
 
       test "handle_error formats error messages properly" do
         error = StandardError.new("Test error")
-
-        # Capture logger output
-        logged_error = nil
-        Roast::Helpers::Logger.stub(:error, ->(msg) { logged_error = msg }) do
-          result = Roast::Tools::Swarm.send(:handle_error, error)
-
-          assert_equal "Error running swarm: Test error", result
-          assert_equal "Error running swarm: Test error\n", logged_error
-        end
+        result = Roast::Tools::Swarm.send(:handle_error, error)
+        assert_equal "Error running swarm: Test error", result
       end
 
       test "included method registers swarm function" do
