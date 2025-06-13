@@ -7,7 +7,7 @@ require "tmpdir"
 
 module Roast
   module Commands
-    class MCPServerTest < ActiveSupport::TestCase
+    class McpServerTest < ActiveSupport::TestCase
       def setup
         @temp_dir = Dir.mktmpdir
         @server = nil
@@ -27,7 +27,7 @@ module Roast
             - step1: Do something
         YAML
 
-        server = MCPServer.new(workflow_dirs: [@temp_dir])
+        server = McpServer.new(workflow_dirs: [@temp_dir])
 
         assert_equal 1, server.tools.length
         assert_equal "roast_test_workflow", server.tools.first["name"]
@@ -35,7 +35,7 @@ module Roast
       end
 
       test "handles initialize request" do
-        server = MCPServer.new
+        server = McpServer.new
         request = {
           "jsonrpc" => "2.0",
           "id" => 1,
@@ -55,7 +55,7 @@ module Roast
       end
 
       test "rejects unsupported protocol version" do
-        server = MCPServer.new
+        server = McpServer.new
         request = {
           "jsonrpc" => "2.0",
           "id" => 1,
@@ -73,7 +73,7 @@ module Roast
       end
 
       test "accepts alternate protocol version 0.1.0" do
-        server = MCPServer.new
+        server = McpServer.new
         request = {
           "jsonrpc" => "2.0",
           "id" => 1,
@@ -92,7 +92,7 @@ module Roast
       end
 
       test "accepts protocol version 2025-03-26 with adapted capabilities" do
-        server = MCPServer.new
+        server = McpServer.new
         request = {
           "jsonrpc" => "2.0",
           "id" => 1,
@@ -120,7 +120,7 @@ module Roast
             - step1: Do something
         YAML
 
-        server = MCPServer.new(workflow_dirs: [@temp_dir])
+        server = McpServer.new(workflow_dirs: [@temp_dir])
         server.send(:instance_variable_set, :@initialized, true)
 
         request = {
@@ -138,7 +138,7 @@ module Roast
       end
 
       test "handles ping request" do
-        server = MCPServer.new
+        server = McpServer.new
         request = {
           "jsonrpc" => "2.0",
           "id" => 3,
@@ -153,7 +153,7 @@ module Roast
       end
 
       test "handles shutdown request" do
-        server = MCPServer.new
+        server = McpServer.new
         server.send(:instance_variable_set, :@initialized, true)
 
         request = {
@@ -171,7 +171,7 @@ module Roast
       end
 
       test "rejects requests when not initialized" do
-        server = MCPServer.new
+        server = McpServer.new
         request = {
           "jsonrpc" => "2.0",
           "id" => 5,
@@ -194,7 +194,7 @@ module Roast
           ],
         }
 
-        server = MCPServer.new
+        server = McpServer.new
         schema = server.send(:build_input_schema, config)
 
         assert_equal "object", schema["type"]
@@ -212,7 +212,7 @@ module Roast
           ],
         }
 
-        server = MCPServer.new
+        server = McpServer.new
         variables = server.send(:extract_variables, config)
 
         assert_equal 3, variables.length
@@ -230,7 +230,7 @@ module Roast
           ],
         }
 
-        server = MCPServer.new
+        server = McpServer.new
         variables = server.send(:extract_variables, config)
 
         assert_includes variables, "file"
@@ -247,7 +247,7 @@ module Roast
             - analyze: Process <%= workflow.file %>
         YAML
 
-        server = MCPServer.new(workflow_dirs: [@temp_dir])
+        server = McpServer.new(workflow_dirs: [@temp_dir])
         tool = server.tools.find { |t| t["name"] == "roast_each_workflow" }
 
         assert tool["inputSchema"]["properties"].key?("file")
@@ -263,7 +263,7 @@ module Roast
             - analyze: Just analyze something
         YAML
 
-        server = MCPServer.new(workflow_dirs: [@temp_dir])
+        server = McpServer.new(workflow_dirs: [@temp_dir])
         tool = server.tools.find { |t| t["name"] == "roast_simple_workflow" }
 
         assert tool["inputSchema"]["properties"].key?("file")
@@ -272,7 +272,7 @@ module Roast
       end
 
       test "handles unknown method" do
-        server = MCPServer.new
+        server = McpServer.new
         server.send(:instance_variable_set, :@initialized, true)
 
         request = {
@@ -288,7 +288,7 @@ module Roast
       end
 
       test "handles prompts/list request" do
-        server = MCPServer.new
+        server = McpServer.new
         server.send(:instance_variable_set, :@initialized, true)
 
         request = {
@@ -305,7 +305,7 @@ module Roast
       end
 
       test "handles resources/list request" do
-        server = MCPServer.new
+        server = McpServer.new
         server.send(:instance_variable_set, :@initialized, true)
 
         request = {
@@ -328,7 +328,7 @@ module Roast
             - analyze: Analyze the code
         YAML
 
-        server = MCPServer.new(workflow_dirs: [@temp_dir])
+        server = McpServer.new(workflow_dirs: [@temp_dir])
 
         assert_equal 1, server.tools.length
         assert_equal "roast_my_custom_workflow", server.tools.first["name"]
@@ -347,7 +347,7 @@ module Roast
             - step1: Do something
         YAML
 
-        server = MCPServer.new(workflow_dirs: [@temp_dir])
+        server = McpServer.new(workflow_dirs: [@temp_dir])
 
         assert_equal 1, server.tools.length
         assert_equal "roast_valid_workflow", server.tools.first["name"]

@@ -45,7 +45,7 @@ end
 
 # Create and run the server
 begin
-  server = Roast::Commands::MCPServer.new(
+  server = Roast::Commands::McpServer.new(
     workflow_dirs: workflow_dirs,
     log_level: log_level
   )

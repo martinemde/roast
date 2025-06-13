@@ -10,7 +10,7 @@ require "roast/workflow/configuration_parser"
 
 module Roast
   module Commands
-    class MCPServer
+    class McpServer
       VERSION = "2024-11-05"
       # Support multiple protocol versions for compatibility
       SUPPORTED_VERSIONS = [

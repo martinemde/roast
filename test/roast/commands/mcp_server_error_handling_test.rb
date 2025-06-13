@@ -7,7 +7,7 @@ require "tmpdir"
 
 module Roast
   module Commands
-    class MCPServerErrorHandlingTest < ActiveSupport::TestCase
+    class McpServerErrorHandlingTest < ActiveSupport::TestCase
       def setup
         @temp_dir = Dir.mktmpdir
         @server = nil
@@ -28,7 +28,7 @@ module Roast
                 cmd: "exit 1"
         YAML
 
-        server = MCPServer.new(workflow_dirs: [@temp_dir])
+        server = McpServer.new(workflow_dirs: [@temp_dir])
         server.send(:instance_variable_set, :@initialized, true)
 
         request = {
@@ -61,7 +61,7 @@ module Roast
             - nonexistent_step: Do something
         YAML
 
-        server = MCPServer.new(workflow_dirs: [@temp_dir])
+        server = McpServer.new(workflow_dirs: [@temp_dir])
         server.send(:instance_variable_set, :@initialized, true)
 
         request = {
@@ -94,7 +94,7 @@ module Roast
             - bad_interpolation: "Process {{ undefined_variable }}"
         YAML
 
-        server = MCPServer.new(workflow_dirs: [@temp_dir])
+        server = McpServer.new(workflow_dirs: [@temp_dir])
         server.send(:instance_variable_set, :@initialized, true)
 
         request = {
@@ -127,7 +127,7 @@ module Roast
                 cmd: "exit 1"
         YAML
 
-        server = MCPServer.new(workflow_dirs: [@temp_dir])
+        server = McpServer.new(workflow_dirs: [@temp_dir])
         server.send(:instance_variable_set, :@initialized, true)
 
         # First request - failing workflow
@@ -183,7 +183,7 @@ module Roast
             exit_on_error: false
         YAML
 
-        server = MCPServer.new(workflow_dirs: [@temp_dir])
+        server = McpServer.new(workflow_dirs: [@temp_dir])
         server.send(:instance_variable_set, :@initialized, true)
 
         request = {

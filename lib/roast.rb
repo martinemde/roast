@@ -317,7 +317,7 @@ module Roast
       # Combine positional arguments with --workflows flag
       all_dirs = workflow_dirs + (options[:workflows] || [])
 
-      server = Roast::Commands::MCPServer.new(workflow_dirs: all_dirs)
+      server = Roast::Commands::McpServer.new(workflow_dirs: all_dirs)
 
       # Redirect logger output if specified
       if options[:log]
@@ -326,7 +326,7 @@ module Roast
 
       # For MCP protocol, we should not output anything to stdout before the server starts
       # Log to stderr instead
-      $stderr.puts "Starting Roast MCP server v#{Roast::Commands::MCPServer::VERSION}..."
+      $stderr.puts "Starting Roast MCP server v#{Roast::Commands::McpServer::VERSION}..."
       $stderr.puts "Discovered #{server.tools.length} workflows"
       $stderr.puts "Listening on stdin/stdout..."
 
