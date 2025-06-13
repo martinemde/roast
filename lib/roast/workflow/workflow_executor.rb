@@ -111,8 +111,8 @@ module Roast
         @interpolator.interpolate(text)
       end
 
-      def execute_step(name, exit_on_error: true)
-        @step_executor_coordinator.execute(name, exit_on_error: exit_on_error)
+      def execute_step(name, exit_on_error: true, is_last_step: nil)
+        @step_executor_coordinator.execute(name, exit_on_error:, is_last_step:)
       rescue StepLoader::StepNotFoundError => e
         raise StepNotFoundError.new(e.message, step_name: e.step_name, original_error: e.original_error)
       rescue StepLoader::StepExecutionError => e
