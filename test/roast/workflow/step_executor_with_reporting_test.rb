@@ -36,7 +36,7 @@ module Roast
         
         @executor.execute("test_step", {})
         
-        assert_equal "✓ Complete: test_step (consumed 150 tokens, total 250)\n", @output.string
+        assert_equal "✓ Complete: test_step (consumed 150 tokens, total 250)\n\n\n", @output.string
       end
 
       test "handles nil context manager gracefully" do
@@ -45,7 +45,7 @@ module Roast
         
         @executor.execute("test_step", {})
         
-        assert_equal "✓ Complete: test_step (consumed 0 tokens, total 0)\n", @output.string
+        assert_equal "✓ Complete: test_step (consumed 0 tokens, total 0)\n\n\n", @output.string
       end
 
       test "does not report on execution failure" do

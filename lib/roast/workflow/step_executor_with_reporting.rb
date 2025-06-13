@@ -22,11 +22,34 @@ module Roast
         tokens_after = @context.workflow.context_manager&.total_tokens || 0
         tokens_consumed = tokens_after - tokens_before
         
+        
         step_type = StepTypeResolver.resolve(step, @context)
         step_name = @name_extractor.extract(step, step_type)
         @reporter.report(step_name, tokens_consumed, tokens_after)
         
         result
+      end
+      
+      # Override execute_steps to ensure reporting happens for each step
+      def execute_steps(workflow_steps)
+        workflow_steps.each_with_index do |step, index|
+          is_last_step = (index == workflow_steps.length - 1)
+          case step
+          when Hash
+            execute(step, is_last_step:)
+          when Array
+            execute(step, is_last_step:)
+          when String
+            execute(step, is_last_step:)
+            # Handle pause after string steps
+            if @context.workflow.pause_step_name == step
+              Kernel.binding.irb # rubocop:disable Lint/Debugger
+            end
+          else
+            # For other types, delegate to base executor
+            execute(step, is_last_step:)
+          end
+        end
       end
 
       # Delegate all other methods to the base executor

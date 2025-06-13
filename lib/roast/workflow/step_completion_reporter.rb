@@ -13,6 +13,8 @@ module Roast
         formatted_total = number_with_delimiter(total_tokens)
         
         @output.puts "✓ Complete: #{step_name} (consumed #{formatted_consumed} tokens, total #{formatted_total})"
+        @output.puts
+        @output.puts
       end
 
       private
