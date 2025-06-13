@@ -73,6 +73,9 @@ module Roast
         create_step_node(step)
       when Hash
         process_control_flow(step)
+      else
+        ::CLI::Kit.logger.warn("Unexpected step type in workflow diagram: #{step.class} - #{step.inspect}")
+        nil
       end
     end
 
@@ -108,6 +111,9 @@ module Roast
         process_proceed(control_flow)
       elsif control_flow.key?("case")
         process_case(control_flow)
+      else
+        ::CLI::Kit.logger.warn("Unexpected control flow structure in workflow diagram: #{control_flow.keys.join(", ")}")
+        nil
       end
     end
 
