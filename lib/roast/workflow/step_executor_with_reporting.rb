@@ -14,22 +14,21 @@ module Roast
       def execute(step, options = {})
         # Track tokens before execution
         tokens_before = @context.workflow.context_manager&.total_tokens || 0
-        
+
         # Execute the step
         result = @base_executor.execute(step, options)
-        
+
         # Report token consumption after successful execution
         tokens_after = @context.workflow.context_manager&.total_tokens || 0
         tokens_consumed = tokens_after - tokens_before
-        
-        
+
         step_type = StepTypeResolver.resolve(step, @context)
         step_name = @name_extractor.extract(step, step_type)
         @reporter.report(step_name, tokens_consumed, tokens_after)
-        
+
         result
       end
-      
+
       # Override execute_steps to ensure reporting happens for each step
       def execute_steps(workflow_steps)
         workflow_steps.each_with_index do |step, index|

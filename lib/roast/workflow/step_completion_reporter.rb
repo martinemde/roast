@@ -11,7 +11,7 @@ module Roast
       def report(step_name, tokens_consumed, total_tokens)
         formatted_consumed = number_with_delimiter(tokens_consumed)
         formatted_total = number_with_delimiter(total_tokens)
-        
+
         @output.puts "✓ Complete: #{step_name} (consumed #{formatted_consumed} tokens, total #{formatted_total})"
         @output.puts
         @output.puts

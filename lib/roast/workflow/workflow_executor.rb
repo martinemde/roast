@@ -84,9 +84,13 @@ module Roast
             error_handler: @error_handler,
           },
         )
-        
-        # Always wrap with reporting decorator
-        @step_executor_coordinator = StepExecutorWithReporting.new(base_coordinator, @context)
+
+        # Only wrap with reporting decorator if workflow has token tracking enabled
+        @step_executor_coordinator = if workflow.respond_to?(:context_manager) && workflow.context_manager
+          StepExecutorWithReporting.new(base_coordinator, @context)
+        else
+          base_coordinator
+        end
       end
 
       # Logger interface methods for backward compatibility
