@@ -31,22 +31,22 @@ module Roast
 
       def extract_command_name(step)
         cmd = step.to_s.strip
-        cmd.length > 20 ? "#{cmd[0..17]}..." : cmd
+        cmd.length > 20 ? "#{cmd[0..19]}..." : cmd
       end
 
       def extract_hash_step_name(step)
         key, value = step.to_a.first
-        
+
         # Check if this looks like an inline prompt (key is similar to sanitized value)
         if value.is_a?(String)
           # Get first non-empty line
           first_line = value.lines.map(&:strip).find { |line| !line.empty? } || ""
-          
+
           # If key looks like it was auto-generated from the content, use truncated content
-          sanitized = first_line.downcase.gsub(/[^a-z0-9_]/, '_').squeeze('_').gsub(/^_|_$/, '')
+          sanitized = first_line.downcase.gsub(/[^a-z0-9_]/, "_").squeeze("_").gsub(/^_|_$/, "")
           if key.to_s == sanitized || key.to_s.start_with?(sanitized[0..15])
             # This is likely an inline prompt
-            first_line.length > 20 ? "#{first_line[0..17]}..." : first_line
+            first_line.length > 20 ? "#{first_line[0..19]}..." : first_line
           else
             # This is a labeled step
             key.to_s
