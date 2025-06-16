@@ -18,14 +18,14 @@ require "roast/commands/mcp_server"
 # Parse command line arguments
 require "optparse"
 
-log_level = nil
+log_file = nil
 workflow_dirs = []
 
 parser = OptionParser.new do |opts|
   opts.banner = "Usage: roast-mcp [options] [workflow_dirs...]"
   
-  opts.on("-l", "--log-level LEVEL", "Set log level (DEBUG, INFO, WARN, ERROR)") do |level|
-    log_level = level
+  opts.on("-l", "--log FILE", "Log to FILE instead of stderr") do |file|
+    log_file = file
   end
   
   opts.on("-h", "--help", "Show this help message") do
@@ -38,7 +38,7 @@ parser.parse!
 workflow_dirs = ARGV
 
 # Get configuration from environment variables if not provided via CLI
-log_level ||= ENV["ROAST_LOG_LEVEL"]
+log_file ||= ENV["ROAST_LOG_FILE"]
 if workflow_dirs.empty? && ENV["ROAST_WORKFLOW_DIRS"]
   workflow_dirs = ENV["ROAST_WORKFLOW_DIRS"].split(":")
 end
@@ -47,8 +47,24 @@ end
 begin
   server = Roast::Commands::McpServer.new(
     workflow_dirs: workflow_dirs,
-    log_level: log_level
+    log_level: ENV["ROAST_LOG_LEVEL"]  # Still support env var for log level
   )
+  
+  # Redirect logger output if log file specified
+  if log_file
+    require "logger"
+    server.instance_variable_set(:@logger, Logger.new(log_file))
+    # Set log level from env var if provided
+    if ENV["ROAST_LOG_LEVEL"]
+      level = begin
+        Logger.const_get(ENV["ROAST_LOG_LEVEL"].upcase)
+      rescue
+        Logger::INFO
+      end
+      server.instance_variable_get(:@logger).level = level
+    end
+  end
+  
   server.run
 rescue StandardError => e
   # Log errors to stderr

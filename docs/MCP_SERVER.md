@@ -168,12 +168,19 @@ The MCP server can be configured using environment variables:
 
 - `ROAST_WORKFLOW_DIRS`: Colon-separated list of directories to search for workflows (e.g., `/path/to/workflows1:/path/to/workflows2`)
 - `ROAST_LOG_LEVEL`: Set the log level (DEBUG, INFO, WARN, ERROR)
+- `ROAST_LOG_FILE`: Log to a file instead of stderr
 
 Example:
 ```bash
 export ROAST_WORKFLOW_DIRS="/home/user/workflows:/opt/team-workflows"
 export ROAST_LOG_LEVEL=DEBUG
+export ROAST_LOG_FILE="/var/log/roast-mcp.log"
 bin/roast-mcp
+```
+
+You can also use the `--log` flag to specify a log file:
+```bash
+bin/roast-mcp --log /var/log/roast-mcp.log /path/to/workflows
 ```
 
 ### Workflow Execution
