@@ -21,7 +21,7 @@ module Roast
           base.class_eval do
             function(
               :swarm,
-              "Execute Claude Swarm to orchestrate multiple Claude Code instances",
+              "Execute Claude Swarm to orchestrate multiple Claude Code instances. If the swarm is iterating on previous work, set continue to true.",
               prompt: {
                 type: "string",
                 description: "The prompt to send to the swarm agents",
@@ -32,8 +32,23 @@ module Roast
                 description: "Path to the swarm configuration file (optional)",
                 required: false,
               },
+              include_context_summary: {
+                type: "boolean",
+                description: "Whether to include a summary of the current workflow context as system directive (default: false)",
+                required: false,
+              },
+              continue: {
+                type: "boolean",
+                description: "Whether to continue where the previous swarm left off or start with a fresh context (default: false, start fresh)",
+                required: false,
+              },
             ) do |params|
-              Roast::Tools::Swarm.call(params[:prompt], params[:path])
+              Roast::Tools::Swarm.call(
+                params[:prompt],
+                params[:path],
+                include_context_summary: params[:include_context_summary].presence || false,
+                continue: params[:continue].presence || false,
+              )
             end
           end
         end
@@ -45,7 +60,7 @@ module Roast
         attr_reader :tool_config
       end
 
-      def call(prompt, step_path = nil)
+      def call(prompt, step_path = nil, include_context_summary: false, continue: false)
         config_path = determine_config_path(step_path)
 
         if config_path.nil?
@@ -58,7 +73,7 @@ module Roast
 
         Roast::Helpers::Logger.info("🐝 Running Claude Swarm with config: #{config_path}\n")
 
-        execute_swarm(prompt, config_path)
+        execute_swarm(prompt, config_path, include_context_summary:, continue:)
       rescue StandardError => e
         handle_error(e)
       end
@@ -80,9 +95,12 @@ module Roast
         DEFAULT_CONFIG_PATHS.find { |path| File.exist?(path) }
       end
 
-      def execute_swarm(prompt, config_path)
+      def execute_swarm(prompt, config_path, include_context_summary:, continue:)
+        # Prepare the final prompt with context summary if requested
+        final_prompt = prepare_prompt(prompt, include_context_summary)
+
         # Build the swarm command with proper escaping
-        command = build_swarm_command(prompt, config_path)
+        command = build_swarm_command(final_prompt, config_path, continue:)
 
         result = ""
 
@@ -96,15 +114,21 @@ module Roast
         format_output(command, result, exit_status)
       end
 
-      def build_swarm_command(prompt, config_path)
+      def build_swarm_command(prompt, config_path, continue:)
         # Build the claude-swarm command with properly escaped arguments
-        [
-          "claude-swarm",
+        command_parts = ["claude-swarm"]
+
+        # Add --continue flag if specified
+        command_parts << "--continue" if continue
+
+        command_parts += [
           "--config",
           config_path,
           "--prompt",
           prompt,
-        ].shelljoin
+        ]
+
+        command_parts.shelljoin
       end
 
       def format_output(command, result, exit_status)
@@ -118,6 +142,35 @@ module Roast
         Roast::Helpers::Logger.error("#{error_message}\n")
         Roast::Helpers::Logger.debug("#{error.backtrace.join("\n")}\n") if ENV["DEBUG"]
         error_message
+      end
+
+      def prepare_prompt(prompt, include_context_summary)
+        return prompt unless include_context_summary
+
+        context_summary = generate_context_summary(prompt)
+        return prompt if context_summary.blank? || context_summary == "No relevant information found in the workflow context."
+
+        # Prepend context summary as a system directive
+        <<~PROMPT
+          <system>
+          #{context_summary}
+          </system>
+
+          #{prompt}
+        PROMPT
+      end
+
+      def generate_context_summary(swarm_prompt)
+        # Access the current workflow context if available
+        workflow_context = Thread.current[:workflow_context]
+        return unless workflow_context
+
+        # Use ContextSummarizer to generate an intelligent summary
+        summarizer = ContextSummarizer.new
+        summarizer.generate_summary(workflow_context, swarm_prompt)
+      rescue => e
+        Roast::Helpers::Logger.debug("Failed to generate context summary: #{e.message}\n")
+        nil
       end
     end
   end

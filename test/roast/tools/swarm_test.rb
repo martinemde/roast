@@ -58,7 +58,7 @@ module Roast
       end
 
       test "build_swarm_command escapes shell arguments properly" do
-        command = Roast::Tools::Swarm.send(:build_swarm_command, 'Test with "quotes" and $vars', "config.yml")
+        command = Roast::Tools::Swarm.send(:build_swarm_command, 'Test with "quotes" and $vars', "config.yml", continue: false)
 
         # Check the command is properly escaped
         assert_match "claude-swarm", command
@@ -67,6 +67,15 @@ module Roast
         # Shellwords escaping will handle special characters
         assert_match "Test", command
         assert_match "quotes", command
+        refute_match "--continue", command
+      end
+
+      test "build_swarm_command includes continue flag when specified" do
+        command = Roast::Tools::Swarm.send(:build_swarm_command, "Test prompt", "config.yml", continue: true)
+
+        assert_match "claude-swarm --continue", command
+        assert_match "--config config.yml", command
+        assert_match "--prompt", command
       end
 
       test "format_output includes all necessary information" do
@@ -83,7 +92,45 @@ module Roast
         assert_equal "Error running swarm: Test error", result
       end
 
-      test "included method registers swarm function" do
+      test "prepare_prompt returns original prompt when include_context_summary is false" do
+        prompt = "Test prompt"
+        result = Roast::Tools::Swarm.send(:prepare_prompt, prompt, false)
+        assert_equal prompt, result
+      end
+
+      test "prepare_prompt includes context summary when available" do
+        prompt = "Test prompt"
+        mock_summary = "This is a context summary"
+
+        Roast::Tools::Swarm.stub(:generate_context_summary, mock_summary) do
+          result = Roast::Tools::Swarm.send(:prepare_prompt, prompt, true)
+
+          assert_match "<system>", result
+          assert_match mock_summary, result
+          assert_match "</system>", result
+          assert_match prompt, result
+        end
+      end
+
+      test "prepare_prompt returns original when context summary is blank" do
+        prompt = "Test prompt"
+
+        Roast::Tools::Swarm.stub(:generate_context_summary, "") do
+          result = Roast::Tools::Swarm.send(:prepare_prompt, prompt, true)
+          assert_equal prompt, result
+        end
+      end
+
+      test "prepare_prompt returns original when context summary says no relevant info" do
+        prompt = "Test prompt"
+
+        Roast::Tools::Swarm.stub(:generate_context_summary, "No relevant information found in the workflow context.") do
+          result = Roast::Tools::Swarm.send(:prepare_prompt, prompt, true)
+          assert_equal prompt, result
+        end
+      end
+
+      test "included method registers swarm function with all parameters" do
         base_class = Class.new do
           class << self
             attr_accessor :registered_functions
@@ -99,9 +146,13 @@ module Roast
 
         assert base_class.registered_functions.key?(:swarm)
         swarm_func = base_class.registered_functions[:swarm]
-        assert_equal "Execute Claude Swarm to orchestrate multiple Claude Code instances", swarm_func[:description]
+        assert_match "Execute Claude Swarm to orchestrate multiple Claude Code instances", swarm_func[:description]
         assert swarm_func[:parameters][:prompt][:required]
-        assert_not swarm_func[:parameters][:path][:required]
+        refute swarm_func[:parameters][:path][:required]
+        refute swarm_func[:parameters][:include_context_summary][:required]
+        refute swarm_func[:parameters][:continue][:required]
+        assert_equal "boolean", swarm_func[:parameters][:include_context_summary][:type]
+        assert_equal "boolean", swarm_func[:parameters][:continue][:type]
       end
     end
   end

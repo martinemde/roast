@@ -16,6 +16,13 @@ steps:
       3. Implement optimizations
       4. Ensure backward compatibility
       
+  - continue_refactoring: |
+      Continue the refactoring work from the previous step. Build on the optimizations
+      already implemented and focus on:
+      - Completing any unfinished optimizations
+      - Adding performance benchmarks
+      - Documenting the changes made
+      
   - specialized_analysis: |
       Now use the specialized swarm configuration at ./specialized-swarm.yml to run 
       a comprehensive code analysis that includes:
@@ -23,3 +30,14 @@ steps:
       - Security audit  
       - Documentation generation
       - Test coverage analysis
+      
+  - generate_report: |
+      Generate a comprehensive report summarizing all the work done in this workflow.
+      Include insights from the refactoring and analysis steps.
+
+# Step configuration to demonstrate new features
+continue_refactoring:
+  continue: true  # Continue from where orchestrate_refactoring left off
+  
+generate_report:
+  include_context_summary: true  # Include AI-generated summary of workflow context
