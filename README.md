@@ -28,6 +28,7 @@ Roast provides a structured, declarative approach to building AI workflows with:
 - **Session replay**: Rerun previous sessions starting at a specified step to speed up development time
 - **Parallel execution**: Run multiple steps concurrently to speed up workflow execution
 - **Function caching**: Flexibly cache the results of tool function calls to speed up workflows
+- **Context management**: Automatic handling of LLM context limits with intelligent compaction strategies
 - **Extensive instrumentation**: Monitor and track workflow execution, AI calls, and tool usage ([see instrumentation documentation](docs/INSTRUMENTATION.md))
 
 ## What does it look like?
@@ -708,6 +709,26 @@ For most workflows, you'll mainly use `response` to access the current step's re
 ### Instrumentation
 
 Roast provides extensive instrumentation capabilities using ActiveSupport::Notifications. You can monitor workflow execution, track AI model usage, measure performance, and integrate with external monitoring systems. [Read the full instrumentation documentation](docs/INSTRUMENTATION.md).
+
+### Context Management
+
+Roast automatically manages LLM context limits to prevent workflows from failing when conversation history grows too large. When enabled, it monitors token usage and intelligently compacts the conversation history using configurable strategies:
+
+```yaml
+context_management:
+  enabled: true          # Enable automatic context management
+  strategy: auto         # Options: auto, summarize, fifo, prune
+  threshold: 0.8         # Trigger compaction at 80% of context window
+  max_tokens: 128000     # Override default context limit if needed
+```
+
+Available strategies:
+- **auto**: Uses an LLM to analyze the transcript and choose the best approach
+- **summarize**: Creates AI summaries of older messages while preserving key information
+- **fifo**: Removes oldest messages while keeping recent context
+- **prune**: Keeps beginning and end of conversation, removes middle messages
+
+See the [context management examples](examples/context_management_demo/) for detailed configuration options.
 
 ### Built-in Tools
 

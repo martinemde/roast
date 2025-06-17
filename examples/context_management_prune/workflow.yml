@@ -1,0 +1,38 @@
+name: Context Management with Prune Strategy
+model: gpt-4o-mini
+
+# Context management configuration using prune strategy
+context_management:
+  enabled: true
+  strategy: prune          # Keep beginning and end, remove middle
+  threshold: 0.8           # Trigger at 80% of context window
+  max_tokens: 10000        # Demo with smaller limit
+  keep_start: 3            # Keep first 3 messages
+  keep_end: 15             # Keep last 15 messages
+
+steps:
+  - setup_context: |
+      We're building a task management system.
+      The key requirements are:
+      1. User authentication
+      2. Task CRUD operations
+      3. Due date tracking
+      4. Priority levels
+      5. Task assignment to users
+      
+  - design_database: |
+      Design a database schema for this task management system.
+      Include all necessary tables, relationships, and indexes.
+      
+  - design_api: |
+      Design a REST API for the task management system.
+      Include all endpoints with request/response examples.
+      
+  - implementation_plan: |
+      Create a detailed implementation plan with phases and milestones.
+      Consider both backend and frontend development.
+      
+  - final_review: |
+      Review everything we've discussed. Do you still have access
+      to the initial requirements from the setup_context step?
+      What about the middle steps - can you see the database design?

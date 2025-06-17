@@ -1,0 +1,31 @@
+name: Context Management with FIFO Strategy
+model: gpt-4o-mini
+
+# Context management configuration using FIFO strategy
+context_management:
+  enabled: true
+  strategy: fifo           # Use FIFO (First In, First Out) strategy
+  threshold: 0.8           # Trigger at 80% of context window
+  max_tokens: 10000        # Demo with smaller limit
+  keep_percentage: 0.4     # Keep 40% of most recent messages
+
+steps:
+  - generate_data: |
+      Generate a list of 20 random facts about space exploration.
+      Number each fact clearly.
+      
+  - analyze_early: |
+      Analyze facts 1-5 from the previous response.
+      What themes do you notice?
+      
+  - analyze_middle: |
+      Analyze facts 10-15 from the earlier response.
+      How do these differ from the early facts?
+      
+  - analyze_late: |
+      Analyze facts 16-20 from the earlier response.
+      What patterns emerge in the later facts?
+      
+  - summarize_all: |
+      Based on all your analyses, what are the key insights
+      about the complete set of space exploration facts?

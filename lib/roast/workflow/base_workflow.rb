@@ -67,6 +67,11 @@ module Roast
           if @context_management_config[:enabled]
             @context_manager.track_usage(messages)
             @context_manager.check_warnings
+
+            # Check if compaction is needed
+            if @context_manager.should_compact?
+              perform_context_compaction
+            end
           end
 
           ActiveSupport::Notifications.instrument("roast.chat_completion.start", {
@@ -153,6 +158,34 @@ module Roast
 
         result_hash = result.is_a?(Hash) ? result : result.to_h
         result_hash.dig("usage") || result_hash.dig(:usage)
+      end
+
+      def perform_context_compaction
+        strategy_name = @context_management_config[:strategy] || "auto"
+
+        begin
+          # Create the compaction strategy
+          strategy = CompactionStrategyFactory.create(
+            strategy_name,
+            @context_manager,
+            @context_management_config,
+          )
+
+          # Compact the transcript
+          compacted = strategy.compact(transcript, self)
+
+          # Replace the transcript with the compacted version
+          @transcript = compacted
+
+          # Reset token tracking after compaction
+          @context_manager.reset_after_compaction(transcript)
+
+          Roast::Helpers::Logger.info("Context compaction completed using #{strategy_name} strategy")
+        rescue => e
+          # Log error but don't fail the workflow
+          Roast::Helpers::Logger.error("Context compaction failed: #{e.message}")
+          Roast::Helpers::Logger.debug(e.backtrace.join("\n"))
+        end
       end
     end
   end

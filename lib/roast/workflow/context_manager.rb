@@ -75,6 +75,16 @@ module Roast
         @estimated_tokens_since_update = 0
       end
 
+      def reset_after_compaction(compacted_transcript)
+        # Recalculate token count for the compacted transcript
+        @total_tokens = @token_counter.count_messages(compacted_transcript)
+        @message_count = compacted_transcript.size
+        @last_actual_update = Time.now
+        @estimated_tokens_since_update = 0
+
+        Roast::Helpers::Logger.debug("Token count after compaction: #{@total_tokens}")
+      end
+
       private
 
       def default_config
