@@ -12,8 +12,15 @@ module Roast
           read_sidecar_prompt
         end
 
-        # Call CodingAgent directly with the prompt content
-        result = Roast::Tools::CodingAgent.call(prompt_content)
+        # Extract agent-specific configuration from workflow config
+        step_config = workflow.config[name.to_s] || {}
+        agent_options = {
+          include_context_summary: step_config.fetch("include_context_summary", false),
+          continue: step_config.fetch("continue", false),
+        }
+
+        # Call CodingAgent directly with the prompt content and options
+        result = Roast::Tools::CodingAgent.call(prompt_content, **agent_options)
 
         # Process output if print_response is enabled
         process_output(result, print_response:)

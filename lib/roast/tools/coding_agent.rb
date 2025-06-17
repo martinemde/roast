@@ -19,10 +19,16 @@ module Roast
           base.class_eval do
             function(
               :coding_agent,
-              "AI-powered coding agent that runs Claude Code CLI with the given prompt",
+              "AI-powered coding agent that runs an instance of the Claude Code agent with the given prompt. If the agent is iterating on previous work, set continue to true.",
               prompt: { type: "string", description: "The prompt to send to Claude Code" },
+              include_context_summary: { type: "boolean", description: "Whether to set a summary of the current workflow context as system directive (default: false)", required: false },
+              continue: { type: "boolean", description: "Whether to continue where the previous coding agent left off or start with a fresh context (default: false, start fresh)", required: false },
             ) do |params|
-              Roast::Tools::CodingAgent.call(params[:prompt])
+              Roast::Tools::CodingAgent.call(
+                params[:prompt],
+                include_context_summary: params[:include_context_summary].presence || false,
+                continue: params[:continue].presence || false,
+              )
             end
           end
         end
@@ -33,9 +39,9 @@ module Roast
         end
       end
 
-      def call(prompt)
+      def call(prompt, include_context_summary: false, continue: false)
         Roast::Helpers::Logger.info("🤖 Running CodingAgent\n")
-        run_claude_code(prompt)
+        run_claude_code(prompt, include_context_summary:, continue:)
       rescue StandardError => e
         "Error running CodingAgent: #{e.message}".tap do |error_message|
           Roast::Helpers::Logger.error(error_message + "\n")
@@ -45,7 +51,7 @@ module Roast
 
       private
 
-      def run_claude_code(prompt)
+      def run_claude_code(prompt, include_context_summary:, continue:)
         Roast::Helpers::Logger.debug("🤖 Executing Claude Code CLI with prompt: #{prompt}\n")
 
         # Create a temporary file with a unique name
@@ -55,14 +61,21 @@ module Roast
         temp_file = Tempfile.new(["claude_prompt_#{timestamp}_#{pid}_#{random_id}", ".txt"])
 
         begin
+          # Prepare the final prompt with context summary if requested
+          final_prompt = prepare_prompt(prompt, include_context_summary)
+
           # Write the prompt to the file
-          temp_file.write(prompt)
+          temp_file.write(final_prompt)
           temp_file.close
 
+          # Build the command with continue option if specified
+          base_command = claude_code_command
+          command_to_run = build_command(base_command, continue:)
+
           # Run Claude Code CLI using the temp file as input with streaming output
-          expect_json_output = claude_code_command.include?("--output-format stream-json") ||
-            claude_code_command.include?("--output-format json")
-          command = "cat #{temp_file.path} | #{claude_code_command}"
+          expect_json_output = command_to_run.include?("--output-format stream-json") ||
+            command_to_run.include?("--output-format json")
+          command = "cat #{temp_file.path} | #{command_to_run}"
           result = ""
 
           Open3.popen3(command) do |stdin, stdout, stderr, wait_thread|
@@ -135,6 +148,70 @@ module Roast
 
       def claude_code_command
         CodingAgent.configured_command || ENV["CLAUDE_CODE_COMMAND"] || "claude -p --verbose --output-format stream-json"
+      end
+
+      def build_command(base_command, continue:)
+        return base_command unless continue
+
+        # Add --continue flag to the command
+        # If the command already has flags, insert --continue after 'claude'
+        if base_command.start_with?("claude ")
+          base_command.sub("claude ", "claude --continue ")
+        else
+          # Fallback for non-standard commands
+          "#{base_command} --continue"
+        end
+      end
+
+      def prepare_prompt(prompt, include_context_summary)
+        return prompt unless include_context_summary
+
+        context_summary = generate_context_summary
+        return prompt if context_summary.blank?
+
+        # Prepend context summary as a system directive
+        <<~PROMPT
+          <system>
+          #{context_summary}
+          </system>
+
+          #{prompt}
+        PROMPT
+      end
+
+      def generate_context_summary
+        # Access the current workflow context if available
+        return unless Thread.current[:workflow_context]
+
+        context = Thread.current[:workflow_context]
+        workflow = context.workflow
+
+        summary_parts = []
+
+        # Add workflow description
+        if workflow.config["description"]
+          summary_parts << "Workflow: #{workflow.config["description"]}"
+        end
+
+        # Add information about previous steps and their outputs
+        if workflow.output && !workflow.output.empty?
+          summary_parts << "\nPrevious step outputs:"
+          workflow.output.each do |step_name, output|
+            # Truncate long outputs
+            truncated_output = output.to_s.length > 200 ? "#{output.to_s[0..200]}..." : output.to_s
+            summary_parts << "- #{step_name}: #{truncated_output}"
+          end
+        end
+
+        # Add current working directory
+        if Dir.pwd
+          summary_parts << "\nWorking directory: #{Dir.pwd}"
+        end
+
+        summary_parts.join("\n")
+      rescue => e
+        Roast::Helpers::Logger.debug("Failed to generate context summary: #{e.message}\n")
+        nil
       end
     end
   end

@@ -19,6 +19,29 @@ steps:
 
 Both file-based prompts (with directories like `implement_fix/prompt.md`) and inline prompts (text with spaces) are supported.
 
+## Agent Step Configuration Options
+
+Agent steps support two special configuration options:
+
+### `continue` (boolean, default: false)
+When set to `true`, the agent continues from its previous session instead of starting fresh. This is useful for iterative development where you want the agent to maintain context across multiple steps.
+
+### `include_context_summary` (boolean, default: false)
+When set to `true`, the agent receives a summary of the workflow context (previous step outputs, workflow description, etc.) as a system directive. This helps the agent understand what has been done so far without needing full conversation history. NOTE: Without this option, the agent relies solely on what it is instructed to do either by the prompt or your specific step instructions.
+
+```yaml
+steps:
+  - analyze_code
+  - implement_fix: ^Fix the issues identified in the analysis
+  - add_tests: ^Prepare and publish PR
+
+implement_fix:
+  include_context_summary: true  # Include a summary of the workflow context so far
+
+add_tests:
+  continue: true # does not need context since is continuing from the previous step
+```
+
 ## When to Use Agent Steps
 
 ### Use Agent Steps When:
@@ -63,22 +86,18 @@ This benefits from LLM interpretation because:
 ```markdown
 Create a new migration file with the following specifications:
 
-1. Use MultiEdit to create file: db/migrate/{{timestamp}}_add_user_preferences.rb
+1. Create a new migration file: db/migrate/{{timestamp}}_add_user_preferences.rb
 2. The migration must include:
    - Add column :users, :preferences, :jsonb, default: {}
    - Add index :users, :preferences, using: :gin
    - Add column :users, :notification_settings, :jsonb, default: {}
 3. Ensure proper up/down methods
 4. Follow Rails migration conventions exactly
-
-Required tools: MultiEdit
-Do not use Write tool for migrations.
 ```
 
 This is better as an agent step because:
-- It requires specific tool usage (MultiEdit, not Write)
 - The instructions are precise and technical
-- No interpretation needed - just execution
+- No interpretation needed - just execution of steps known beforehand
 
 ### Example 2: Code Refactoring
 
@@ -216,9 +235,6 @@ Use exact module structure and method signatures shown.
    Use MultiEdit tool to update the following files:
    - app/models/user.rb: Add validation
    - test/models/user_test.rb: Add test case
-   
-   # Avoid in agent steps
-   Update the user model with better validation
    ```
 
 2. **Include specific line numbers or code markers when possible**
@@ -260,5 +276,7 @@ Use exact module structure and method signatures shown.
 ## Summary
 
 Agent steps are powerful when you need direct control over tool usage and precise execution of technical tasks. They complement regular steps by handling the implementation details while regular steps handle the analysis and planning.
+
+The `continue` and `include_context_summary` options make agent steps even more powerful for iterative development workflows where maintaining context is important.
 
 Choose agent steps when precision matters more than interpretation. Choose regular steps when context and judgment are important.
