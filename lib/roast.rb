@@ -30,6 +30,7 @@ require "json-schema"
 require "raix"
 require "raix/chat_completion"
 require "raix/function_dispatch"
+require "ruby-graphviz"
 require "thor"
 
 # Autoloading setup
@@ -50,6 +51,7 @@ module Roast
     option :target, type: :string, aliases: "-t", desc: "Override target files. Can be file path, glob pattern, or $(shell command)"
     option :replay, type: :string, aliases: "-r", desc: "Resume workflow from a specific step. Format: step_name or session_timestamp:step_name"
     option :pause, type: :string, aliases: "-p", desc: "Pause workflow after a specific step. Format: step_name"
+    option :file_storage, type: :boolean, aliases: "-f", desc: "Use filesystem storage for sessions instead of SQLite"
 
     def execute(*paths)
       raise Thor::Error, "Workflow configuration file is required" if paths.empty?
@@ -65,6 +67,44 @@ module Roast
       raise Thor::Error, "Expected a Roast workflow configuration file, got directory: #{expanded_workflow_path}" if File.directory?(expanded_workflow_path)
 
       Roast::Workflow::ConfigurationParser.new(expanded_workflow_path, files, options.transform_keys(&:to_sym)).begin!
+    end
+
+    desc "resume WORKFLOW_FILE", "Resume a paused workflow with an event"
+    option :event, type: :string, aliases: "-e", required: true, desc: "Event name to trigger"
+    option :session_id, type: :string, aliases: "-s", desc: "Specific session ID to resume (defaults to most recent)"
+    option :event_data, type: :string, desc: "JSON data to pass with the event"
+    def resume(workflow_path)
+      expanded_workflow_path = if workflow_path.include?("workflow.yml")
+        File.expand_path(workflow_path)
+      else
+        File.expand_path("roast/#{workflow_path}/workflow.yml")
+      end
+
+      unless File.exist?(expanded_workflow_path)
+        raise Thor::Error, "Workflow file not found: #{expanded_workflow_path}"
+      end
+
+      # Store the event in the session
+      repository = Workflow::StateRepositoryFactory.create
+
+      unless repository.respond_to?(:add_event)
+        raise Thor::Error, "Event resumption requires SQLite storage. Set ROAST_STATE_STORAGE=sqlite"
+      end
+
+      # Parse event data if provided
+      event_data = options[:event_data] ? JSON.parse(options[:event_data]) : nil
+
+      # Add the event to the session
+      session_id = options[:session_id]
+      repository.add_event(expanded_workflow_path, session_id, options[:event], event_data)
+
+      # Resume workflow execution from the wait state
+      resume_options = options.transform_keys(&:to_sym).merge(
+        resume_from_event: options[:event],
+        session_id: session_id,
+      )
+
+      Roast::Workflow::ConfigurationParser.new(expanded_workflow_path, [], resume_options).begin!
     end
 
     desc "version", "Display the current version of Roast"
@@ -106,6 +146,123 @@ module Roast
 
       puts
       puts "Run a workflow with: roast execute <workflow_name>"
+    end
+
+    desc "validate [WORKFLOW_CONFIGURATION_FILE]", "Validate a workflow configuration"
+    option :strict, type: :boolean, aliases: "-s", desc: "Treat warnings as errors"
+    def validate(workflow_path = nil)
+      validation_command = Roast::Workflow::ValidationCommand.new(options)
+      validation_command.execute(workflow_path)
+    end
+
+    desc "sessions", "List stored workflow sessions"
+    option :status, type: :string, aliases: "-s", desc: "Filter by status (running, waiting, completed, failed)"
+    option :workflow, type: :string, aliases: "-w", desc: "Filter by workflow name"
+    option :older_than, type: :string, desc: "Show sessions older than specified time (e.g., '7d', '1h')"
+    option :cleanup, type: :boolean, desc: "Clean up old sessions"
+    def sessions
+      repository = Workflow::StateRepositoryFactory.create
+
+      unless repository.respond_to?(:list_sessions)
+        raise Thor::Error, "Session listing is only available with SQLite storage. Set ROAST_STATE_STORAGE=sqlite"
+      end
+
+      if options[:cleanup] && options[:older_than]
+        count = repository.cleanup_old_sessions(options[:older_than])
+        puts "Cleaned up #{count} old sessions"
+        return
+      end
+
+      sessions = repository.list_sessions(
+        status: options[:status],
+        workflow_name: options[:workflow],
+        older_than: options[:older_than],
+      )
+
+      if sessions.empty?
+        puts "No sessions found"
+        return
+      end
+
+      puts "Found #{sessions.length} session(s):"
+      puts
+
+      sessions.each do |session|
+        id, workflow_name, _, status, current_step, created_at, updated_at = session
+
+        puts "Session: #{id}"
+        puts "  Workflow: #{workflow_name}"
+        puts "  Status: #{status}"
+        puts "  Current step: #{current_step || "N/A"}"
+        puts "  Created: #{created_at}"
+        puts "  Updated: #{updated_at}"
+        puts
+      end
+    end
+
+    desc "session SESSION_ID", "Show details for a specific session"
+    def session(session_id)
+      repository = Workflow::StateRepositoryFactory.create
+
+      unless repository.respond_to?(:get_session_details)
+        raise Thor::Error, "Session details are only available with SQLite storage. Set ROAST_STATE_STORAGE=sqlite"
+      end
+
+      details = repository.get_session_details(session_id)
+
+      unless details
+        raise Thor::Error, "Session not found: #{session_id}"
+      end
+
+      session = details[:session]
+      states = details[:states]
+      events = details[:events]
+
+      puts "Session: #{session[0]}"
+      puts "Workflow: #{session[1]}"
+      puts "Path: #{session[2]}"
+      puts "Status: #{session[3]}"
+      puts "Created: #{session[6]}"
+      puts "Updated: #{session[7]}"
+
+      if session[5]
+        puts
+        puts "Final output:"
+        puts session[5]
+      end
+
+      if states && !states.empty?
+        puts
+        puts "Steps executed:"
+        states.each do |step_index, step_name, created_at|
+          puts "  #{step_index}: #{step_name} (#{created_at})"
+        end
+      end
+
+      if events && !events.empty?
+        puts
+        puts "Events:"
+        events.each do |event_name, event_data, received_at|
+          puts "  #{event_name} at #{received_at}"
+          puts "    Data: #{event_data}" if event_data
+        end
+      end
+    end
+
+    desc "diagram WORKFLOW_FILE", "Generate a visual diagram of a workflow"
+    option :output, type: :string, aliases: "-o", desc: "Output file path (defaults to workflow_name_diagram.png)"
+    def diagram(workflow_file)
+      unless File.exist?(workflow_file)
+        raise Thor::Error, "Workflow file not found: #{workflow_file}"
+      end
+
+      workflow = Workflow::Configuration.new(workflow_file)
+      generator = WorkflowDiagramGenerator.new(workflow, workflow_file)
+      output_path = generator.generate(options[:output])
+
+      puts ::CLI::UI.fmt("{{success:✓}} Diagram generated: #{output_path}")
+    rescue StandardError => e
+      raise Thor::Error, "Error generating diagram: #{e.message}"
     end
 
     private

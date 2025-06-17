@@ -16,7 +16,8 @@ module Roast
         :session_name,
         :session_timestamp,
         :model,
-        :workflow_configuration
+        :workflow_configuration,
+        :storage_type
 
       attr_reader :pre_processing_data
 

@@ -13,10 +13,11 @@ class RoastWorkflowOutputHandlerTest < ActiveSupport::TestCase
     @workflow.stubs(:final_output).returns("Test output")
     @workflow.stubs(:respond_to?).with(:session_name).returns(true)
     @workflow.stubs(:respond_to?).with(:final_output).returns(true)
+    @workflow.stubs(:storage_type).returns(nil)
 
     state_repository = mock("state_repository")
     state_repository.expects(:save_final_output).with(@workflow, "Test output").returns("/path/to/output.txt")
-    Roast::Workflow::FileStateRepository.expects(:new).returns(state_repository)
+    Roast::Workflow::StateRepositoryFactory.expects(:create).with(nil).returns(state_repository)
 
     assert_output(nil, "Final output saved to: /path/to/output.txt\n") do
       @handler.save_final_output(@workflow)
@@ -26,7 +27,7 @@ class RoastWorkflowOutputHandlerTest < ActiveSupport::TestCase
   def test_save_final_output_skips_when_no_session_name
     @workflow.stubs(:respond_to?).with(:session_name).returns(false)
 
-    Roast::Workflow::FileStateRepository.expects(:new).never
+    Roast::Workflow::StateRepositoryFactory.expects(:create).never
 
     @handler.save_final_output(@workflow)
   end
@@ -37,7 +38,7 @@ class RoastWorkflowOutputHandlerTest < ActiveSupport::TestCase
     @workflow.stubs(:respond_to?).with(:session_name).returns(true)
     @workflow.stubs(:respond_to?).with(:final_output).returns(true)
 
-    Roast::Workflow::FileStateRepository.expects(:new).never
+    Roast::Workflow::StateRepositoryFactory.expects(:create).never
 
     @handler.save_final_output(@workflow)
   end
@@ -47,10 +48,11 @@ class RoastWorkflowOutputHandlerTest < ActiveSupport::TestCase
     @workflow.stubs(:final_output).returns("Test output")
     @workflow.stubs(:respond_to?).with(:session_name).returns(true)
     @workflow.stubs(:respond_to?).with(:final_output).returns(true)
+    @workflow.stubs(:storage_type).returns(nil)
 
     state_repository = mock("state_repository")
     state_repository.expects(:save_final_output).raises(StandardError, "Save failed")
-    Roast::Workflow::FileStateRepository.expects(:new).returns(state_repository)
+    Roast::Workflow::StateRepositoryFactory.expects(:create).with(nil).returns(state_repository)
 
     assert_output(nil, "Warning: Failed to save final output to session: Save failed\n") do
       @handler.save_final_output(@workflow)

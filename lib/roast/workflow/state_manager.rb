@@ -6,10 +6,10 @@ module Roast
     class StateManager
       attr_reader :workflow, :logger
 
-      def initialize(workflow, logger: nil)
+      def initialize(workflow, logger: nil, state_repository: nil, storage_type: nil)
         @workflow = workflow
         @logger = logger
-        @state_repository = FileStateRepository.new
+        @state_repository = state_repository || StateRepositoryFactory.create(storage_type)
       end
 
       # Save the current state after a step execution

@@ -13,10 +13,11 @@ module Roast
         @workflow.stubs(output: { "step1" => "result1", "step2" => "result2" })
         @workflow.stubs(transcript: [{ user: "test" }, { assistant: "response" }])
         @workflow.stubs(final_output: ["final result"])
+        @workflow.stubs(storage_type: nil)
 
         @logger = mock("logger")
         @state_repository = mock("state_repository")
-        FileStateRepository.stubs(:new).returns(@state_repository)
+        StateRepositoryFactory.stubs(:create).returns(@state_repository)
 
         @state_manager = StateManager.new(@workflow, logger: @logger)
       end
@@ -81,6 +82,7 @@ module Roast
         workflow.stubs(file: nil)
         workflow.stubs(output: {})
         workflow.stubs(final_output: [])
+        workflow.stubs(storage_type: nil)
         # Don't stub transcript - workflow doesn't respond to it
 
         @state_repository.stubs(:save_state)
@@ -107,6 +109,7 @@ module Roast
         workflow.stubs(file: nil)
         workflow.stubs(transcript: [])
         workflow.stubs(final_output: [])
+        workflow.stubs(storage_type: nil)
         # Don't stub output - workflow doesn't respond to it
 
         state_manager = StateManager.new(workflow)
@@ -132,6 +135,7 @@ module Roast
         workflow.stubs(file: nil)
         workflow.stubs(output: {})
         workflow.stubs(transcript: [])
+        workflow.stubs(storage_type: nil)
         # Don't stub final_output - workflow doesn't respond to it
 
         state_manager = StateManager.new(workflow)

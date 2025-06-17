@@ -1,5 +1,5 @@
 name: interpolation_example
-model: anthropic:claude-3-7-sonnet
+model: gpt-4o-mini
 
 tools:
   - Roast::Tools::ReadFile

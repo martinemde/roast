@@ -38,3 +38,16 @@ VCR.configure do |config|
     match_requests_on: [:method, :host],
   }
 end
+
+# Helper method to create a properly stubbed mock workflow
+def create_mock_workflow(options = {})
+  workflow = mock("workflow")
+  default_stubs = {
+    output: {},
+    pause_step_name: nil,
+    verbose: false,
+    storage_type: nil, # This is the key fix for test failures
+  }
+  workflow.stubs(default_stubs.merge(options))
+  workflow
+end

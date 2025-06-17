@@ -405,6 +405,72 @@ For typical AI workflows, the continuous conversation history provides seamless 
 - `-c, --concise`: Use concise output templates (exposed as a boolean flag on `workflow`)
 - `-v, --verbose`: Show output from all steps as they execute
 - `-r, --replay STEP_NAME`: Resume a workflow from a specific step, optionally with a specific session timestamp
+- `-f, --file-storage`: Use filesystem storage for sessions instead of SQLite (default: SQLite)
+
+#### Workflow Validation
+
+Roast provides a `validate` command to check workflow configuration files for errors and potential issues before execution:
+
+```bash
+# Validate a specific workflow
+roast validate workflow.yml
+
+# Validate a workflow in a subdirectory
+roast validate my_workflow
+
+# Validate with strict mode (treats warnings as errors)
+roast validate workflow.yml --strict
+```
+
+The validator checks for:
+- YAML syntax errors
+- Missing required fields
+- Invalid step references
+- Circular dependencies
+- Tool availability
+- Prompt file existence
+- Configuration consistency
+
+This helps catch configuration errors early and ensures workflows will run smoothly.
+
+#### Session Storage and Management
+
+Roast uses SQLite by default for session storage, providing better performance and advanced querying capabilities. Sessions are automatically saved during workflow execution, capturing each step's state including conversation transcripts and outputs.
+
+**Storage Options:**
+
+```bash
+# Use default SQLite storage (recommended)
+roast execute workflow.yml
+
+# Use legacy filesystem storage
+roast execute workflow.yml --file-storage
+
+# Set storage type via environment variable
+ROAST_STATE_STORAGE=file roast execute workflow.yml
+```
+
+**Session Management Commands:**
+
+```bash
+# List all sessions
+roast sessions
+
+# Filter sessions by status
+roast sessions --status waiting
+
+# Filter sessions by workflow
+roast sessions --workflow my_workflow
+
+# Show sessions older than 7 days
+roast sessions --older-than 7d
+
+# Clean up old sessions
+roast sessions --cleanup --older-than 30d
+
+# View detailed session information
+roast session <session_id>
+```
 
 #### Session Replay
 
@@ -418,14 +484,14 @@ roast execute workflow.yml -r step_name
 roast execute workflow.yml -r 20250507_123456_789:step_name
 ```
 
-Sessions are automatically saved during workflow execution. Each step's state, including the conversation transcript and output, is persisted to a session directory. The session directories are organized by workflow name and file, with timestamps for each run.
-
 This feature is particularly useful when:
 - Debugging specific steps in a long workflow
 - Iterating on prompts without rerunning the entire workflow
 - Resuming after failures in long-running workflows
 
-Sessions are stored in the `.roast/sessions/` directory in your project. Note that there is no automatic cleanup of session data, so you might want to periodically delete old sessions yourself.
+**Storage Locations:**
+- SQLite: `~/.roast/sessions.db` (configurable via `ROAST_SESSIONS_DB`)
+- Filesystem: `.roast/sessions/` directory in your project
 
 #### Target Option (`-t, --target`)
 
