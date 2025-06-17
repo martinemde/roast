@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Foundation for wait_for_event feature** (#251)
   - New `roast resume` command infrastructure for resuming paused workflows
   - Event storage and tracking in SQLite sessions table
+- **Configurable agent step options** for CodingAgent (#254)
+  - New `continue` option for agent steps to maintain session context across multiple agent invocations
+  - New `include_context_summary` option to provide AI-generated workflow context summaries to agents
+  - Context summaries are intelligently tailored to the agent's specific task using LLM analysis
+  - Helps reduce token usage by including only relevant context information
 
 ### Changed
 - Session storage now defaults to SQLite instead of filesystem

@@ -45,21 +45,23 @@ module Roast
         workflow = mock
         workflow.stubs(:config).returns({ "description" => "Test workflow" })
         workflow.stubs(:output).returns({ "step1" => "output1", "step2" => "output2" })
+        workflow.stubs(:name).returns("test_workflow")
 
         context = mock
         context.stubs(:workflow).returns(workflow)
 
         Thread.current[:workflow_context] = context
 
+        # Mock the ContextSummarizer
+        mock_summarizer = mock
+        mock_summarizer.stubs(:generate_summary).returns("This is a test workflow that has completed step1 and step2.")
+        Roast::Tools::ContextSummarizer.stubs(:new).returns(mock_summarizer)
+
         prompt = "Test prompt"
         result = CodingAgent.send(:prepare_prompt, prompt, true)
 
         assert_includes result, "<system>"
-        assert_includes result, "Workflow: Test workflow"
-        assert_includes result, "Previous step outputs:"
-        assert_includes result, "- step1: output1"
-        assert_includes result, "- step2: output2"
-        assert_includes result, "Working directory:"
+        assert_includes result, "This is a test workflow that has completed step1 and step2."
         assert_includes result, "</system>"
         assert_includes result, "Test prompt"
 
@@ -68,33 +70,45 @@ module Roast
 
       test "generate_context_summary handles missing workflow context" do
         Thread.current[:workflow_context] = nil
-        result = CodingAgent.send(:generate_context_summary)
+        result = CodingAgent.send(:generate_context_summary, "Test prompt")
         assert_nil result
       end
 
-      test "generate_context_summary truncates long outputs" do
-        # Create a mock workflow with a long output
-        long_output = "x" * 300
-
+      test "generate_context_summary uses ContextSummarizer" do
+        # Create a mock workflow context
         workflow = mock
-        workflow.stubs(:config).returns({})
-        workflow.stubs(:output).returns({ "long_step" => long_output })
-
         context = mock
         context.stubs(:workflow).returns(workflow)
 
         Thread.current[:workflow_context] = context
 
-        result = CodingAgent.send(:generate_context_summary)
+        # Mock the ContextSummarizer
+        mock_summarizer = mock
+        mock_summarizer.expects(:generate_summary).with(context, "Test agent prompt").returns("Generated summary")
+        Roast::Tools::ContextSummarizer.stubs(:new).returns(mock_summarizer)
 
-        # Check that the output was truncated (201 chars = 200 + "...")
-        assert result.include?("- long_step:")
-        assert result.include?("...")
-        # Verify the truncated output is approximately the right length
-        long_step_line = result.lines.find { |line| line.include?("- long_step:") }
-        output_part = long_step_line.split(": ", 2).last.chomp
-        assert_equal 204, output_part.length # 200 chars + "..."
-        refute_includes result, "x" * 300
+        result = CodingAgent.send(:generate_context_summary, "Test agent prompt")
+        assert_equal "Generated summary", result
+
+        Thread.current[:workflow_context] = nil
+      end
+
+      test "prepare_prompt returns original prompt when summary is 'No relevant information found in the workflow context.'" do
+        # Create a mock workflow context
+        workflow = mock
+        context = mock
+        context.stubs(:workflow).returns(workflow)
+
+        Thread.current[:workflow_context] = context
+
+        # Mock the ContextSummarizer to return "No relevant information found in the workflow context."
+        mock_summarizer = mock
+        mock_summarizer.stubs(:generate_summary).returns("No relevant information found in the workflow context.")
+        Roast::Tools::ContextSummarizer.stubs(:new).returns(mock_summarizer)
+
+        prompt = "Test prompt"
+        result = CodingAgent.send(:prepare_prompt, prompt, true)
+        assert_equal prompt, result
 
         Thread.current[:workflow_context] = nil
       end

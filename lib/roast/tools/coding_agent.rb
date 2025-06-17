@@ -166,8 +166,8 @@ module Roast
       def prepare_prompt(prompt, include_context_summary)
         return prompt unless include_context_summary
 
-        context_summary = generate_context_summary
-        return prompt if context_summary.blank?
+        context_summary = generate_context_summary(prompt)
+        return prompt if context_summary.blank? || context_summary == "No relevant information found in the workflow context."
 
         # Prepend context summary as a system directive
         <<~PROMPT
@@ -179,36 +179,14 @@ module Roast
         PROMPT
       end
 
-      def generate_context_summary
+      def generate_context_summary(agent_prompt)
         # Access the current workflow context if available
-        return unless Thread.current[:workflow_context]
+        workflow_context = Thread.current[:workflow_context]
+        return unless workflow_context
 
-        context = Thread.current[:workflow_context]
-        workflow = context.workflow
-
-        summary_parts = []
-
-        # Add workflow description
-        if workflow.config["description"]
-          summary_parts << "Workflow: #{workflow.config["description"]}"
-        end
-
-        # Add information about previous steps and their outputs
-        if workflow.output && !workflow.output.empty?
-          summary_parts << "\nPrevious step outputs:"
-          workflow.output.each do |step_name, output|
-            # Truncate long outputs
-            truncated_output = output.to_s.length > 200 ? "#{output.to_s[0..200]}..." : output.to_s
-            summary_parts << "- #{step_name}: #{truncated_output}"
-          end
-        end
-
-        # Add current working directory
-        if Dir.pwd
-          summary_parts << "\nWorking directory: #{Dir.pwd}"
-        end
-
-        summary_parts.join("\n")
+        # Use ContextSummarizer to generate an intelligent summary
+        summarizer = ContextSummarizer.new
+        summarizer.generate_summary(workflow_context, agent_prompt)
       rescue => e
         Roast::Helpers::Logger.debug("Failed to generate context summary: #{e.message}\n")
         nil
