@@ -9,7 +9,7 @@ context_management:
   enabled: true
   strategy: auto
   threshold: 0.8  # Trigger compaction at 80% of context window
-  max_tokens: 10000  # Demo with smaller limit for testing
+  max_tokens: 5000  # Demo with smaller limit for testing
   retain_steps:
     - analyze_requirements
     - generate_summary
