@@ -79,6 +79,7 @@ class RoastWorkflowAgentStepTest < ActiveSupport::TestCase
     workflow.stubs(:transcript).returns([])
     workflow.stubs(:append_to_final_output)
     workflow.stubs(:file).returns(nil)
+    workflow.stubs(:config).returns({})
 
     # Create agent step
     agent_step = Roast::Workflow::AgentStep.new(workflow, name: "test_agent")
@@ -86,8 +87,8 @@ class RoastWorkflowAgentStepTest < ActiveSupport::TestCase
     # Mock the prompt loader to return our test prompt
     Roast::Helpers::PromptLoader.stubs(:load_prompt).returns("Test agent prompt")
 
-    # Set expectation that CodingAgent will be called with the prompt
-    Roast::Tools::CodingAgent.expects(:call).with("Test agent prompt").returns("Agent response")
+    # Set expectation that CodingAgent will be called with the prompt and default options
+    Roast::Tools::CodingAgent.expects(:call).with("Test agent prompt", include_context_summary: false, continue: false).returns("Agent response")
 
     # Execute the step
     result = agent_step.call
@@ -181,13 +182,14 @@ class RoastWorkflowAgentStepTest < ActiveSupport::TestCase
     workflow.stubs(:transcript).returns([])
     workflow.stubs(:append_to_final_output)
     workflow.stubs(:file).returns(nil)
+    workflow.stubs(:config).returns({})
 
     # Create agent step with inline prompt
     inline_prompt = "Review this code and identify performance bottlenecks"
     agent_step = Roast::Workflow::AgentStep.new(workflow, name: inline_prompt)
 
-    # Set up expectation for CodingAgent call with the inline prompt
-    Roast::Tools::CodingAgent.expects(:call).with(inline_prompt).returns("Found 3 bottlenecks")
+    # Set up expectation for CodingAgent call with the inline prompt and default options
+    Roast::Tools::CodingAgent.expects(:call).with(inline_prompt, include_context_summary: false, continue: false).returns("Found 3 bottlenecks")
 
     # Execute the step
     result = agent_step.call
