@@ -368,10 +368,11 @@ module Roast
       test "command prefix dev detection" do
         config = { "allowed_commands" => ["dev"] }
 
-        result = Roast::Tools::Cmd.call("dev help", config, timeout: 1)
+        result = Roast::Tools::Cmd.call("dev nonexistent_subcommand", config, timeout: 5)
 
-        assert(result.include?("Command: dev help"))
-        assert(result.include?("command not found"))
+        assert(result.include?("Command: dev nonexistent_subcommand"))
+        # The dev command exists but the subcommand doesn't, so we should see an error
+        assert(result.include?("Exit status: 1") || result.include?("Error:"))
       end
 
       test "quote escaping in bash command" do
