@@ -184,6 +184,57 @@ module Roast
         assert_equal 0, exit_status
         assert_operator elapsed, :<, 1.0
       end
+
+      test "cleanup_process logs debug message for permission denied" do
+        # Mock a process that can't be killed due to permissions
+        mock_wait_thr = mock("wait_thr")
+        mock_wait_thr.stubs(:alive?).returns(true)
+        mock_wait_thr.stubs(:pid).returns(12345)
+
+        # Mock Process.kill to raise EPERM
+        Process.stubs(:kill).with("TERM", 12345).raises(Errno::EPERM)
+
+        # Capture debug logs
+        Roast::Helpers::Logger.expects(:debug).with("Could not kill process 12345: Permission denied")
+
+        # Call the private cleanup method
+        @handler.send(:cleanup_process, mock_wait_thr)
+      end
+
+      test "cleanup_process logs debug message for unexpected errors" do
+        # Mock a process that raises an unexpected error
+        mock_wait_thr = mock("wait_thr")
+        mock_wait_thr.stubs(:alive?).returns(true)
+        mock_wait_thr.stubs(:pid).returns(12345)
+
+        # Mock Process.kill to raise an unexpected error
+        unexpected_error = StandardError.new("Something went wrong")
+        Process.stubs(:kill).with("TERM", 12345).raises(unexpected_error)
+
+        # Capture debug logs
+        Roast::Helpers::Logger.expects(:debug).with("Unexpected error during process cleanup: Something went wrong")
+
+        # Call the private cleanup method
+        @handler.send(:cleanup_process, mock_wait_thr)
+      end
+
+      test "cleanup_process handles ESRCH silently" do
+        # Mock a process that's already terminated
+        mock_wait_thr = mock("wait_thr")
+        mock_wait_thr.stubs(:alive?).returns(true)
+        mock_wait_thr.stubs(:pid).returns(12345)
+
+        # Mock Process.kill to raise ESRCH (process already terminated)
+        Process.stubs(:kill).with("TERM", 12345).raises(Errno::ESRCH)
+
+        # Should not log anything for ESRCH
+        Roast::Helpers::Logger.expects(:debug).never
+
+        # Call the private cleanup method - should not raise
+        assert_nothing_raised do
+          @handler.send(:cleanup_process, mock_wait_thr)
+        end
+      end
     end
   end
 end

@@ -80,7 +80,10 @@ module Roast
           # Process already terminated, which is fine
         rescue Errno::EPERM
           # Permission denied - process may be owned by different user
-          # Log but don't fail the timeout handling
+          Roast::Helpers::Logger.debug("Could not kill process #{pid}: Permission denied")
+        rescue => e
+          # Catch any other unexpected errors during cleanup
+          Roast::Helpers::Logger.debug("Unexpected error during process cleanup: #{e.message}")
         end
       end
     end
