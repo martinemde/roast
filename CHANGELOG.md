@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.1] - 2025-06-18
 
 ### Added
 - **SQLite session storage** as the default storage backend (#252)
@@ -22,16 +22,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Foundation for wait_for_event feature** (#251)
   - New `roast resume` command infrastructure for resuming paused workflows
   - Event storage and tracking in SQLite sessions table
-- **Configurable agent step options** for CodingAgent (#254)
+- **Configurable agent step options** for CodingAgent (#266)
   - New `continue` option for agent steps to maintain session context across multiple agent invocations
   - New `include_context_summary` option to provide AI-generated workflow context summaries to agents
   - Context summaries are intelligently tailored to the agent's specific task using LLM analysis
   - Helps reduce token usage by including only relevant context information
+- **Token consumption reporting** for step execution (#264)
+  - Displays token usage (prompt and completion) after each step execution
+  - Helps users monitor and optimize their LLM token consumption
+  - Automatically enabled for all workflow runs
+- **Timeout functionality for bash and cmd steps** (#261)
+  - New `timeout` option for bash and cmd steps to prevent hanging commands
+  - Configurable timeout duration in seconds
+  - Commands are automatically terminated if they exceed the specified timeout
+  - Prevents workflows from getting stuck on unresponsive commands
+- **Claude Swarm tool integration** (#254)
+  - New `Roast::Tools::Swarm` for integrating with Claude Swarm framework
+  - Enables using Swarm's multi-agent orchestration capabilities within Roast workflows
+  - Provides seamless handoffs between specialized AI agents
+- **Workflow visualization with diagram command** (#256)
+  - New `roast diagram` command to generate visual representations of workflows
+  - Creates GraphViz-based diagrams showing workflow structure and flow
+  - Supports both DOT format output and PNG/SVG image generation
+  - Helps understand complex workflow logic at a glance
+- **Comprehensive workflow validation** (#244)
+  - New `roast validate` command to check workflow syntax and structure
+  - Validates YAML syntax, step references, and configuration options
+  - Provides detailed error messages for invalid workflows
+  - Helps catch errors before running workflows
+- **apply_diff tool** (#246)
+  - New built-in tool for applying unified diff patches to files
+  - Supports standard diff format for making precise file modifications
+  - Enables AI models to suggest changes in diff format
+  - More reliable than search-and-replace for complex edits
+- **Model fallback mechanism** (#257)
+  - Workflows without explicit model configuration now use a sensible default
+  - Prevents errors when model is not specified at workflow or step level
+  - Improves user experience for simple workflows
+- **Context management foundation for auto-compaction** (#264)
+  - Infrastructure for future automatic context size management
+  - Enables intelligent token usage optimization in long-running workflows
 
 ### Changed
 - Session storage now defaults to SQLite instead of filesystem
   - Existing filesystem sessions remain accessible when using `--file-storage` flag
   - No migration required - both storage backends can coexist
+
+[0.4.1]: https://github.com/Shopify/roast/compare/v0.4.0...v0.4.1
 
 ## [0.4.0] - 2025-06-12
 
