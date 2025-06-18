@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+require "English"
+require "roast/helpers/logger"
+require "roast/helpers/timeout_handler"
+
 module Roast
   module Tools
     module Cmd
@@ -62,6 +66,11 @@ module Roast
                 description: "Arguments to pass to the #{command} command",
                 required: false,
               },
+              timeout: {
+                type: "integer",
+                description: "Timeout in seconds (optional, default: 30)",
+                required: false,
+              },
             ) do |params|
               full_command = if params[:args].nil? || params[:args].empty?
                 command
@@ -69,7 +78,7 @@ module Roast
                 "#{command} #{params[:args]}"
               end
 
-              Roast::Tools::Cmd.execute_allowed_command(full_command, command)
+              Roast::Tools::Cmd.execute_allowed_command(full_command, command, params[:timeout])
             end
           end
         end
@@ -80,15 +89,16 @@ module Roast
         end
       end
 
-      def execute_allowed_command(full_command, command_prefix)
+      def execute_allowed_command(full_command, command_prefix, timeout = 30)
         Roast::Helpers::Logger.info("🔧 Running command: #{full_command}\n")
-        execute_command(full_command, command_prefix)
+
+        execute_command(full_command, command_prefix, timeout)
       rescue StandardError => e
         handle_error(e)
       end
 
       # Legacy method for backward compatibility
-      def call(command, config = {})
+      def call(command, config = {}, timeout: 30)
         Roast::Helpers::Logger.info("🔧 Running command: #{command}\n")
 
         allowed_commands = config[CONFIG_ALLOWED_COMMANDS] || DEFAULT_ALLOWED_COMMANDS
@@ -96,7 +106,8 @@ module Roast
         return validation_result unless validation_result.nil?
 
         command_prefix = command.split(" ").first
-        execute_command(command, command_prefix)
+
+        execute_command(command, command_prefix, timeout)
       rescue StandardError => e
         handle_error(e)
       end
@@ -127,16 +138,25 @@ module Roast
         configuration&.tool_config("Roast::Tools::Cmd") || {}
       end
 
-      def execute_command(command, command_prefix)
-        result = if command_prefix == "dev"
-          # Use bash -l -c to ensure we get a login shell with all environment variables
-          full_command = "bash -l -c '#{command.gsub("'", "\\'")}'"
-          IO.popen(full_command, chdir: Dir.pwd, &:read)
+      def execute_command(command, command_prefix, timeout)
+        timeout = Roast::Helpers::TimeoutHandler.validate_timeout(timeout)
+
+        full_command = if command_prefix == "dev"
+          "bash -l -c '#{command.gsub("'", "\\'")}'"
         else
-          IO.popen(command, chdir: Dir.pwd, &:read)
+          command
         end
 
-        format_output(command, result, $CHILD_STATUS.exitstatus)
+        result, exit_status = Roast::Helpers::TimeoutHandler.call(
+          full_command,
+          timeout: timeout,
+          working_directory: Dir.pwd,
+        )
+
+        format_output(command, result, exit_status)
+      rescue Timeout::Error => e
+        Roast::Helpers::Logger.error(e.message + "\n")
+        e.message
       end
 
       def format_output(command, result, exit_status)
