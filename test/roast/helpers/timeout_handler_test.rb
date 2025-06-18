@@ -67,7 +67,7 @@ module Roast
 
       test "call prevents stdin hanging commands" do
         start_time = Time.now
-        output, exit_status = @handler.call("cat", timeout: 2)
+        output, _ = @handler.call("cat", timeout: 2)
         elapsed = Time.now - start_time
 
         assert_operator elapsed, :<, 1.0
@@ -78,7 +78,7 @@ module Roast
         # This test verifies that long-running processes are properly terminated
         # We can't easily test for zombie processes directly, but we can verify
         # that the timeout mechanism completes quickly and doesn't leave hanging processes
-        pids_before = `ps aux | grep sleep | grep -v grep | wc -l`.to_i
+        pids_before = %x(ps aux | grep sleep | grep -v grep | wc -l).to_i
 
         start_time = Time.now
         assert_raises(Timeout::Error) do
@@ -91,7 +91,7 @@ module Roast
 
         # Give a moment for process cleanup
         sleep(0.2)
-        pids_after = `ps aux | grep sleep | grep -v grep | wc -l`.to_i
+        pids_after = %x(ps aux | grep sleep | grep -v grep | wc -l).to_i
 
         # Should not have increased the number of sleep processes
         assert_operator pids_after, :<=, pids_before

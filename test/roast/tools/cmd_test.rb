@@ -312,13 +312,12 @@ module Roast
 
         5.times do |i|
           threads << Thread.new do
-            if i.even?
-              result = Roast::Tools::Cmd.call("pwd", timeout: 2)
-              results << { thread: i, success: result.include?("Exit status: 0") }
+            result = if i.even?
+              Roast::Tools::Cmd.call("pwd", timeout: 2)
             else
-              result = Roast::Tools::Cmd.call("ls /nonexistent_path_#{i} 2>/dev/null", timeout: 2)
-              results << { thread: i, success: result.include?("Exit status: 0") }
+              Roast::Tools::Cmd.call("ls /nonexistent_path_#{i} 2>/dev/null", timeout: 2)
             end
+            results << { thread: i, success: result.include?("Exit status: 0") }
           end
         end
 
@@ -405,8 +404,6 @@ module Roast
       end
 
       test "execute allowed command with standard error" do
-        config = { "allowed_commands" => ["ruby"] }
-
         result = Roast::Tools::Cmd.execute_allowed_command("ruby -e 'raise \"test error\"'", "ruby", 5)
 
         assert(result.is_a?(String))
