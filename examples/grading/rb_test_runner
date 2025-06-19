@@ -4,7 +4,7 @@
 require "rubygems"
 require "bundler/setup"
 
-require_relative "../../lib/roast/helpers/minitest_coverage_runner"
+require "roast/helpers/minitest_coverage_runner"
 
 # Suppress fancy minitest reporting
 ENV["RM_INFO"] = "true"
