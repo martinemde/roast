@@ -100,14 +100,14 @@ module Roast
       end
 
       def test_multiline_command_execution
-        multiline_command = '$(printf %q "line one
+        multiline_command = '$(echo "line one
 line two
 line three")'
 
         result = @executor.execute(multiline_command)
 
-        # printf %q outputs the string with shell escaping for newlines
-        expected_output = "$'line one\\nline two\\nline three'"
+        # echo outputs the string with actual newlines
+        expected_output = "line one\nline two\nline three\n"
         assert_equal(expected_output, result)
       end
 
