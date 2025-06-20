@@ -268,4 +268,30 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
     result = @executor.interpolate("Using {{output['previous_step']}}")
     assert_equal "Using previous result", result
   end
+
+  test "escapes backticks when interpolating into shell commands" do
+    @output["code_output"] = "Use `git status` command"
+    @workflow.expects(:instance_eval).with("output['code_output']").returns("Use `git status` command")
+
+    result = @executor.interpolate('$(echo "{{output[\'code_output\']}}")')
+    assert_equal '$(echo "Use \\`git status\\` command")', result
+  end
+
+  test "preserves backticks when interpolating into non-shell contexts" do
+    @output["code_output"] = "Use `git status` command"
+    @workflow.expects(:instance_eval).with("output['code_output']").returns("Use `git status` command")
+
+    result = @executor.interpolate("Step result: {{output['code_output']}}")
+    assert_equal "Step result: Use `git status` command", result
+  end
+
+  test "handles multiline interpolation with backticks in shell commands" do
+    multiline_content = "Here's some code:\n`console.log('hello')`\n`console.log('world')`"
+    @output["multiline_code"] = multiline_content
+    @workflow.expects(:instance_eval).with("output['multiline_code']").returns(multiline_content)
+
+    result = @executor.interpolate('$(echo "{{output[\'multiline_code\']}}")')
+    expected = "$(echo \"Here's some code:\n\\`console.log('hello')\\`\n\\`console.log('world')\\`\")"
+    assert_equal expected, result
+  end
 end

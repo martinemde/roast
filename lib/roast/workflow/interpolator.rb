@@ -24,7 +24,8 @@ module Roast
             # Escape backticks if this is a shell command to prevent command substitution
             if is_shell_command
               # Only escape backticks - they trigger command substitution even in double quotes
-              result.gsub("`", "\\`")
+              # Need 4 backslashes: \\\\ becomes \\ in string, then \\ becomes \ in gsub replacement
+              result.gsub("`", "\\\\`")
             else
               result
             end

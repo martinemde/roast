@@ -138,6 +138,22 @@ Third line")'
         assert_match(/Third line/, result)
         assert_equal(3, result.split("\n").length)
       end
+
+      def test_multiline_command_with_backticks
+        multiline_command = '$(echo "Code example:
+\\`function test() {\\`
+\\`  return true;\\`
+\\`}\\`")'
+
+        result = @executor.execute(multiline_command)
+
+        # Should contain the multiline output with backticks preserved
+        assert_match(/Code example:/, result)
+        assert_match(/`function test\(\) \{`/, result)
+        assert_match(/`  return true;`/, result)
+        assert_match(/`\}`/, result)
+        assert_equal(4, result.split("\n").length)
+      end
     end
   end
 end
