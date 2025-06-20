@@ -183,6 +183,83 @@ module Roast
         result = @interpolator.interpolate("$(bash -c '{{cmd}}')")
         assert_equal("$(bash -c 'grep \\`pattern\\`')", result)
       end
+
+      # Tests for comprehensive shell metacharacter escaping
+      def test_escapes_backslashes_in_shell_commands
+        @context.instance_variable_set(:@content, "path\\to\\file")
+        @context.define_singleton_method(:content) { @content }
+
+        result = @interpolator.interpolate("$(echo '{{content}}')")
+        assert_equal("$(echo 'path\\\\to\\\\file')", result)
+      end
+
+      def test_escapes_double_quotes_in_shell_commands
+        @context.instance_variable_set(:@message, 'Say "hello world"')
+        @context.define_singleton_method(:message) { @message }
+
+        result = @interpolator.interpolate('$(echo "{{message}}")')
+        assert_equal('$(echo "Say \\"hello world\\"")', result)
+      end
+
+      def test_escapes_dollar_signs_in_shell_commands
+        @context.instance_variable_set(:@command, "echo $USER and $HOME")
+        @context.define_singleton_method(:command) { @command }
+
+        result = @interpolator.interpolate("$(echo '{{command}}')")
+        assert_equal("$(echo 'echo \\$USER and \\$HOME')", result)
+      end
+
+      def test_escapes_all_metacharacters_together
+        dangerous_content = 'Test \\path with `cmd` and "quotes" and $VAR'
+        @context.instance_variable_set(:@dangerous, dangerous_content)
+        @context.define_singleton_method(:dangerous) { @dangerous }
+
+        result = @interpolator.interpolate('$(echo "{{dangerous}}")')
+        expected = '$(echo "Test \\\\path with \\`cmd\\` and \\"quotes\\" and \\$VAR")'
+        assert_equal(expected, result)
+      end
+
+      def test_escaping_order_prevents_double_escaping
+        # Test that backslashes are escaped first to prevent double-escaping
+        content_with_escaped_chars = 'Already escaped: \\"quote\\"'
+        @context.instance_variable_set(:@content, content_with_escaped_chars)
+        @context.define_singleton_method(:content) { @content }
+
+        result = @interpolator.interpolate('$(echo "{{content}}")')
+        # Should escape the backslashes first, then the quotes
+        expected = '$(echo "Already escaped: \\\\\\"quote\\\\\\"")'
+        assert_equal(expected, result)
+      end
+
+      def test_does_not_escape_metacharacters_in_non_shell_contexts
+        dangerous_content = 'Test \\path with `cmd` and "quotes" and $VAR'
+        @context.instance_variable_set(:@dangerous, dangerous_content)
+        @context.define_singleton_method(:dangerous) { @dangerous }
+
+        # Regular interpolation should preserve all characters
+        result = @interpolator.interpolate("Regular text: {{dangerous}}")
+        assert_equal("Regular text: #{dangerous_content}", result)
+
+        # Markdown context should preserve all characters
+        result = @interpolator.interpolate("Here is code: {{dangerous}}")
+        assert_equal("Here is code: #{dangerous_content}", result)
+      end
+
+      def test_empty_string_escaping
+        @context.instance_variable_set(:@empty, "")
+        @context.define_singleton_method(:empty) { @empty }
+
+        result = @interpolator.interpolate("$(echo '{{empty}}')")
+        assert_equal("$(echo '')", result)
+      end
+
+      def test_only_whitespace_escaping
+        @context.instance_variable_set(:@whitespace, "   \n\t  ")
+        @context.define_singleton_method(:whitespace) { @whitespace }
+
+        result = @interpolator.interpolate("$(echo '{{whitespace}}')")
+        assert_equal("$(echo '   \n\t  ')", result)
+      end
     end
   end
 end

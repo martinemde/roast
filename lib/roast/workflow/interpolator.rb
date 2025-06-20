@@ -21,11 +21,9 @@ module Roast
             # Evaluate the expression in the context
             result = @context.instance_eval(expression).to_s
 
-            # Escape backticks if this is a shell command to prevent command substitution
+            # Escape shell metacharacters if this is a shell command
             if is_shell_command
-              # Only escape backticks - they trigger command substitution even in double quotes
-              # Need 4 backslashes: \\\\ becomes \\ in string, then \\ becomes \ in gsub replacement
-              result.gsub("`", "\\\\`")
+              escape_shell_metacharacters(result)
             else
               result
             end
@@ -36,6 +34,18 @@ module Roast
             match # Preserve the original expression in the string
           end
         end
+      end
+
+      private
+
+      # Escape shell metacharacters to prevent injection and command substitution
+      # Order matters: escape backslashes first to avoid double-escaping
+      def escape_shell_metacharacters(text)
+        text
+          .gsub("\\", "\\\\\\\\")  # Escape backslashes first (4 backslashes become 2, then 1)
+          .gsub('"', '\\\\"')      # Escape double quotes
+          .gsub("$", "\\\\$")      # Escape dollar signs (variable expansion)
+          .gsub("`", "\\\\`")      # Escape backticks (command substitution)
       end
 
       class NullLogger

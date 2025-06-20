@@ -294,4 +294,23 @@ class RoastWorkflowWorkflowExecutorTest < ActiveSupport::TestCase
     expected = "$(echo \"Here's some code:\n\\`console.log('hello')\\`\n\\`console.log('world')\\`\")"
     assert_equal expected, result
   end
+
+  test "escapes all shell metacharacters in shell command interpolation" do
+    dangerous_content = 'Path: C:\\Users\\test with `cmd` and "quotes" and $VAR'
+    @output["dangerous_output"] = dangerous_content
+    @workflow.expects(:instance_eval).with("output['dangerous_output']").returns(dangerous_content)
+
+    result = @executor.interpolate('$(echo "{{output[\'dangerous_output\']}}")')
+    expected = '$(echo "Path: C:\\\\Users\\\\test with \\`cmd\\` and \\"quotes\\" and \\$VAR")'
+    assert_equal expected, result
+  end
+
+  test "preserves all metacharacters in non-shell interpolation" do
+    dangerous_content = 'Path: C:\\Users\\test with `cmd` and "quotes" and $VAR'
+    @output["dangerous_output"] = dangerous_content
+    @workflow.expects(:instance_eval).with("output['dangerous_output']").returns(dangerous_content)
+
+    result = @executor.interpolate("Analysis result: {{output['dangerous_output']}}")
+    assert_equal "Analysis result: #{dangerous_content}", result
+  end
 end
