@@ -29,6 +29,8 @@ module Roast
         store_in_state(result) if step_name
 
         result
+      rescue Interrupt
+        raise Roast::Errors::ExitEarly
       rescue Timeout::Error
         handle_timeout
       end

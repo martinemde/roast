@@ -38,6 +38,8 @@ module Roast
         else
           @workflow_runner.run_targetless
         end
+      rescue Roast::Errors::ExitEarly
+        $stderr.puts "Exiting workflow early."
       ensure
         execution_time = Time.now - start_time
 

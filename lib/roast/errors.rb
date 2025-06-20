@@ -7,5 +7,8 @@ module Roast
 
     # Custom error for when API authentication fails
     class AuthenticationError < StandardError; end
+
+    # Exit the app, for instance via Ctrl-C during an InputStep
+    class ExitEarly < StandardError; end
   end
 end
