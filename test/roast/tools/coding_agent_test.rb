@@ -40,7 +40,7 @@ module Roast
         mock_status.expects(:success?).returns(true)
         mock_wait_thread.expects(:value).returns(mock_status)
 
-        Open3.expects(:popen3).with { |cmd| cmd =~ /cat .* \| claude -p --verbose --output-format stream-json$/ }.yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
+        Open3.expects(:popen3).with { |cmd| cmd =~ /cat .* \| claude -p --verbose --output-format stream-json --dangerously-skip-permissions$/ }.yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
 
         result = Roast::Tools::CodingAgent.call("Test prompt")
         assert_equal("AI response", result)
