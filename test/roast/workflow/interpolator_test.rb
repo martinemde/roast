@@ -82,9 +82,6 @@ module Roast
 
       # Tests for shell command backtick escaping
       def test_detects_shell_commands
-        shell_command = "$(echo 'test')"
-        non_shell_command = "echo 'test'"
-
         # We can't directly test the private detection logic, but we can test the behavior
         @context.instance_variable_set(:@content, "has `backticks`")
         @context.define_singleton_method(:content) { @content }

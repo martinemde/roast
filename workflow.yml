@@ -1,5 +1,0 @@
-name: Coverage
-model: anthropic:claude-3-5-sonnet-20241022
-steps:
-  - check_model: "What model is this? Add some more text to your answer with backticks"
-  - $(echo "{{ output.check_model }}")
