@@ -34,12 +34,22 @@ module Roast
       end
 
       def teardown
-        # Restore the original state
+        # Restore the original state properly
         StepExecutorRegistry.clear!
+
+        # Reset the defaults flag to ensure defaults get re-registered
+        StepExecutorFactory.instance_variable_set(:@defaults_registered, false)
+
+        # Ensure defaults are registered (this will set @defaults_registered = true)
+        StepExecutorFactory.ensure_defaults_registered
+
+        # Then add any additional executors that were originally registered
         @original_executors.each do |klass, executor_class|
-          StepExecutorRegistry.register(klass, executor_class)
+          # Skip re-registering defaults since they're already registered above
+          unless [Hash, Array, String].include?(klass)
+            StepExecutorRegistry.register(klass, executor_class)
+          end
         end
-        StepExecutorFactory.instance_variable_set(:@defaults_registered, @original_defaults_registered)
       end
 
       def test_register_and_retrieve_executor
