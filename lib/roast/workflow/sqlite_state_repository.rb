@@ -29,13 +29,13 @@ module Roast
 
         session_id = ensure_session(workflow)
 
-        @db.execute(<<~SQL, session_id, state_data[:order], step_name, state_data.to_json)
+        @db.execute(<<~SQL, [session_id, state_data[:order], step_name, state_data.to_json])
           INSERT INTO session_states (session_id, step_index, step_name, state_data)
           VALUES (?, ?, ?, ?)
         SQL
 
         # Update session's current step
-        @db.execute(<<~SQL, state_data[:order], session_id)
+        @db.execute(<<~SQL, [state_data[:order], session_id])
           UPDATE sessions#{" "}
           SET current_step_index = ?, updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
@@ -49,7 +49,7 @@ module Roast
         return false unless session_id
 
         # Find the state before the target step
-        result = @db.execute(<<~SQL, session_id, step_name)
+        result = @db.execute(<<~SQL, [session_id, step_name])
           SELECT state_data, step_name
           FROM session_states
           WHERE session_id = ?
@@ -64,7 +64,7 @@ module Roast
 
         if result.empty?
           # Try to find the latest state if target step doesn't exist
-          result = @db.execute(<<~SQL, session_id)
+          result = @db.execute(<<~SQL, [session_id])
             SELECT state_data, step_name
             FROM session_states
             WHERE session_id = ?
@@ -95,7 +95,7 @@ module Roast
 
         session_id = ensure_session(workflow)
 
-        @db.execute(<<~SQL, output_content, session_id)
+        @db.execute(<<~SQL, [output_content, session_id])
           UPDATE sessions#{" "}
           SET final_output = ?, status = 'completed', updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
@@ -130,7 +130,7 @@ module Roast
 
         where_clause = conditions.empty? ? "" : "WHERE #{conditions.join(" AND ")}"
 
-        @db.execute(<<~SQL, *params)
+        @db.execute(<<~SQL, params)
           SELECT id, workflow_name, workflow_path, status, current_step_index,#{" "}
                  created_at, updated_at
           FROM sessions
@@ -141,20 +141,20 @@ module Roast
       end
 
       def get_session_details(session_id)
-        session = @db.execute(<<~SQL, session_id).first
+        session = @db.execute(<<~SQL, [session_id]).first
           SELECT * FROM sessions WHERE id = ?
         SQL
 
         return unless session
 
-        states = @db.execute(<<~SQL, session_id)
+        states = @db.execute(<<~SQL, [session_id])
           SELECT step_index, step_name, created_at
           FROM session_states
           WHERE session_id = ?
           ORDER BY step_index
         SQL
 
-        events = @db.execute(<<~SQL, session_id)
+        events = @db.execute(<<~SQL, [session_id])
           SELECT event_name, event_data, received_at
           FROM session_events
           WHERE session_id = ?
@@ -170,7 +170,7 @@ module Roast
 
       def cleanup_old_sessions(older_than)
         count = @db.changes
-        @db.execute(<<~SQL, "-#{older_than}")
+        @db.execute(<<~SQL, ["-#{older_than}"])
           DELETE FROM sessions
           WHERE created_at < datetime('now', ?)
         SQL
@@ -181,7 +181,7 @@ module Roast
         # Find the session if session_id not provided
         unless session_id
           workflow_name = File.basename(File.dirname(workflow_path))
-          result = @db.execute(<<~SQL, workflow_name, "waiting")
+          result = @db.execute(<<~SQL, [workflow_name, "waiting"])
             SELECT id FROM sessions
             WHERE workflow_name = ? AND status = ?
             ORDER BY created_at DESC
@@ -194,13 +194,13 @@ module Roast
         end
 
         # Add the event
-        @db.execute(<<~SQL, session_id, event_name, event_data&.to_json)
+        @db.execute(<<~SQL, [session_id, event_name, event_data&.to_json])
           INSERT INTO session_events (session_id, event_name, event_data)
           VALUES (?, ?, ?)
         SQL
 
         # Update session status
-        @db.execute(<<~SQL, session_id)
+        @db.execute(<<~SQL, [session_id])
           UPDATE sessions#{" "}
           SET status = 'running', updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
@@ -272,14 +272,14 @@ module Roast
         session_id = generate_session_id(workflow)
 
         # Check if session exists
-        existing = @db.execute("SELECT id FROM sessions WHERE id = ?", session_id).first
+        existing = @db.execute("SELECT id FROM sessions WHERE id = ?", [session_id]).first
         return session_id if existing
 
         # Create new session
         workflow_name = workflow.session_name || "unnamed"
         workflow_path = workflow.file || "notarget"
 
-        @db.execute(<<~SQL, session_id, workflow_name, workflow_path)
+        @db.execute(<<~SQL, [session_id, workflow_name, workflow_path])
           INSERT INTO sessions (id, workflow_name, workflow_path)
           VALUES (?, ?, ?)
         SQL
@@ -296,7 +296,7 @@ module Roast
           workflow_name = workflow.session_name || "unnamed"
           workflow_path = workflow.file || "notarget"
 
-          result = @db.execute(<<~SQL, workflow_name, workflow_path)
+          result = @db.execute(<<~SQL, [workflow_name, workflow_path])
             SELECT id FROM sessions
             WHERE workflow_name = ? AND workflow_path = ?
             ORDER BY created_at DESC
@@ -324,7 +324,7 @@ module Roast
         new_session_id = ensure_session(workflow)
 
         # Copy states up to the target step
-        @db.execute(<<~SQL, new_session_id, source_session_id, target_step_name, source_session_id)
+        @db.execute(<<~SQL, [new_session_id, source_session_id, target_step_name, source_session_id])
           INSERT INTO session_states (session_id, step_index, step_name, state_data)
           SELECT ?, step_index, step_name, state_data
           FROM session_states

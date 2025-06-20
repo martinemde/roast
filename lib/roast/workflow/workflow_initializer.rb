@@ -10,6 +10,7 @@ module Roast
 
       def setup
         load_roast_initializers
+        check_raix_configuration
         include_tools
         configure_api_client
       end
@@ -18,6 +19,85 @@ module Roast
 
       def load_roast_initializers
         Roast::Initializers.load_all
+      end
+
+      def check_raix_configuration
+        # Skip check in test environment
+        return if ENV["RAILS_ENV"] == "test" || ENV["RACK_ENV"] == "test" || defined?(Minitest)
+
+        # Only check if the workflow has steps that would need API access
+        return if @configuration.steps.empty?
+
+        # Check if Raix has been configured with the appropriate client
+        case @configuration.api_provider
+        when :openai
+          if Raix.configuration.openai_client.nil?
+            warn_about_missing_raix_configuration(:openai)
+          end
+        when :openrouter
+          if Raix.configuration.openrouter_client.nil?
+            warn_about_missing_raix_configuration(:openrouter)
+          end
+        when nil
+          # If no api_provider is set but we have steps that might need API access,
+          # check if any client is configured
+          if Raix.configuration.openai_client.nil? && Raix.configuration.openrouter_client.nil?
+            warn_about_missing_raix_configuration(:any)
+          end
+        end
+      end
+
+      def warn_about_missing_raix_configuration(provider)
+        ::CLI::UI.frame_style = :box
+        ::CLI::UI::Frame.open("{{red:Raix Configuration Missing}}", color: :red) do
+          case provider
+          when :openai
+            puts ::CLI::UI.fmt("{{yellow:⚠️  Warning: Raix OpenAI client is not configured!}}")
+          when :openrouter
+            puts ::CLI::UI.fmt("{{yellow:⚠️  Warning: Raix OpenRouter client is not configured!}}")
+          else
+            puts ::CLI::UI.fmt("{{yellow:⚠️  Warning: Raix is not configured!}}")
+          end
+          puts
+          puts "Roast requires Raix to be properly initialized to make API calls."
+          puts ::CLI::UI.fmt("To fix this, create a file at {{cyan:.roast/initializers/raix.rb}} with:")
+          puts
+          puts ::CLI::UI.fmt("{{cyan:# frozen_string_literal: true}}")
+          puts
+          puts ::CLI::UI.fmt("{{cyan:require \"raix\"}}")
+
+          if provider == :openrouter
+            puts ::CLI::UI.fmt("{{cyan:require \"open_router\"}}")
+            puts
+            puts ::CLI::UI.fmt("{{cyan:Raix.configure do |config|}}")
+            puts ::CLI::UI.fmt("{{cyan:  config.openrouter_client = OpenRouter::Client.new(}}")
+            puts ::CLI::UI.fmt("{{cyan:    access_token: ENV.fetch(\"OPENROUTER_API_KEY\"),}}")
+            puts ::CLI::UI.fmt("{{cyan:    uri_base: \"https://openrouter.ai/api/v1\",}}")
+            puts ::CLI::UI.fmt("{{cyan:  )}}")
+          else
+            puts ::CLI::UI.fmt("{{cyan:require \"faraday\"}}")
+            puts ::CLI::UI.fmt("{{cyan:require \"faraday/retry\"}}")
+            puts
+            puts ::CLI::UI.fmt("{{cyan: Raix.configure do |config|}}")
+            puts ::CLI::UI.fmt("{{cyan:  config.openai_client = OpenAI::Client.new(}}")
+            puts ::CLI::UI.fmt("{{cyan:    access_token: ENV.fetch(\"OPENAI_API_KEY\"),}}")
+            puts ::CLI::UI.fmt("{{cyan:    uri_base: \"https://api.openai.com/v1\",}}")
+            puts ::CLI::UI.fmt("{{cyan:  ) do |f|}}")
+            puts ::CLI::UI.fmt("{{cyan:    f.request(:retry, {}}")
+            puts ::CLI::UI.fmt("{{cyan:      max: 2,}}")
+            puts ::CLI::UI.fmt("{{cyan:      interval: 0.05,}}")
+            puts ::CLI::UI.fmt("{{cyan:      interval_randomness: 0.5,}}")
+            puts ::CLI::UI.fmt("{{cyan:      backoff_factor: 2,}}")
+            puts ::CLI::UI.fmt("{{cyan:    })}}")
+            puts ::CLI::UI.fmt("{{cyan:  end}}")
+          end
+          puts ::CLI::UI.fmt("{{cyan:end}}")
+          puts
+          puts "For Shopify users, you need to use the LLM gateway proxy instead."
+          puts "Check the #roast slack channel for more information."
+          puts
+        end
+        raise ::CLI::Kit::Abort, "Please configure Raix before running workflows."
       end
 
       def include_tools
