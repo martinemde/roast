@@ -147,7 +147,7 @@ module Roast
       end
 
       def claude_code_command
-        CodingAgent.configured_command || ENV["CLAUDE_CODE_COMMAND"] || "claude -p --verbose --output-format stream-json"
+        CodingAgent.configured_command || ENV["CLAUDE_CODE_COMMAND"] || "claude -p --verbose --output-format stream-json --dangerously-skip-permissions"
       end
 
       def build_command(base_command, continue:)
