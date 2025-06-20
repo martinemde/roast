@@ -24,13 +24,22 @@ module Roast
         @workflow_executor = mock("workflow_executor")
         @workflow_executor.stubs(:workflow).returns(mock("workflow"))
         @workflow_executor.stubs(:config_hash).returns({})
+
+        # Store the current state to restore later
+        @original_executors = StepExecutorRegistry.registered_executors.dup
+        @original_defaults_registered = StepExecutorFactory.instance_variable_get(:@defaults_registered)
+
         # Clear the registry before each test
         StepExecutorRegistry.clear!
       end
 
       def teardown
-        # Clean up after tests
+        # Restore the original state
         StepExecutorRegistry.clear!
+        @original_executors.each do |klass, executor_class|
+          StepExecutorRegistry.register(klass, executor_class)
+        end
+        StepExecutorFactory.instance_variable_set(:@defaults_registered, @original_defaults_registered)
       end
 
       def test_register_and_retrieve_executor
@@ -103,17 +112,30 @@ module Roast
       end
 
       def test_registered_executors_returns_copy
-        StepExecutorRegistry.register(String, TestExecutor)
-        StepExecutorRegistry.register(Hash, AnotherTestExecutor)
+        # Use a unique class that won't conflict with defaults
+        custom_class = Class.new
+        StepExecutorRegistry.register(custom_class, TestExecutor)
 
-        executors = StepExecutorRegistry.registered_executors
+        # Get initial snapshot
+        executors_before = StepExecutorRegistry.registered_executors
+        original_count = executors_before.size
 
-        assert_equal(TestExecutor, executors[String])
-        assert_equal(AnotherTestExecutor, executors[Hash])
+        # Verify our registration is there
+        assert_equal(TestExecutor, executors_before[custom_class])
 
-        # Verify it's a copy
-        executors[Array] = TestExecutor
-        refute(StepExecutorRegistry.registered_executors.key?(Array))
+        # Modify the returned copy by adding a new entry
+        modification_class = Class.new
+        executors_before[modification_class] = AnotherTestExecutor
+
+        # Verify the original registry wasn't modified
+        executors_after = StepExecutorRegistry.registered_executors
+        refute(executors_after.key?(modification_class), "Registry should not contain modification_class key after modifying the copy")
+        assert_equal(TestExecutor, executors_after[custom_class], "Original registration should be unchanged")
+
+        # The registry should have the same number of entries as before (or possibly more if defaults were re-registered)
+        # but it should NOT have our modification
+        assert_operator(executors_after.size, :>=, original_count, "Registry size should not decrease")
+        refute(executors_after.key?(modification_class), "Registry should not contain our modification")
       end
 
       def test_executor_receives_workflow_executor_in_constructor
