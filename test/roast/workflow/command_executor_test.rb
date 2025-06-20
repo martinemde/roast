@@ -98,6 +98,46 @@ module Roast
         result = @executor.execute("$(FOO=bar bash -c 'echo $FOO')")
         assert_equal("bar\n", result)
       end
+
+      def test_multiline_command_execution
+        multiline_command = '$(printf %q "line one
+line two
+line three")'
+
+        result = @executor.execute(multiline_command)
+
+        # printf %q outputs the string with shell escaping for newlines
+        expected_output = "$'line one\\nline two\\nline three'"
+        assert_equal(expected_output, result)
+      end
+
+      def test_multiline_command_with_quotes
+        multiline_command = '$(cat << "EOF"
+line one
+line two with "quotes"
+line three
+EOF
+)'
+
+        result = @executor.execute(multiline_command)
+
+        expected_output = "line one\nline two with \"quotes\"\nline three\n"
+        assert_equal(expected_output, result)
+      end
+
+      def test_multiline_command_with_complex_formatting
+        multiline_command = '$(echo "First line
+Second line with $(date +%Y)
+Third line")'
+
+        result = @executor.execute(multiline_command)
+
+        # Should contain the multiline output with the year substituted
+        assert_match(/First line/, result)
+        assert_match(/Second line with \d{4}/, result) # matches year
+        assert_match(/Third line/, result)
+        assert_equal(3, result.split("\n").length)
+      end
     end
   end
 end

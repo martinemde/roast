@@ -14,6 +14,8 @@ module Roast
         end
       end
 
+      BASH_COMMAND_REGEX = /^\$\((.*)\)$/m
+
       def initialize(logger: nil)
         @logger = logger || NullLogger.new
       end
@@ -44,7 +46,7 @@ module Roast
       private
 
       def extract_command(command_string)
-        match = command_string.strip.match(/^\$\((.*)\)$/)
+        match = command_string.strip.match(BASH_COMMAND_REGEX)
         raise ArgumentError, "Invalid command format. Expected $(command), got: #{command_string}" unless match
 
         match[1]
