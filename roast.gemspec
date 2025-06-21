@@ -37,6 +37,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency("activesupport", ">= 7.0")
+  spec.add_dependency("cli-kit", "~> 5.0")
   spec.add_dependency("cli-ui", "2.3.0")
   spec.add_dependency("diff-lcs", "~> 1.5")
   spec.add_dependency("faraday-retry")
@@ -44,6 +45,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency("open_router", "~> 0.3")
   spec.add_dependency("raix", "~> 1.0")
   spec.add_dependency("ruby-graphviz", "~> 1.2")
+  spec.add_dependency("sqlite3", "~> 2.6")
   spec.add_dependency("thor", "~> 1.3")
   spec.add_dependency("zeitwerk", "~> 2.6")
 end

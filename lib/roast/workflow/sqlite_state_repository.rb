@@ -49,7 +49,7 @@ module Roast
         return false unless session_id
 
         # Find the state before the target step
-        result = @db.execute(<<~SQL, [session_id, session_id, step_name])
+        result = @db.execute(<<~SQL, [session_id, step_name])
           SELECT state_data, step_name
           FROM session_states
           WHERE session_id = ?
@@ -130,7 +130,7 @@ module Roast
 
         where_clause = conditions.empty? ? "" : "WHERE #{conditions.join(" AND ")}"
 
-        @db.execute(<<~SQL, *params)
+        @db.execute(<<~SQL, params)
           SELECT id, workflow_name, workflow_path, status, current_step_index,#{" "}
                  created_at, updated_at
           FROM sessions
@@ -324,7 +324,7 @@ module Roast
         new_session_id = ensure_session(workflow)
 
         # Copy states up to the target step
-        @db.execute(<<~SQL, [new_session_id, source_session_id, source_session_id, target_step_name])
+        @db.execute(<<~SQL, [new_session_id, source_session_id, target_step_name, source_session_id])
           INSERT INTO session_states (session_id, step_index, step_name, state_data)
           SELECT ?, step_index, step_name, state_data
           FROM session_states

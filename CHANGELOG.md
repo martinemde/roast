@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2025-06-20
+
+### Added
+- **Multiline bash command support** (#289)
+  - Enhanced CommandExecutor to properly handle commands spanning multiple lines
+  - Enables sophisticated bash scripts in workflow steps
+  - Maintains backward compatibility with single-line commands
+- **Comprehensive shell security enhancements** (#289)
+  - Smart interpolation that detects shell commands and escapes dangerous characters
+  - Protection against shell injection for all major metacharacters:
+    - Backslashes (`\`) to prevent path injection
+    - Double quotes (`"`) to prevent breaking quoted contexts
+    - Dollar signs (`$`) to prevent variable expansion
+    - Backticks (`` ` ``) to prevent command substitution
+  - Context-aware escaping only in shell commands, preserving text elsewhere
+- **Early detection for missing Raix configuration** (#292)
+  - Provides helpful error messages when Raix is not properly initialized
+  - Shows example configuration for both OpenAI and OpenRouter
+  - Prevents cryptic "undefined method 'chat' for nil" errors
+- **Exit early feature for input steps** (#291)
+  - Pressing Ctrl-C during input steps now exits cleanly
+  - No more confusing stack traces when canceling input
+- **Default --dangerously-skip-permissions flag for CodingAgent** (#290)
+  - Avoids permission prompts during automated workflows
+  - Improves workflow automation experience
+
+### Fixed
+- Test isolation issue causing CI failures (#289)
+- Flaky test in StepExecutorRegistryTest due to executor registration conflicts (#289)
+- Shell command interpolation security vulnerabilities (#289)
+- Missing dependency declarations (cli-kit, sqlite3) (#292)
+
+### Changed
+- Updated cli-kit dependency to ~> 5.0 for better error handling
+- Updated sqlite3 dependency to ~> 2.6 to resolve version conflicts
+
+[0.4.2]: https://github.com/Shopify/roast/compare/v0.4.1...v0.4.2
+
 ## [0.4.1] - 2025-06-18
 
 ### Added

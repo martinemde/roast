@@ -41,3 +41,4 @@ bin/thor
 
 gemfiles/*.lock
 bin/claude-swarm
+*.gem
