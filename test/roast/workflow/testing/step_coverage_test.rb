@@ -3,6 +3,7 @@
 require "test_helper"
 require "roast/workflow/testing"
 require "roast/workflow/testing/step_coverage"
+require "roast/workflow/testing/step_test_harness"
 
 module Roast
   module Workflow
