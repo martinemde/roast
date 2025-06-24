@@ -11,11 +11,11 @@ module Roast
       end
 
       def before_attempt(attempt)
-        ActiveSupport::Notifications.instrument("#{namespace}.attempt", attempt: attempt)
+        ActiveSupport::Notifications.instrument("attempt.#{namespace}", attempt: attempt)
       end
 
       def on_retry(error, attempt)
-        ActiveSupport::Notifications.instrument("#{namespace}.retry", {
+        ActiveSupport::Notifications.instrument("retry.#{namespace}", {
           attempt: attempt,
           error_class: error.class.name,
           error_message: error.message,
@@ -23,11 +23,11 @@ module Roast
       end
 
       def on_success(attempt)
-        ActiveSupport::Notifications.instrument("#{namespace}.success", attempt: attempt)
+        ActiveSupport::Notifications.instrument("success.#{namespace}", attempt: attempt)
       end
 
       def on_failure(error, attempt)
-        ActiveSupport::Notifications.instrument("#{namespace}.failure", {
+        ActiveSupport::Notifications.instrument("failure.#{namespace}", {
           attempt: attempt,
           error_class: error.class.name,
           error_message: error.message,

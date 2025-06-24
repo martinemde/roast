@@ -135,8 +135,7 @@ module Roast
         return unless api_config
 
         # Build retry policy with API-specific matchers
-        config = api_config.dup
-        config[:matcher] ||= {
+        default_matcher = {
           type: "composite",
           operator: "any",
           matchers: [
@@ -145,6 +144,7 @@ module Roast
             { type: "error_message", pattern: /timeout|timed out/i },
           ],
         }
+        config = api_config.merge(matcher: api_config[:matcher] || default_matcher)
 
         RetryPolicyFactory.build(config)
       end

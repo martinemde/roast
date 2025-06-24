@@ -7,7 +7,7 @@ module Roast
 
       def initialize(logger: nil, base_delay: 1, max_delay: 60)
         super()
-        @logger = logger || Rails.logger
+        @logger = logger || Roast::Helpers::Logger.instance
         @base_delay = base_delay
         @max_delay = max_delay
       end
