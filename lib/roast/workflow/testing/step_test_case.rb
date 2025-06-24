@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "active_support/test_case"
-
 module Roast
   module Workflow
     module Testing

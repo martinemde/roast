@@ -1,15 +1,10 @@
 # frozen_string_literal: true
 
-require "roast/workflow/testing/step_test_harness"
-require "roast/workflow/testing/step_validators"
-require "roast/workflow/testing/performance_monitor"
-require "roast/workflow/testing/step_coverage"
-require "roast/workflow/testing/step_test_case"
-
 module Roast
   module Workflow
     # Main module for step unit testing framework
     module Testing
+      DEFAULT_BENCHMARK_ITERATIONS = 10
       class << self
         # Enable testing mode globally
         def enable!
@@ -103,7 +98,7 @@ module Roast
         end
 
         # Benchmark a step with multiple configurations
-        def benchmark_step(step_class, configurations = [{}], iterations = 10)
+        def benchmark_step(step_class, configurations = [{}], iterations = DEFAULT_BENCHMARK_ITERATIONS)
           results = []
 
           configurations.each_with_index do |config, config_index|

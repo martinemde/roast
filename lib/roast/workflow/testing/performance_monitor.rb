@@ -3,7 +3,7 @@
 module Roast
   module Workflow
     module Testing
-      # Performance monitoring for step execution
+      # Performance monitoring for step execution using ActiveSupport instrumentation
       class PerformanceMonitor
         attr_reader :metrics
 
@@ -14,13 +14,14 @@ module Roast
             tool_calls: [],
             memory_usage: [],
           }
-          @start_memory = nil
+          @subscribers = []
+          setup_subscribers
         end
 
         # Start monitoring a step execution
         def start_monitoring
           @start_time = Time.now
-          @start_memory = current_memory_usage
+          @start_allocations = GC.stat[:total_allocated_objects] if GC.respond_to?(:stat)
           @api_call_count = 0
           @tool_call_count = 0
         end
@@ -28,33 +29,26 @@ module Roast
         # Record an API call
         def record_api_call(model, tokens_used = nil)
           @api_call_count += 1
-          @metrics[:api_calls] << {
-            timestamp: Time.now,
-            model: model,
-            tokens_used: tokens_used,
-            response_time: nil, # To be set when response completes
-          }
+          # Also instrument the call
+          ActiveSupport::Notifications.instrument("roast.api.call", model: model, tokens_used: tokens_used)
         end
 
         # Record a tool call
         def record_tool_call(tool_name, execution_time = nil)
           @tool_call_count += 1
-          @metrics[:tool_calls] << {
-            timestamp: Time.now,
-            tool: tool_name,
-            execution_time: execution_time,
-          }
+          # Also instrument the call
+          ActiveSupport::Notifications.instrument("roast.tool.execute", tool_name: tool_name, execution_time: execution_time)
         end
 
         # Complete monitoring and record final metrics
         def complete_monitoring(result = nil)
           execution_time = Time.now - @start_time
-          memory_delta = current_memory_usage - @start_memory
+          allocations = @start_allocations ? GC.stat[:total_allocated_objects] - @start_allocations : 0
 
           execution_metrics = {
             timestamp: @start_time,
             execution_time: execution_time,
-            memory_delta: memory_delta,
+            memory_delta: allocations,
             api_calls: @api_call_count,
             tool_calls: @tool_call_count,
             success: !result.nil?,
@@ -64,7 +58,7 @@ module Roast
           @metrics[:executions] << execution_metrics
           @metrics[:memory_usage] << {
             timestamp: Time.now,
-            usage: current_memory_usage,
+            usage: allocations,
           }
 
           execution_metrics
@@ -89,14 +83,14 @@ module Roast
           report << "  Max: #{format_time(execution_times.max)}"
           report << ""
 
-          # API call statistics
+          # API call statistics from instrumentation
           total_api_calls = executions.sum { |e| e[:api_calls] }
           report << "API Calls:"
           report << "  Total: #{total_api_calls}"
           report << "  Average per execution: #{(total_api_calls.to_f / executions.size).round(2)}"
           report << ""
 
-          # Tool call statistics
+          # Tool call statistics from instrumentation
           total_tool_calls = executions.sum { |e| e[:tool_calls] }
           report << "Tool Calls:"
           report << "  Total: #{total_tool_calls}"
@@ -167,18 +161,39 @@ module Roast
           trends
         end
 
+        # Clean up subscribers
+        def cleanup
+          @subscribers.each do |subscriber|
+            ActiveSupport::Notifications.unsubscribe(subscriber)
+          end
+          @subscribers.clear
+        end
+
         private
 
-        def current_memory_usage
-          # This is a simplified memory measurement
-          # In production, you might want to use more sophisticated memory profiling
-          if defined?(GetProcessMem)
-            GetProcessMem.new.bytes
-          elsif File.exist?("/proc/#{Process.pid}/status")
-            # Fallback to RSS from /proc if available
-            File.read("/proc/#{Process.pid}/status").match(/VmRSS:\s+(\d+)/)&.captures&.first&.to_i&.*(1024) || 0
-          else
-            0
+        def setup_subscribers
+          # Subscribe to tool execution events
+          @subscribers << ActiveSupport::Notifications.subscribe("roast.tool.execute") do |_name, start, finish, _id, payload|
+            @metrics[:tool_calls] << {
+              timestamp: start,
+              tool: payload[:tool_name] || payload[:tool],
+              execution_time: payload[:execution_time] || (finish - start),
+            }
+          end
+
+          # Subscribe to tool completion events (if additional data is needed)
+          @subscribers << ActiveSupport::Notifications.subscribe("roast.tool.complete") do |name, start, finish, id, payload|
+            # Additional tool completion handling if needed
+          end
+
+          # Subscribe to API calls (assuming we instrument these)
+          @subscribers << ActiveSupport::Notifications.subscribe("roast.api.call") do |_name, start, finish, _id, payload|
+            @metrics[:api_calls] << {
+              timestamp: start,
+              model: payload[:model],
+              tokens_used: payload[:tokens_used],
+              response_time: finish - start,
+            }
           end
         end
 
