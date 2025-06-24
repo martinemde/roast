@@ -7,21 +7,10 @@ module Roast
 
       def initialize(logger: nil)
         super()
-        @logger = logger || default_logger
+        @logger = logger || Roast::Helpers::Logger.instance
       end
 
       private
-
-      def default_logger
-        # Use Rails logger if available, otherwise create a basic logger
-        if defined?(Rails) && Rails.respond_to?(:logger)
-          Rails.logger
-        else
-          Logger.new($stdout).tap do |log|
-            log.level = Logger::INFO
-          end
-        end
-      end
 
       def before_attempt(attempt)
         logger.info("Starting attempt #{attempt}")
