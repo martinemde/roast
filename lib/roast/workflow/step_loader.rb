@@ -203,6 +203,18 @@ module Roast
         if step_config.key?("available_tools")
           step.available_tools = step_config["available_tools"]
         end
+
+        # Apply any other configuration attributes that the step supports
+        step_config.each do |key, value|
+          # Skip keys we've already handled above
+          next if ["print_response", "json", "params", "coerce_to", "available_tools"].include?(key)
+
+          # Apply configuration if the step has a setter for this attribute
+          setter_method = "#{key}="
+          if step.respond_to?(setter_method)
+            step.public_send(setter_method, value)
+          end
+        end
       end
     end
   end

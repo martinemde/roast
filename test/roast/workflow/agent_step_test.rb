@@ -197,4 +197,72 @@ class RoastWorkflowAgentStepTest < ActiveSupport::TestCase
     # Verify the result
     assert_equal "Found 3 bottlenecks", result
   end
+
+  test "agent step full integration test from workflow YAML" do
+    Dir.mktmpdir do |tmpdir|
+      workflow_file = File.join(tmpdir, "test_workflow.yml")
+      File.write(workflow_file, <<~YAML)
+        name: agent_test_workflow
+        tools: []
+        steps:
+          - ^analyze the code and identify issues
+          - ^refactor the problematic functions
+
+        analyze the code and identify issues:
+          include_context_summary: true
+          continue: false
+
+        refactor the problematic functions:
+          include_context_summary: false#{" "}
+          continue: true
+      YAML
+
+      # Create a Configuration from the YAML (like normal Roast execution)
+      configuration = Roast::Workflow::Configuration.new(workflow_file)
+
+      # Verify the configuration loaded correctly
+      assert_equal "agent_test_workflow", configuration.name
+      assert_equal ["^analyze the code and identify issues", "^refactor the problematic functions"], configuration.steps
+
+      # Verify step configuration (without ^ prefix in config keys)
+      step1_config = configuration.get_step_config("analyze the code and identify issues")
+      assert_equal true, step1_config["include_context_summary"]
+      assert_equal false, step1_config["continue"]
+
+      step2_config = configuration.get_step_config("refactor the problematic functions")
+      assert_equal false, step2_config["include_context_summary"]
+      assert_equal true, step2_config["continue"]
+
+      # Create a workflow from the configuration (like WorkflowRunner does)
+      workflow = Roast::Workflow::BaseWorkflow.new(nil, name: configuration.name)
+
+      # Create WorkflowExecutor with the parsed configuration
+      executor = Roast::Workflow::WorkflowExecutor.new(
+        workflow,
+        configuration.config_hash,
+        tmpdir,
+      )
+
+      # Mock CodingAgent calls to prevent actual LLM execution
+      # First agent step should get config: include_context_summary=true, continue=false
+      Roast::Tools::CodingAgent.expects(:call).with(
+        "analyze the code and identify issues",
+        include_context_summary: true,
+        continue: false,
+      ).returns("Found 3 issues: X, Y, Z")
+
+      # Second agent step should get config: include_context_summary=false, continue=true
+      Roast::Tools::CodingAgent.expects(:call).with(
+        "refactor the problematic functions",
+        include_context_summary: false,
+        continue: true,
+      ).returns("Refactored functions A, B, C")
+
+      executor.execute_steps(configuration.steps)
+
+      # Verify workflow output contains results from both agent steps
+      assert_equal "Found 3 issues: X, Y, Z", workflow.output["analyze the code and identify issues"]
+      assert_equal "Refactored functions A, B, C", workflow.output["refactor the problematic functions"]
+    end
+  end
 end

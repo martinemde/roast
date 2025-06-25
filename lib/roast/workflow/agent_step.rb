@@ -3,6 +3,15 @@
 module Roast
   module Workflow
     class AgentStep < BaseStep
+      attr_accessor :include_context_summary, :continue
+
+      def initialize(workflow, **kwargs)
+        super
+        # Set default values for agent-specific options
+        @include_context_summary = false
+        @continue = false
+      end
+
       def call
         # For inline prompts (detected by plain text step names), use the name as the prompt
         # For file-based steps, load from the prompt file
@@ -12,11 +21,10 @@ module Roast
           read_sidecar_prompt
         end
 
-        # Extract agent-specific configuration from workflow config
-        step_config = workflow.config[name.to_s] || {}
+        # Use agent-specific configuration that was applied by StepLoader
         agent_options = {
-          include_context_summary: step_config.fetch("include_context_summary", false),
-          continue: step_config.fetch("continue", false),
+          include_context_summary: @include_context_summary,
+          continue: @continue,
         }
 
         # Call CodingAgent directly with the prompt content and options
