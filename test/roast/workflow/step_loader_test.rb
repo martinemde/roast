@@ -82,6 +82,36 @@ module Roast
         assert_equal(File.join(@context_path, "test"), step.context_path)
       end
 
+      def test_loads_directory_based_step_from_shared_directory
+        # Create a temporary directory structure with shared prompt step
+        Dir.mktmpdir do |base_dir|
+          context_dir = File.join(base_dir, "workflows", "my_workflow")
+          shared_dir = File.join(base_dir, "workflows", "shared")
+          FileUtils.mkdir_p(context_dir)
+          FileUtils.mkdir_p(shared_dir)
+
+          # Create a shared step directory with prompt.md
+          shared_step_dir = File.join(shared_dir, "analyze_security")
+          FileUtils.mkdir_p(shared_step_dir)
+          File.write(File.join(shared_step_dir, "prompt.md"), <<~MD)
+            Analyze the following code for security vulnerabilities:
+            - SQL injection risks
+            - XSS vulnerabilities
+            - Authentication bypasses
+            - Input validation issues
+
+            Provide specific recommendations for fixing any issues found.
+          MD
+
+          loader = StepLoader.new(@workflow, @config_hash, context_dir)
+          step = loader.load("analyze_security")
+
+          assert_instance_of(BaseStep, step)
+          assert_equal("analyze_security", step.name)
+          assert_equal(shared_step_dir, step.context_path)
+        end
+      end
+
       def test_raises_error_for_missing_step
         error = assert_raises(StepLoader::StepNotFoundError) do
           @step_loader.load("nonexistent_step")

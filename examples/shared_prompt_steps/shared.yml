@@ -1,0 +1,31 @@
+# Shared YAML configuration for shared prompt steps example
+# This file defines YAML anchors that can be referenced in workflow files
+
+# Standard tools used across workflows
+standard_tools: &standard_tools
+  - Roast::Tools::Grep
+  - Roast::Tools::ReadFile
+  - Roast::Tools::WriteFile
+  - Roast::Tools::SearchFile
+
+# Shared prompt step references
+# These anchors reference step directories in the shared/ folder
+analyze_security: &analyze_security analyze_security
+review_performance: &review_performance review_performance
+validate_inputs: &validate_inputs validate_inputs
+check_best_practices: &check_best_practices check_best_practices
+
+# Common inline prompts
+summarize_findings: &summarize_findings |
+  Summarize all the findings from the previous analysis steps.
+  Create a concise report highlighting:
+  - Critical issues that need immediate attention
+  - Recommendations for improvements
+  - Positive aspects of the code
+
+# Model configurations
+high_quality_model: &high_quality_model
+  model: gpt-4o
+
+fast_model: &fast_model
+  model: gpt-4o-mini

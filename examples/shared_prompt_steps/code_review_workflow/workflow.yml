@@ -1,0 +1,49 @@
+name: Comprehensive Code Review
+description: Performs a thorough code review using shared prompt steps
+
+tools: *standard_tools
+
+steps:
+  # Use shared prompt steps for comprehensive analysis
+  - *validate_inputs
+  - *analyze_security
+  - *review_performance
+  - *check_best_practices
+  
+  # Inline prompt to summarize findings
+  - *summarize_findings
+  
+  # Custom step specific to this workflow
+  - suggest_improvements: |
+      Based on all the previous analysis steps, provide a prioritized list of improvements:
+      
+      1. **Critical** - Must fix immediately (security vulnerabilities, data loss risks)
+      2. **High** - Should fix soon (performance issues, maintainability concerns)
+      3. **Medium** - Good to fix (best practice violations, minor optimizations)
+      4. **Low** - Nice to have (style improvements, minor refactoring)
+      
+      For each suggestion, provide:
+      - Specific code changes needed
+      - Estimated effort (trivial/small/medium/large)
+      - Business impact of making the change
+
+# Step configurations
+validate_inputs:
+  <<: *fast_model
+  print_response: false
+
+analyze_security:
+  <<: *high_quality_model
+  print_response: false
+
+review_performance:
+  <<: *fast_model
+  print_response: false
+
+check_best_practices:
+  <<: *fast_model
+  print_response: false
+
+suggest_improvements:
+  <<: *high_quality_model
+  print_response: true  # Only print the final suggestions

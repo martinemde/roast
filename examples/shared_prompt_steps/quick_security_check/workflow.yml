@@ -1,0 +1,32 @@
+name: Quick Security Check
+description: Fast security-focused review using shared prompt steps
+
+tools: *standard_tools
+
+# Use fast model for all steps
+model: gpt-4o-mini
+
+steps:
+  # Only use security-related shared steps
+  - validate_inputs   # Direct reference without anchor
+  - *analyze_security # Reference via anchor
+  
+  # Custom summary for security findings only
+  - security_summary: |
+      Create a concise security report focusing only on:
+      
+      1. **Critical vulnerabilities** requiring immediate fixes
+      2. **Security risks** ranked by severity
+      3. **Quick wins** - easy security improvements
+      
+      Format as a checklist that developers can work through.
+
+# Step configurations - all quiet except final summary
+validate_inputs:
+  print_response: false
+
+analyze_security:
+  print_response: false
+
+security_summary:
+  print_response: true
