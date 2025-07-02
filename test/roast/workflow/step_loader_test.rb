@@ -158,6 +158,39 @@ module Roast
         assert_equal([], step.available_tools)
       end
 
+      test "handles non-hash step config gracefully" do
+        config_with_string = { "test" => "string_value" }
+        loader = StepLoader.new(@workflow, config_with_string, @context_path)
+
+        step = loader.load("test")
+
+        assert_equal(StepLoader::DEFAULT_MODEL, step.model)
+        assert_equal(false, step.print_response)
+        assert_equal(false, step.json)
+        assert_equal({}, step.params)
+      end
+
+      test "handles array step config without error" do
+        config_with_array = { "test" => ["item1", "item2"] }
+        loader = StepLoader.new(@workflow, config_with_array, @context_path)
+
+        step = loader.load("test")
+
+        assert_equal(StepLoader::DEFAULT_MODEL, step.model)
+        assert_nil(step.available_tools)
+        assert_equal(false, step.print_response)
+        assert_equal(false, step.json)
+      end
+
+      test "handles nil step config value" do
+        config_with_nil = { "test" => nil }
+        loader = StepLoader.new(@workflow, config_with_nil, @context_path)
+
+        step = loader.load("test")
+
+        assert_equal(StepLoader::DEFAULT_MODEL, step.model)
+      end
+
       def test_sets_resource_when_supported
         @workflow.resource = Roast::Resources::FileResource.new("test.txt")
 

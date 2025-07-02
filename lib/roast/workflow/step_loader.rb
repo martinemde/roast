@@ -48,7 +48,7 @@ module Roast
         name = step_name.is_a?(Roast::ValueObjects::StepName) ? step_name : Roast::ValueObjects::StepName.new(step_name)
 
         # Get step config for per-step path
-        step_config = config_hash[name.to_s] || {}
+        step_config = config_hash[name.to_s].is_a?(Hash) ? config_hash[name.to_s] : {}
         per_step_path = step_config["path"]
 
         # First check for a prompt step (contains spaces)
