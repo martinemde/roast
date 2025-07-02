@@ -37,19 +37,8 @@ module Roast
             raise result
           end
 
-          # Strip Markdown code block indicators surrounding JSON data in response if present
-          lines = result.strip.split("\n")
-
-          # Check if first line is ```json or ``` (with optional trailing whitespace)
-          # and last line is ``` (with optional trailing whitespace)
-          cleaned_result = if lines.length >= 2 &&
-              (lines.first.strip == "```json" || lines.first.strip == "```") &&
-              lines.last.strip == "```"
-            # Remove first and last lines
-            lines[1..-2].join("\n")
-          else
-            result
-          end
+          # Extract JSON from markdown code blocks anywhere in the response
+          cleaned_result = extract_json_from_markdown(result)
 
           begin
             result = JSON.parse(cleaned_result)
@@ -63,6 +52,23 @@ module Roast
 
         # Apply coercion if configured
         apply_coercion(result)
+      end
+
+      private
+
+      def extract_json_from_markdown(text)
+        # Look for JSON code blocks anywhere in the text
+        # Matches ```json or ``` followed by content, then closing ```
+        json_block_pattern = /```(?:json)?\s*\n(.*?)\n```/m
+
+        match = text.match(json_block_pattern)
+        if match
+          # Return the content inside the code block
+          match[1].strip
+        else
+          # No code block found, return original text
+          text.strip
+        end
       end
     end
   end
