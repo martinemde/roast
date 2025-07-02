@@ -30,6 +30,34 @@ module Roast
         # Call CodingAgent directly with the prompt content and options
         result = Roast::Tools::CodingAgent.call(prompt_content, **agent_options)
 
+        # Parse as JSON if json: true is configured (since CodingAgent response is not handled by Raix)
+        if @json && result.is_a?(String)
+          # Don't try to parse error messages as JSON
+          if result.start_with?("Error running CodingAgent:")
+            raise result
+          end
+
+          # Strip Markdown code block indicators surrounding JSON data in response if present
+          lines = result.strip.split("\n")
+
+          # Check if first line is ```json or ``` (with optional trailing whitespace)
+          # and last line is ``` (with optional trailing whitespace)
+          cleaned_result = if lines.length >= 2 &&
+              (lines.first.strip == "```json" || lines.first.strip == "```") &&
+              lines.last.strip == "```"
+            # Remove first and last lines
+            lines[1..-2].join("\n")
+          else
+            result
+          end
+
+          begin
+            result = JSON.parse(cleaned_result)
+          rescue JSON::ParserError => e
+            raise "Failed to parse CodingAgent result as JSON: #{e.message}"
+          end
+        end
+
         # Process output if print_response is enabled
         process_output(result, print_response:)
 

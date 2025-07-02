@@ -132,7 +132,7 @@ module Roast
           elsif json["subtype"] == "success"
             json["result"]
           else
-            raise CodingAgentError, "CodingAgent did not complete successfully: #{line}"
+            raise CodingAgentError, "CodingAgent did not complete successfully: #{json.inspect}"
           end
         end
       end
