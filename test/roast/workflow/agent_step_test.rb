@@ -265,4 +265,192 @@ class RoastWorkflowAgentStepTest < ActiveSupport::TestCase
       assert_equal "Refactored functions A, B, C", workflow.output["refactor the problematic functions"]
     end
   end
+
+  test "agent step parses JSON response when json: true" do
+    # Create a mock workflow
+    workflow = mock
+    workflow.stubs(:resource).returns(nil)
+    workflow.stubs(:output).returns({})
+    workflow.stubs(:transcript).returns([])
+    workflow.stubs(:append_to_final_output)
+    workflow.stubs(:file).returns(nil)
+    workflow.stubs(:config).returns({})
+
+    # Create agent step with json: true
+    agent_step = Roast::Workflow::AgentStep.new(workflow, name: "test_agent")
+    agent_step.json = true
+
+    # Mock the prompt loader
+    Roast::Helpers::PromptLoader.stubs(:load_prompt).returns("Generate JSON output")
+
+    # Mock CodingAgent to return raw JSON string
+    json_response = '{"results": ["item1", "item2"], "count": 2}'
+    Roast::Tools::CodingAgent.expects(:call).returns(json_response)
+
+    # Execute the step
+    result = agent_step.call
+
+    # Verify the result is parsed JSON, not a string
+    assert_instance_of Hash, result
+    assert_equal ["item1", "item2"], result["results"]
+    assert_equal 2, result["count"]
+  end
+
+  test "agent step parses JSON wrapped in markdown code blocks" do
+    # Create a mock workflow
+    workflow = mock
+    workflow.stubs(:resource).returns(nil)
+    workflow.stubs(:output).returns({})
+    workflow.stubs(:transcript).returns([])
+    workflow.stubs(:append_to_final_output)
+    workflow.stubs(:file).returns(nil)
+    workflow.stubs(:config).returns({})
+
+    # Create agent step with json: true
+    agent_step = Roast::Workflow::AgentStep.new(workflow, name: "test_agent")
+    agent_step.json = true
+
+    # Mock the prompt loader
+    Roast::Helpers::PromptLoader.stubs(:load_prompt).returns("Generate JSON output")
+
+    # Mock CodingAgent to return JSON wrapped in markdown
+    markdown_response = <<~RESPONSE
+      ```json
+      {
+        "files": ["test.rb", "main.rb"],
+        "total": 2
+      }
+      ```
+    RESPONSE
+
+    Roast::Tools::CodingAgent.expects(:call).returns(markdown_response)
+
+    # Execute the step
+    result = agent_step.call
+
+    # Verify the result is parsed JSON with markdown stripped
+    assert_instance_of Hash, result
+    assert_equal ["test.rb", "main.rb"], result["files"]
+    assert_equal 2, result["total"]
+  end
+
+  test "agent step parses JSON wrapped in plain code blocks" do
+    # Create a mock workflow
+    workflow = mock
+    workflow.stubs(:resource).returns(nil)
+    workflow.stubs(:output).returns({})
+    workflow.stubs(:transcript).returns([])
+    workflow.stubs(:append_to_final_output)
+    workflow.stubs(:file).returns(nil)
+    workflow.stubs(:config).returns({})
+
+    # Create agent step with json: true
+    agent_step = Roast::Workflow::AgentStep.new(workflow, name: "test_agent")
+    agent_step.json = true
+
+    # Mock the prompt loader
+    Roast::Helpers::PromptLoader.stubs(:load_prompt).returns("Generate JSON output")
+
+    # Mock CodingAgent to return JSON wrapped in plain code blocks
+    plain_code_response = <<~RESPONSE
+      ```
+      ["test1", "test2", "test3"]
+      ```
+    RESPONSE
+
+    Roast::Tools::CodingAgent.expects(:call).returns(plain_code_response)
+
+    # Execute the step
+    result = agent_step.call
+
+    # Verify the result is parsed JSON array
+    assert_instance_of Array, result
+    assert_equal ["test1", "test2", "test3"], result
+  end
+
+  test "agent step raises error for invalid JSON when json: true" do
+    # Create a mock workflow
+    workflow = mock
+    workflow.stubs(:resource).returns(nil)
+    workflow.stubs(:output).returns({})
+    workflow.stubs(:transcript).returns([])
+    workflow.stubs(:append_to_final_output)
+    workflow.stubs(:file).returns(nil)
+    workflow.stubs(:config).returns({})
+
+    # Create agent step with json: true
+    agent_step = Roast::Workflow::AgentStep.new(workflow, name: "test_agent")
+    agent_step.json = true
+
+    # Mock the prompt loader
+    Roast::Helpers::PromptLoader.stubs(:load_prompt).returns("Generate JSON output")
+
+    # Mock CodingAgent to return invalid JSON
+    Roast::Tools::CodingAgent.expects(:call).returns("This is not valid JSON")
+
+    # Execute the step and expect a JSON parsing error
+    error = assert_raises(RuntimeError) do
+      agent_step.call
+    end
+
+    assert_match(/Failed to parse CodingAgent result as JSON/, error.message)
+  end
+
+  test "agent step passes through error messages without parsing as JSON" do
+    # Create a mock workflow
+    workflow = mock
+    workflow.stubs(:resource).returns(nil)
+    workflow.stubs(:output).returns({})
+    workflow.stubs(:transcript).returns([])
+    workflow.stubs(:append_to_final_output)
+    workflow.stubs(:file).returns(nil)
+    workflow.stubs(:config).returns({})
+
+    # Create agent step with json: true
+    agent_step = Roast::Workflow::AgentStep.new(workflow, name: "test_agent")
+    agent_step.json = true
+
+    # Mock the prompt loader
+    Roast::Helpers::PromptLoader.stubs(:load_prompt).returns("Generate JSON output")
+
+    # Mock CodingAgent to return error message
+    error_message = "Error running CodingAgent: Something went wrong"
+    Roast::Tools::CodingAgent.expects(:call).returns(error_message)
+
+    # Execute the step and expect the error to be raised directly
+    error = assert_raises(RuntimeError) do
+      agent_step.call
+    end
+
+    assert_equal error_message, error.message
+  end
+
+  test "agent step returns string when json: false" do
+    # Create a mock workflow
+    workflow = mock
+    workflow.stubs(:resource).returns(nil)
+    workflow.stubs(:output).returns({})
+    workflow.stubs(:transcript).returns([])
+    workflow.stubs(:append_to_final_output)
+    workflow.stubs(:file).returns(nil)
+    workflow.stubs(:config).returns({})
+
+    # Create agent step with json: false (default)
+    agent_step = Roast::Workflow::AgentStep.new(workflow, name: "test_agent")
+    agent_step.json = false
+
+    # Mock the prompt loader
+    Roast::Helpers::PromptLoader.stubs(:load_prompt).returns("Generate output")
+
+    # Mock CodingAgent to return JSON string
+    json_string = '{"results": ["item1", "item2"]}'
+    Roast::Tools::CodingAgent.expects(:call).returns(json_string)
+
+    # Execute the step
+    result = agent_step.call
+
+    # Verify the result is returned as-is (string), not parsed
+    assert_instance_of String, result
+    assert_equal json_string, result
+  end
 end
