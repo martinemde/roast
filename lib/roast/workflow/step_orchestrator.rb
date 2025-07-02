@@ -28,6 +28,8 @@ module Roast
         @error_handler.with_error_handling(name, resource_type: resource_type) do
           $stderr.puts "Executing: #{name} (Resource type: #{resource_type || "unknown"})"
 
+          Thread.current[:current_step_name] = name
+
           # Use step_key for loading if provided, otherwise use name
           load_key = step_key || name
           is_last_step = options[:is_last_step]
