@@ -11,9 +11,10 @@ module Roast
       private_constant :CONFIG_CODING_AGENT_COMMAND
 
       @configured_command = nil
+      @configured_options = {}
 
       class << self
-        attr_accessor :configured_command
+        attr_accessor :configured_command, :configured_options
 
         def included(base)
           base.class_eval do
@@ -36,6 +37,8 @@ module Roast
         # Called after configuration is loaded
         def post_configuration_setup(base, config = {})
           self.configured_command = config[CONFIG_CODING_AGENT_COMMAND]
+          # Store any other configuration options (like model)
+          self.configured_options = config.except(CONFIG_CODING_AGENT_COMMAND)
         end
       end
 
@@ -71,6 +74,8 @@ module Roast
           # Build the command with continue option if specified
           base_command = claude_code_command
           command_to_run = build_command(base_command, continue:)
+
+          Roast::Helpers::Logger.debug(command_to_run)
 
           # Run Claude Code CLI using the temp file as input with streaming output
           expect_json_output = command_to_run.include?("--output-format stream-json") ||
@@ -151,16 +156,44 @@ module Roast
       end
 
       def build_command(base_command, continue:)
-        return base_command unless continue
+        command = base_command.dup
 
-        # Add --continue flag to the command
-        # If the command already has flags, insert --continue after 'claude'
-        if base_command.start_with?("claude ")
-          base_command.sub("claude ", "claude --continue ")
-        else
-          # Fallback for non-standard commands
-          "#{base_command} --continue"
+        # Add configured options (like --model)
+        if CodingAgent.configured_options.any?
+          options_str = build_options_string(CodingAgent.configured_options)
+          command = if command.start_with?("claude ")
+            command.sub("claude ", "claude #{options_str} ")
+          else
+            # For non-standard commands, append at the end
+            "#{command} #{options_str}"
+          end
         end
+
+        # Add --continue flag if needed
+        if continue
+          command = if command.start_with?("claude ")
+            command.sub("claude ", "claude --continue ")
+          else
+            # Fallback for non-standard commands
+            "#{command} --continue"
+          end
+        end
+
+        command
+      end
+
+      def build_options_string(options)
+        options.map do |key, value|
+          # Convert Ruby hash keys to command line format
+          flag = "--#{key.to_s.tr("_", "-")}"
+          if value == true
+            flag
+          elsif value == false || value.nil?
+            nil
+          else
+            "#{flag} #{value}"
+          end
+        end.compact.join(" ")
       end
 
       def prepare_prompt(prompt, include_context_summary)

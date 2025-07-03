@@ -14,6 +14,7 @@ module Roast
       def teardown
         ENV["CLAUDE_CODE_COMMAND"] = @original_env
         CodingAgent.configured_command = nil
+        CodingAgent.configured_options = {}
       end
 
       test "build_command adds --continue flag when continue is true" do
@@ -123,6 +124,46 @@ module Roast
 
         result = CodingAgent.call("Test prompt", include_context_summary: true, continue: true)
         assert_equal "Success", result
+      end
+
+      test "build_options_string creates correct command line options" do
+        options = { model: "opus", temperature: 0.7, verbose: true, quiet: false }
+        result = CodingAgent.send(:build_options_string, options)
+        assert_equal "--model opus --temperature 0.7 --verbose", result
+      end
+
+      test "build_command includes configured options" do
+        CodingAgent.configured_options = { model: "opus" }
+        base_command = "claude -p --verbose"
+        result = CodingAgent.send(:build_command, base_command, continue: false)
+        assert_equal "claude --model opus -p --verbose", result
+      end
+
+      test "build_command includes both configured options and continue flag" do
+        CodingAgent.configured_options = { model: "opus", temperature: 0.5 }
+        base_command = "claude -p --verbose"
+        result = CodingAgent.send(:build_command, base_command, continue: true)
+        assert_equal "claude --continue --model opus --temperature 0.5 -p --verbose", result
+      end
+
+      test "post_configuration_setup stores command and options separately" do
+        config = {
+          "coding_agent_command" => "custom-claude",
+          "model" => "opus",
+          "temperature" => 0.7,
+        }
+
+        CodingAgent.post_configuration_setup(nil, config)
+
+        assert_equal "custom-claude", CodingAgent.configured_command
+        assert_equal({ "model" => "opus", "temperature" => 0.7 }, CodingAgent.configured_options)
+      end
+
+      test "build_command handles non-standard commands with options" do
+        CodingAgent.configured_options = { model: "opus" }
+        base_command = "custom-claude-wrapper --some-flag"
+        result = CodingAgent.send(:build_command, base_command, continue: false)
+        assert_equal "custom-claude-wrapper --some-flag --model opus", result
       end
     end
   end
