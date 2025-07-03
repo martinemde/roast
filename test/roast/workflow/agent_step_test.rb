@@ -453,4 +453,50 @@ class RoastWorkflowAgentStepTest < ActiveSupport::TestCase
     assert_instance_of String, result
     assert_equal json_string, result
   end
+
+  test "agent step parses JSON code blocks anywhere in response" do
+    # Create a mock workflow
+    workflow = mock
+    workflow.stubs(:resource).returns(nil)
+    workflow.stubs(:output).returns({})
+    workflow.stubs(:transcript).returns([])
+    workflow.stubs(:append_to_final_output)
+    workflow.stubs(:file).returns(nil)
+    workflow.stubs(:config).returns({})
+
+    # Create agent step with json: true
+    agent_step = Roast::Workflow::AgentStep.new(workflow, name: "test_agent")
+    agent_step.json = true
+
+    # Mock the prompt loader
+    Roast::Helpers::PromptLoader.stubs(:load_prompt).returns("Generate JSON output")
+
+    # Mock CodingAgent to return response with text around JSON code block
+    response_with_text = <<~RESPONSE
+      Here's my analysis of the code:
+
+      I found several issues that need attention. Let me provide the detailed results:
+
+      ```json
+      {
+        "issues": ["performance", "security", "maintainability"],
+        "severity": "high",
+        "recommendations": ["refactor loops", "sanitize input", "add tests"]
+      }
+      ```
+
+      Please review these findings and let me know if you need clarification.
+    RESPONSE
+
+    Roast::Tools::CodingAgent.expects(:call).returns(response_with_text)
+
+    # Execute the step
+    result = agent_step.call
+
+    # Verify the result is parsed JSON with surrounding text stripped
+    assert_instance_of Hash, result
+    assert_equal ["performance", "security", "maintainability"], result["issues"]
+    assert_equal "high", result["severity"]
+    assert_equal ["refactor loops", "sanitize input", "add tests"], result["recommendations"]
+  end
 end
