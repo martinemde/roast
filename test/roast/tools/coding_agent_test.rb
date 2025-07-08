@@ -138,7 +138,7 @@ module Roast
         Open3.expects(:popen3).yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
 
         result = Roast::Tools::CodingAgent.call("Test prompt")
-        assert_equal "Error running CodingAgent: Command not found: claude", result
+        assert_equal "🤖 Error running CodingAgent: Command not found: claude", result
       end
 
       test "cleans up temporary files even on error" do
@@ -235,7 +235,15 @@ module Roast
         end
 
         result = Roast::Tools::CodingAgent.call("Test prompt")
-        assert_equal(result, "Error running CodingAgent: ERROR TEXT")
+        assert_match(/^🤖 Error running CodingAgent:/, result)
+        assert_match(/"type"/, result)
+        assert_match(/"result"/, result)
+        assert_match(/"subtype"/, result)
+        assert_match(/"success"/, result)
+        assert_match(/"is_error"/, result)
+        assert_match(/true/, result)
+        assert_match(/"result"/, result)
+        assert_match(/ERROR TEXT/, result)
       ensure
         ENV["CLAUDE_CODE_COMMAND"] = original_env
       end

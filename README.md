@@ -727,11 +727,16 @@ tools:
         - yarn
   - Roast::Tools::CodingAgent:     # Optional configuration
       coding_agent_command: claude --model opus -p --allowedTools "Bash, Glob, Grep, LS, Read"
+      model: opus                  # Model to use for all CodingAgent invocations
+      retries: 3                   # Number of automatic retries on failure (default: 0)
 ```
 
 Currently supported configurations:
 - `Roast::Tools::Cmd` via `allowed_commands`: restricts which commands can be executed (defaults to: `pwd`, `find`, `ls`, `rake`, `ruby`, `dev`, `mkdir`)
-- `Roast::Tools::CodingAgent` via `coding_agent_command`: customizes the Claude Code CLI command used by the agent
+- `Roast::Tools::CodingAgent` via:
+  - `coding_agent_command`: customizes the Claude Code CLI command used by the agent
+  - `model`: sets the model for all CodingAgent invocations (e.g., `opus`, `sonnet`)
+  - `retries`: number of times to automatically retry if the agent encounters an error (default: 0, no retries)
 
 ##### Cmd Tool Configuration
 
@@ -959,16 +964,25 @@ bash(command: "ps aux | grep ruby | awk '{print $2}'")
 Creates a specialized agent for complex coding tasks or long-running operations.
 
 ```ruby
+# Basic usage
 coding_agent(
-  task: "Refactor the authentication module to use JWT tokens",
-  language: "ruby",
-  files: ["app/models/user.rb", "app/controllers/auth_controller.rb"]
+  prompt: "Refactor the authentication module to use JWT tokens",
+  include_context_summary: true,  # Include workflow context in the agent prompt
+  continue: true                   # Continue from previous agent session
+)
+
+# With automatic retries on failure
+coding_agent(
+  prompt: "Implement complex feature with error handling",
+  retries: 3  # Retry up to 3 times if the agent encounters errors
 )
 ```
 
-- Delegates complex tasks to a specialized coding agent
+- Delegates complex tasks to a specialized coding agent (Claude Code)
 - Useful for tasks that require deep code understanding or multi-step changes
 - Can work across multiple files and languages
+- Supports automatic retries on transient failures (network issues, API errors)
+- Retries can be configured globally (see Tool Configuration) or per invocation
 
 ### MCP (Model Context Protocol) Tools
 

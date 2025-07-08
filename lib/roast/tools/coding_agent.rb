@@ -24,11 +24,13 @@ module Roast
               prompt: { type: "string", description: "The prompt to send to Claude Code" },
               include_context_summary: { type: "boolean", description: "Whether to set a summary of the current workflow context as system directive (default: false)", required: false },
               continue: { type: "boolean", description: "Whether to continue where the previous coding agent left off or start with a fresh context (default: false, start fresh)", required: false },
+              retries: { type: "integer", description: "Number of times to retry the coding agent invocation if it terminates with an error (default: 0, no retry)", required: false },
             ) do |params|
               Roast::Tools::CodingAgent.call(
                 params[:prompt],
                 include_context_summary: params[:include_context_summary].presence || false,
                 continue: params[:continue].presence || false,
+                retries: params[:retries],
               )
             end
           end
@@ -42,11 +44,21 @@ module Roast
         end
       end
 
-      def call(prompt, include_context_summary: false, continue: false)
-        Roast::Helpers::Logger.info("🤖 Running CodingAgent\n")
-        run_claude_code(prompt, include_context_summary:, continue:)
+      def call(prompt, include_context_summary: false, continue: false, retries: nil)
+        # Use configured retries as default, fall back to 0 if not configured
+        retries ||= CodingAgent.configured_options[:retries] || CodingAgent.configured_options["retries"] || 0
+        (retries + 1).times do |iteration|
+          Roast::Helpers::Logger.info("🤖 Running CodingAgent#{iteration > 0 ? ", attempt #{iteration + 1} of #{retries + 1}" : ""}\n")
+          return run_claude_code(prompt, include_context_summary:, continue:)
+        rescue CodingAgentError => e
+          raise e if iteration >= retries
+
+          Roast::Helpers::Logger.warn("🤖 Retrying after error running CodingAgent: #{e.message}")
+          Roast::Helpers::Logger.debug(e.backtrace.join("\n") + "\n") if ENV["DEBUG"]
+        end
+        Roast::Helpers::Logger.error("🤖 CodingAgent did not complete successfully after multiple retries")
       rescue StandardError => e
-        "Error running CodingAgent: #{e.message}".tap do |error_message|
+        "🤖 Error running CodingAgent: #{e.message}".tap do |error_message|
           Roast::Helpers::Logger.error(error_message + "\n")
           Roast::Helpers::Logger.debug(e.backtrace.join("\n") + "\n") if ENV["DEBUG"]
         end
@@ -91,7 +103,8 @@ module Roast
                 next unless json
 
                 handle_intermediate_message(json)
-                result += handle_result(json) || ""
+                handled_result = handle_result(json)
+                result += handled_result if handled_result
               end
             else
               result = stdout.read
@@ -101,8 +114,7 @@ module Roast
             if status.success?
               return result
             else
-              error_output = stderr.read
-              return "Error running CodingAgent: #{error_output}"
+              raise CodingAgentError, stderr.read
             end
           end
         ensure
@@ -132,13 +144,11 @@ module Roast
       def handle_result(json)
         if json["type"] == "result"
           # NOTE: the format of an error response is { "subtype": "success", "is_error": true }
-          if json["is_error"]
-            raise CodingAgentError, json["result"]
-          elsif json["subtype"] == "success"
-            json["result"]
-          else
-            raise CodingAgentError, "CodingAgent did not complete successfully: #{json.inspect}"
-          end
+          is_error = json["is_error"] || false
+          success = !is_error && json["subtype"] == "success"
+          raise CodingAgentError, json.inspect unless success
+
+          json["result"]
         end
       end
 
@@ -158,9 +168,10 @@ module Roast
       def build_command(base_command, continue:)
         command = base_command.dup
 
-        # Add configured options (like --model)
-        if CodingAgent.configured_options.any?
-          options_str = build_options_string(CodingAgent.configured_options)
+        # Add configured options (like --model), excluding retries which is handled internally
+        options_for_command = CodingAgent.configured_options.except("retries", :retries)
+        if options_for_command.any?
+          options_str = build_options_string(options_for_command)
           command = if command.start_with?("claude ")
             command.sub("claude ", "claude #{options_str} ")
           else
