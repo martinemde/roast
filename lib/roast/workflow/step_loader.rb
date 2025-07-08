@@ -60,10 +60,15 @@ module Roast
           return step
         end
 
-        # Look for Ruby file in various locations
-        step_file_path = find_step_file(name.to_s, per_step_path)
-        if step_file_path
-          return load_ruby_step(step_file_path, name.to_s, is_last_step:)
+        # Look for Ruby or shell script file in various locations
+        step_file_info = find_step_file(name.to_s, per_step_path)
+        if step_file_info
+          case step_file_info[:type]
+          when :ruby
+            return load_ruby_step(step_file_info[:path], name.to_s, is_last_step:)
+          when :shell
+            return load_shell_script_step(step_file_info[:path], name.to_s, step_key, is_last_step:)
+          end
         end
 
         # Look for step directory
@@ -87,28 +92,40 @@ module Roast
         File.expand_path(path, context_path)
       end
 
-      # Find a Ruby step file in various locations
+      # Find a Ruby or shell script step file in various locations
       def find_step_file(step_name, per_step_path = nil)
         # Check in per-step path first
         if per_step_path
           resolved_per_step_path = resolve_path(per_step_path)
           custom_rb_path = File.join(resolved_per_step_path, "#{step_name}.rb")
-          return custom_rb_path if File.file?(custom_rb_path)
+          return { path: custom_rb_path, type: :ruby } if File.file?(custom_rb_path)
+
+          custom_sh_path = File.join(resolved_per_step_path, "#{step_name}.sh")
+          return { path: custom_sh_path, type: :shell } if File.file?(custom_sh_path)
         end
 
         # Check in phase-specific directory first
         if phase != :steps
           phase_rb_path = File.join(context_path, phase.to_s, "#{step_name}.rb")
-          return phase_rb_path if File.file?(phase_rb_path)
+          return { path: phase_rb_path, type: :ruby } if File.file?(phase_rb_path)
+
+          phase_sh_path = File.join(context_path, phase.to_s, "#{step_name}.sh")
+          return { path: phase_sh_path, type: :shell } if File.file?(phase_sh_path)
         end
 
         # Check in context path
         rb_file_path = File.join(context_path, "#{step_name}.rb")
-        return rb_file_path if File.file?(rb_file_path)
+        return { path: rb_file_path, type: :ruby } if File.file?(rb_file_path)
+
+        sh_file_path = File.join(context_path, "#{step_name}.sh")
+        return { path: sh_file_path, type: :shell } if File.file?(sh_file_path)
 
         # Check in shared directory
         shared_rb_path = File.expand_path(File.join(context_path, "..", "shared", "#{step_name}.rb"))
-        return shared_rb_path if File.file?(shared_rb_path)
+        return { path: shared_rb_path, type: :ruby } if File.file?(shared_rb_path)
+
+        shared_sh_path = File.expand_path(File.join(context_path, "..", "shared", "#{step_name}.sh"))
+        return { path: shared_sh_path, type: :shell } if File.file?(shared_sh_path)
 
         nil
       end
@@ -158,6 +175,23 @@ module Roast
         step_name_obj = Roast::ValueObjects::StepName.new(step_name)
         step = step_class.new(workflow, name: step_name_obj, context_path: context)
         configure_step(step, step_name, is_last_step:)
+        step
+      end
+
+      # Load a shell script step from a file
+      def load_shell_script_step(file_path, step_name, step_key, is_last_step: nil)
+        $stderr.puts "Loading shell script step: #{file_path}"
+
+        step_name_obj = Roast::ValueObjects::StepName.new(step_name)
+
+        step = ShellScriptStep.new(
+          workflow,
+          script_path: file_path,
+          name: step_name_obj,
+          context_path: File.dirname(file_path),
+        )
+
+        configure_step(step, step_key || step_name, is_last_step:)
         step
       end
 

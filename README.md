@@ -279,35 +279,73 @@ Roast supports several types of steps:
    ```
    Agent steps are prefixed with `^` and send the prompt content directly to the CodingAgent tool without LLM translation. This is useful when you want to give precise instructions to a coding agent without the intermediate interpretation layer. Agent steps support both file-based prompts (`fix_linting_errors/prompt.md`) and inline prompts (text with spaces).
 
-9. **Input step**: Interactive prompts for user input during workflow execution
+9. **Shell script step**: Execute shell scripts directly as workflow steps
    ```yaml
    steps:
-     - analyze_code
-     - get_user_feedback:
-         prompt: "Should we proceed with the refactoring? (yes/no)"
-         type: confirm
-     - review_changes:
-         prompt: "Enter your review comments"
-         type: text
-     - select_strategy:
-         prompt: "Choose optimization strategy"
-         type: select
-         options:
-           - "Performance optimization"
-           - "Memory optimization"
-           - "Code clarity"
-     - api_configuration:
-         prompt: "Enter API key"
-         type: password
+     - setup_environment     # Executes setup_environment.sh
+     - run_tests             # Executes run_tests.sh  
+     - cleanup
    ```
    
-   Input steps pause workflow execution to collect user input. They support several types:
-   - `text`: Free-form text input (default if type not specified)
-   - `confirm`: Yes/No confirmation prompts
-   - `select`: Choice from a list of options
-   - `password`: Masked input for sensitive data
+   Shell script steps allow you to execute `.sh` files directly as workflow steps alongside Ruby steps and AI prompts. Scripts are automatically discovered in the same locations as other step types.
    
-   The user's input is stored in the workflow output using the step name as the key and can be accessed in subsequent steps via interpolation (e.g., `{{output.get_user_feedback}}`).
+   **Configuration options:**
+   ```yaml
+   # Step configuration  
+   my_script:
+     json: true              # Parse stdout as JSON
+     exit_on_error: false    # Don't fail workflow on non-zero exit
+     env:                    # Custom environment variables
+       CUSTOM_VAR: "value"
+   ```
+   
+   **Environment integration:** Shell scripts automatically receive workflow context:
+   - `ROAST_WORKFLOW_RESOURCE`: Current workflow resource
+   - `ROAST_STEP_NAME`: Current step name
+   - `ROAST_WORKFLOW_OUTPUT`: Previous step outputs as JSON
+   
+   **Example script (`setup_environment.sh`):**
+   ```bash
+   #!/bin/bash
+   echo "Setting up environment for: $ROAST_WORKFLOW_RESOURCE"
+   
+   # Create a config file that subsequent steps can use
+   mkdir -p tmp
+   echo "DATABASE_URL=sqlite://test.db" > tmp/config.env
+   
+   # Output data for the workflow (available via ROAST_WORKFLOW_OUTPUT in later steps)
+   echo '{"status": "configured", "database": "sqlite://test.db", "config_file": "tmp/config.env"}'
+   ```
+
+10. **Input step**: Interactive prompts for user input during workflow execution
+    ```yaml
+    steps:
+      - analyze_code
+      - get_user_feedback:
+          prompt: "Should we proceed with the refactoring? (yes/no)"
+          type: confirm
+      - review_changes:
+          prompt: "Enter your review comments"
+          type: text
+      - select_strategy:
+          prompt: "Choose optimization strategy"
+          type: select
+          options:
+            - "Performance optimization"
+            - "Memory optimization"
+            - "Code clarity"
+      - api_configuration:
+          prompt: "Enter API key"
+          type: password
+    ```
+    
+    Input steps pause workflow execution to collect user input. They support several types:
+    - `text`: Free-form text input (default if type not specified)
+    - `confirm`: Yes/No confirmation prompts
+    - `select`: Choice from a list of options
+    - `password`: Masked input for sensitive data
+    
+    The user's input is stored in the workflow output using the step name as the key and can be accessed in subsequent steps via interpolation (e.g., `{{output.get_user_feedback}}`).
 
 #### Step Configuration
 
