@@ -54,6 +54,11 @@ module Roast
         @output
       end
 
+      # Get the raw final output array (for internal use)
+      def raw_final_output
+        @final_output
+      end
+
       # Get a snapshot of the current state for persistence
       def to_h
         {

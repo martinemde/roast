@@ -28,6 +28,7 @@ module Roast
           order: 2,
           transcript: [{ user: "test" }, { assistant: "response" }],
           output: { "step1" => "result1", "step2" => "result2" },
+          metadata: {},
           final_output: ["final result"],
           execution_order: ["step1", "step2"],
         }
@@ -93,6 +94,7 @@ module Roast
           order: 0,
           transcript: [],
           output: {},
+          metadata: {},
           final_output: [],
           execution_order: [],
         }
@@ -122,6 +124,7 @@ module Roast
           order: 0,
           transcript: [],
           output: {},
+          metadata: {},
           final_output: [],
           execution_order: [],
         })
@@ -145,6 +148,7 @@ module Roast
           order: 0,
           transcript: [],
           output: {},
+          metadata: {},
           final_output: [],
           execution_order: [],
         }
@@ -178,6 +182,7 @@ module Roast
           order: 1,
           transcript: [{ user: "test" }, { assistant: "response" }],
           output: { "step1" => "r1", "step2" => "r2", "step3" => "r3" },
+          metadata: {},
           final_output: ["final result"],
           execution_order: ["step1", "step2", "step3"],
         }
@@ -193,6 +198,7 @@ module Roast
           order: 2,
           transcript: [{ user: "test" }, { assistant: "response" }],
           output: { "step1" => "result1", "step2" => "result2" },
+          metadata: {},
           final_output: ["final result"],
           execution_order: ["step1", "step2"],
         }

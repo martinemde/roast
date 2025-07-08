@@ -42,6 +42,7 @@ module Roast
           order: determine_step_order(step_name),
           transcript: extract_transcript,
           output: extract_output,
+          metadata: extract_metadata,
           final_output: extract_final_output,
           execution_order: extract_execution_order,
         }
@@ -68,11 +69,27 @@ module Roast
         workflow.output.clone
       end
 
+      # Extract metadata if available
+      def extract_metadata
+        return {} unless workflow.respond_to?(:metadata)
+
+        workflow.metadata.clone
+      end
+
       # Extract final output data if available
       def extract_final_output
+        # For real workflows, get the raw array from output_manager
+        if workflow.respond_to?(:output_manager) && workflow.output_manager.respond_to?(:raw_final_output)
+          return workflow.output_manager.raw_final_output.clone
+        end
+
+        # For mocks or workflows without output_manager, check for final_output
         return [] unless workflow.respond_to?(:final_output)
 
-        workflow.final_output.clone
+        # If final_output returns a string (processed), return empty array
+        # If it returns an array (raw), return that
+        result = workflow.final_output
+        result.is_a?(Array) ? result.clone : []
       end
 
       # Extract execution order from workflow output
