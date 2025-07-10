@@ -165,6 +165,152 @@ module Roast
         result = CodingAgent.send(:build_command, base_command, continue: false)
         assert_equal "custom-claude-wrapper --some-flag --model opus", result
       end
+
+      test "call uses configured retries as default when not specified" do
+        CodingAgent.configured_options = { "retries" => 2 }
+        ENV["CLAUDE_CODE_COMMAND"] = "claude --output-format stream-json"
+
+        # First two attempts fail
+        mock_stdin1 = mock
+        mock_stdout1 = StringIO.new("")
+        mock_stderr1 = StringIO.new("Network error")
+        mock_wait_thread1 = mock
+        mock_status1 = mock
+        mock_stdin1.expects(:close)
+        mock_status1.expects(:success?).returns(false)
+        mock_wait_thread1.expects(:value).returns(mock_status1)
+
+        mock_stdin2 = mock
+        mock_stdout2 = StringIO.new("")
+        mock_stderr2 = StringIO.new("API timeout")
+        mock_wait_thread2 = mock
+        mock_status2 = mock
+        mock_stdin2.expects(:close)
+        mock_status2.expects(:success?).returns(false)
+        mock_wait_thread2.expects(:value).returns(mock_status2)
+
+        # Third attempt succeeds
+        mock_output3 = [
+          {
+            type: "assistant",
+            message: {
+              content: [{ type: "text", text: "Task completed after retries" }],
+            },
+          }.to_json,
+          { type: "result", subtype: "success", is_error: false, result: "Success on third attempt" }.to_json,
+        ].join("\n")
+        mock_stdin3 = mock
+        mock_stdout3 = StringIO.new(mock_output3)
+        mock_stderr3 = StringIO.new("")
+        mock_wait_thread3 = mock
+        mock_status3 = mock
+        mock_stdin3.expects(:close)
+        mock_status3.expects(:success?).returns(true)
+        mock_wait_thread3.expects(:value).returns(mock_status3)
+
+        # Expect exactly 3 calls (1 initial + 2 retries)
+        Open3.expects(:popen3).times(3).with { |cmd| cmd =~ /cat .* \| claude --output-format stream-json$/ }
+          .yields(mock_stdin1, mock_stdout1, mock_stderr1, mock_wait_thread1)
+          .then.yields(mock_stdin2, mock_stdout2, mock_stderr2, mock_wait_thread2)
+          .then.yields(mock_stdin3, mock_stdout3, mock_stderr3, mock_wait_thread3)
+
+        # Call without specifying retries - should use configured default of 2
+        result = CodingAgent.call("Test prompt")
+        assert_equal "Success on third attempt", result
+      end
+
+      test "call parameter overrides configured retries" do
+        CodingAgent.configured_options = { "retries" => 2 }
+        ENV["CLAUDE_CODE_COMMAND"] = "claude --output-format stream-json"
+
+        # First attempt fails
+        mock_stdin1 = mock
+        mock_stdout1 = StringIO.new("")
+        mock_stderr1 = StringIO.new("Error")
+        mock_wait_thread1 = mock
+        mock_status1 = mock
+        mock_stdin1.expects(:close)
+        mock_status1.expects(:success?).returns(false)
+        mock_wait_thread1.expects(:value).returns(mock_status1)
+
+        # Second attempt succeeds
+        mock_output2 = [
+          {
+            type: "assistant",
+            message: {
+              content: [{ type: "text", text: "Retrying task" }],
+            },
+          }.to_json,
+          { type: "result", subtype: "success", is_error: false, result: "Success after retry" }.to_json,
+        ].join("\n")
+
+        mock_stdin2 = mock
+        mock_stdout2 = StringIO.new(mock_output2)
+        mock_stderr2 = StringIO.new("")
+        mock_wait_thread2 = mock
+        mock_status2 = mock
+        mock_stdin2.expects(:close)
+        mock_status2.expects(:success?).returns(true)
+        mock_wait_thread2.expects(:value).returns(mock_status2)
+
+        Open3.expects(:popen3).twice.with { |cmd| cmd =~ /cat .* \| claude --output-format stream-json$/ }
+          .yields(mock_stdin1, mock_stdout1, mock_stderr1, mock_wait_thread1)
+          .then.yields(mock_stdin2, mock_stdout2, mock_stderr2, mock_wait_thread2)
+
+        # Call with explicit retries=1, should override the configured default of 2
+        result = CodingAgent.call("Test prompt", retries: 1)
+        assert_equal "Success after retry", result
+      end
+
+      test "call fails after exhausting all configured retries" do
+        CodingAgent.configured_options = { "retries" => 2 }
+        ENV["CLAUDE_CODE_COMMAND"] = "claude --output-format stream-json"
+
+        # Create separate mocks for each attempt since stderr.read consumes the stream
+        3.times do |i|
+          mock_stdin = mock
+          mock_stdout = StringIO.new("")
+          mock_stderr = StringIO.new("Persistent error #{i + 1}")
+          mock_wait_thread = mock
+          mock_status = mock
+
+          mock_stdin.expects(:close)
+          mock_status.expects(:success?).returns(false)
+          mock_wait_thread.expects(:value).returns(mock_status)
+
+          Open3.expects(:popen3).with { |cmd| cmd =~ /cat .* \| claude --output-format stream-json$/ }
+            .yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
+        end
+
+        # Should fail with error message after all retries
+        result = CodingAgent.call("Test prompt")
+        assert_match(/Error running CodingAgent: Persistent error/, result)
+      end
+
+      test "default behavior is no retries when not configured" do
+        # Clear any configured options
+        CodingAgent.configured_options = {}
+        ENV["CLAUDE_CODE_COMMAND"] = "claude --output-format stream-json"
+
+        # Single attempt fails
+        mock_stdin = mock
+        mock_stdout = StringIO.new("")
+        mock_stderr = StringIO.new("Command failed")
+        mock_wait_thread = mock
+        mock_status = mock
+
+        mock_stdin.expects(:close)
+        mock_status.expects(:success?).returns(false)
+        mock_wait_thread.expects(:value).returns(mock_status)
+
+        # Expect only ONE call (no retries)
+        Open3.expects(:popen3).once.with { |cmd| cmd =~ /cat .* \| claude --output-format stream-json$/ }
+          .yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
+
+        # Should fail immediately without retrying
+        result = CodingAgent.call("Test prompt")
+        assert_match(/Error running CodingAgent: Command failed/, result)
+      end
     end
   end
 end
