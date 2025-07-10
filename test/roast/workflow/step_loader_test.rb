@@ -203,6 +203,88 @@ module Roast
           assert_equal("missing_dep_step", error.step_name)
         end
       end
+
+      def test_loads_shell_script_from_context_path
+        Dir.mktmpdir do |dir|
+          script_file = File.join(dir, "test_script.sh")
+          File.write(script_file, "#!/bin/bash\necho 'Hello from shell script'")
+          File.chmod(0o755, script_file)
+
+          loader = StepLoader.new(@workflow, @config_hash, dir)
+          step = loader.load("test_script")
+
+          assert_instance_of(ShellScriptStep, step)
+          assert_equal("test_script", step.name.value)
+          assert_equal(script_file, step.script_path)
+        end
+      end
+
+      def test_loads_shell_script_from_shared_directory
+        Dir.mktmpdir do |base_dir|
+          context_dir = File.join(base_dir, "steps", "specific")
+          shared_dir = File.join(base_dir, "steps", "shared")
+          FileUtils.mkdir_p(context_dir)
+          FileUtils.mkdir_p(shared_dir)
+
+          script_file = File.join(shared_dir, "shared_script.sh")
+          File.write(script_file, "#!/bin/bash\necho 'Hello from shared script'")
+          File.chmod(0o755, script_file)
+
+          loader = StepLoader.new(@workflow, @config_hash, context_dir)
+          step = loader.load("shared_script")
+
+          assert_instance_of(ShellScriptStep, step)
+          assert_equal("shared_script", step.name.value)
+          assert_equal(script_file, step.script_path)
+        end
+      end
+
+      def test_prefers_ruby_over_shell_script_when_both_exist
+        Dir.mktmpdir do |dir|
+          # Create both Ruby and shell script files
+          ruby_file = File.join(dir, "dual_step.rb")
+          File.write(ruby_file, <<~RUBY)
+            class DualStep < Roast::Workflow::BaseStep
+              def call
+                "Ruby step executed"
+              end
+            end
+          RUBY
+
+          shell_file = File.join(dir, "dual_step.sh")
+          File.write(shell_file, "#!/bin/bash\necho 'Shell script executed'")
+          File.chmod(0o755, shell_file)
+
+          loader = StepLoader.new(@workflow, @config_hash, dir)
+          step = loader.load("dual_step")
+
+          # Should prefer Ruby step
+          assert_instance_of(DualStep, step)
+          assert_equal("dual_step", step.name)
+        end
+      end
+
+      def test_configures_shell_script_step_with_options
+        Dir.mktmpdir do |dir|
+          script_file = File.join(dir, "configured_script.sh")
+          File.write(script_file, "#!/bin/bash\necho '{\"result\": \"success\"}'")
+          File.chmod(0o755, script_file)
+
+          @config_hash["configured_script"] = {
+            "json" => true,
+            "exit_on_error" => false,
+            "env" => { "CUSTOM_VAR" => "custom_value" },
+          }
+
+          loader = StepLoader.new(@workflow, @config_hash, dir)
+          step = loader.load("configured_script")
+
+          assert_instance_of(ShellScriptStep, step)
+          assert_equal(true, step.json)
+          assert_equal(false, step.exit_on_error)
+          assert_equal({ "CUSTOM_VAR" => "custom_value" }, step.env)
+        end
+      end
     end
   end
 end
