@@ -42,7 +42,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency("diff-lcs", "~> 1.5")
   spec.add_dependency("json-schema")
   spec.add_dependency("open_router", "~> 0.3")
-  spec.add_dependency("raix", "~> 1.0")
+  spec.add_dependency("raix-openai-eight", "~> 1.0")
   spec.add_dependency("ruby-graphviz", "~> 1.2")
   spec.add_dependency("sqlite3", "~> 2.6")
   spec.add_dependency("thor", "~> 1.3")
