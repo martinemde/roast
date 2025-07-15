@@ -130,22 +130,8 @@ module Roast
         assert_equal 60, result
       end
 
-      test "validate_timeout caps timeout at maximum" do
-        result = @handler.validate_timeout(500)
-        assert_equal 300, result
-      end
-
-      test "validate_timeout allows exactly maximum timeout" do
-        result = @handler.validate_timeout(300)
-        assert_equal 300, result
-      end
-
       test "has correct default timeout constant" do
         assert_equal 30, TimeoutHandler::DEFAULT_TIMEOUT
-      end
-
-      test "has correct maximum timeout constant" do
-        assert_equal 300, TimeoutHandler::MAX_TIMEOUT
       end
 
       test "timeout validation is used in call" do

@@ -17,7 +17,6 @@ module Roast
     #   output, status = TimeoutHandler.call("pwd", timeout: 10, working_directory: "/tmp")
     class TimeoutHandler
       DEFAULT_TIMEOUT = 30
-      MAX_TIMEOUT = 300
 
       class << self
         # Execute a command with timeout using Open3 with proper process cleanup
@@ -53,11 +52,9 @@ module Roast
 
         # Validate and normalize timeout value
         # @param timeout [Integer, nil] Raw timeout value
-        # @return [Integer] Validated timeout between 1 and MAX_TIMEOUT
+        # @return [Integer] Default timeout if timeout is nil or less than 0
         def validate_timeout(timeout)
-          return DEFAULT_TIMEOUT if timeout.nil? || timeout <= 0
-
-          [timeout, MAX_TIMEOUT].min
+          timeout.nil? || timeout <= 0 ? DEFAULT_TIMEOUT : timeout
         end
 
         private

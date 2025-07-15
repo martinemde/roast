@@ -225,18 +225,6 @@ class RoastToolsBashTest < ActiveSupport::TestCase
     assert_match(/validated/, result)
   end
 
-  test "timeout with large value is capped by TimeoutHandler" do
-    # TimeoutHandler should cap at MAX_TIMEOUT (300)
-    start_time = Time.now
-
-    result = Roast::Tools::Bash.call("echo 'capped'", timeout: 500)
-
-    elapsed = Time.now - start_time
-    assert_operator elapsed, :<, 1.0
-    assert_match(/Exit status: 0/, result)
-    assert_match(/capped/, result)
-  end
-
   # Output formatting tests
   test "formats output consistently" do
     result = Roast::Tools::Bash.call("echo 'test output'")
