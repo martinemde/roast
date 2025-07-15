@@ -134,6 +134,10 @@ module Roast
         assert_equal 30, TimeoutHandler::DEFAULT_TIMEOUT
       end
 
+      test "has correct default grace period constant" do
+        assert_equal 5, TimeoutHandler::DEFAULT_GRACE_PERIOD
+      end
+
       test "timeout validation is used in call" do
         output, exit_status = @handler.call("echo 'validation test'", timeout: -1)
 

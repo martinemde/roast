@@ -15,8 +15,12 @@ module Roast
     #
     # @example With custom working directory
     #   output, status = TimeoutHandler.call("pwd", timeout: 10, working_directory: "/tmp")
+    #
+    # @example With custom grace period
+    #   output, status = TimeoutHandler.call("sleep 10", timeout: 10, grace_period: 1)
     class TimeoutHandler
       DEFAULT_TIMEOUT = 30
+      DEFAULT_GRACE_PERIOD = 5
 
       class << self
         # Execute a command with timeout using Open3 with proper process cleanup
@@ -25,7 +29,7 @@ module Roast
         # @param working_directory [String] Directory to execute in (default: Dir.pwd)
         # @return [Array<String, Integer>] [output, exit_status]
         # @raise [Timeout::Error] When command exceeds timeout duration
-        def call(command, timeout: DEFAULT_TIMEOUT, working_directory: Dir.pwd)
+        def call(command, timeout: DEFAULT_TIMEOUT, working_directory: Dir.pwd, grace_period: DEFAULT_GRACE_PERIOD)
           timeout = validate_timeout(timeout)
           output = ""
           exit_status = nil
@@ -67,7 +71,7 @@ module Roast
           pid = wait_thr.pid
           # First try graceful termination
           Process.kill("TERM", pid)
-          sleep(0.1)
+          sleep(DEFAULT_GRACE_PERIOD)
 
           # Force kill if still alive
           if wait_thr.alive?
