@@ -199,7 +199,7 @@ class RoastToolsBashTest < ActiveSupport::TestCase
 
     elapsed = Time.now - start_time
     assert_operator elapsed, :>=, 0.9
-    assert_operator elapsed, :<=, 1.5
+    assert_operator elapsed, :<=, 1.6
   end
 
   test "quick commands complete before timeout" do

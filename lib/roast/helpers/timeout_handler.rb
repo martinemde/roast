@@ -18,6 +18,9 @@ module Roast
     #
     # @example With custom grace period
     #   output, status = TimeoutHandler.call("sleep 10", timeout: 10, grace_period: 1)
+    #
+    # @example Disable process group for TTY commands (like macOS security)
+    #   output, status = TimeoutHandler.call("security find-generic-password", timeout: 30, use_pgroup: false)
     class TimeoutHandler
       DEFAULT_TIMEOUT = 30
       DEFAULT_GRACE_PERIOD = 5
@@ -27,9 +30,10 @@ module Roast
         # @param command [String] The command to execute
         # @param timeout [Integer] Timeout in seconds
         # @param working_directory [String] Directory to execute in (default: Dir.pwd)
+        # @param use_pgroup [Boolean] Whether to spawn process in its own process group (default: true)
         # @return [Array<String, Integer>] [output, exit_status]
         # @raise [Timeout::Error] When command exceeds timeout duration
-        def call(command, timeout: DEFAULT_TIMEOUT, working_directory: Dir.pwd, grace_period: DEFAULT_GRACE_PERIOD)
+        def call(command, timeout: DEFAULT_TIMEOUT, working_directory: Dir.pwd, grace_period: DEFAULT_GRACE_PERIOD, use_pgroup: true)
           timeout = validate_timeout(timeout)
           output = ""
           exit_status = nil
@@ -37,7 +41,9 @@ module Roast
 
           begin
             Timeout.timeout(timeout) do
-              stdin, stdout, stderr, wait_thr = Open3.popen3(command, chdir: working_directory)
+              popen3_options = { chdir: working_directory }
+              popen3_options[:pgroup] = true if use_pgroup
+              stdin, stdout, stderr, wait_thr = Open3.popen3(command, popen3_options)
               stdin.close # Prevent hanging on stdin-waiting commands
               output = stdout.read + stderr.read
               wait_thr.join
@@ -47,7 +53,7 @@ module Roast
             end
           rescue Timeout::Error
             # Clean up any remaining processes to prevent zombies
-            cleanup_process(wait_thr) if wait_thr&.alive?
+            cleanup_process(wait_thr, use_pgroup, grace_period) if wait_thr&.alive?
             raise Timeout::Error, "Command '#{command}' in '#{working_directory}' timed out after #{timeout} seconds"
           end
 
@@ -65,17 +71,21 @@ module Roast
 
         # Clean up process on timeout to prevent zombie processes
         # @param wait_thr [Process::Waiter] The process thread to clean up
-        def cleanup_process(wait_thr)
+        # @param use_pgroup [Boolean] Whether to kill the process group (default: true)
+        # @param grace_period [Integer] Grace period in seconds before force kill (default: DEFAULT_GRACE_PERIOD)
+        def cleanup_process(wait_thr, use_pgroup = true, grace_period = DEFAULT_GRACE_PERIOD)
           return unless wait_thr&.alive?
 
           pid = wait_thr.pid
+          # Use negative PID to kill process group, positive PID for individual process
+          target_pid = use_pgroup ? -pid : pid
           # First try graceful termination
-          Process.kill("TERM", pid)
-          sleep(DEFAULT_GRACE_PERIOD)
+          Process.kill("TERM", target_pid)
+          sleep(grace_period)
 
           # Force kill if still alive
           if wait_thr.alive?
-            Process.kill("KILL", pid)
+            Process.kill("KILL", target_pid)
           end
         rescue Errno::ESRCH
           # Process already terminated, which is fine
