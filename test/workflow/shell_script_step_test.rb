@@ -219,12 +219,63 @@ module Roast
         end
       end
 
+      test "print_response true appends output to final output" do
+        Dir.mktmpdir do |dir|
+          script_path = File.join(dir, "test_script.sh")
+          File.write(script_path, "#!/bin/bash\necho 'Output to print'")
+          File.chmod(0o755, script_path)
+
+          workflow = MockWorkflow.new
+          step = ShellScriptStep.new(
+            workflow,
+            script_path: script_path,
+            name: ValueObjects::StepName.new("test_script"),
+            context_path: dir,
+          )
+          step.print_response = true
+
+          result = step.call
+
+          assert_equal "Output to print", result
+          assert_equal 1, workflow.appended_output.size
+          assert_equal "Output to print", workflow.appended_output.first
+        end
+      end
+
+      test "print_response false does not append output to final output" do
+        Dir.mktmpdir do |dir|
+          script_path = File.join(dir, "test_script.sh")
+          File.write(script_path, "#!/bin/bash\necho 'Output not to print'")
+          File.chmod(0o755, script_path)
+
+          workflow = MockWorkflow.new
+          step = ShellScriptStep.new(
+            workflow,
+            script_path: script_path,
+            name: ValueObjects::StepName.new("test_script"),
+            context_path: dir,
+          )
+          step.print_response = false
+
+          result = step.call
+
+          assert_equal "Output not to print", result
+          assert_empty workflow.appended_output
+        end
+      end
+
       class MockWorkflow
         attr_accessor :output, :resource, :storage_type
+        attr_reader :appended_output
 
         def initialize
           @output = {}
           @storage_type = :memory
+          @appended_output = []
+        end
+
+        def append_to_final_output(text)
+          @appended_output << text
         end
       end
     end

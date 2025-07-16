@@ -18,11 +18,14 @@ module Roast
 
         stdout, stderr, status = execute_script
 
-        if status.success?
+        result = if status.success?
           parse_output(stdout)
         else
           handle_script_error(stderr, status.exitstatus)
         end
+
+        process_output(result, print_response: @print_response)
+        result
       end
 
       private
