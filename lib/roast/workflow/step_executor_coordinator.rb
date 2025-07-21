@@ -190,7 +190,7 @@ module Roast
 
         # Load and execute the agent step
         merged_options = options.merge(
-          exit_on_error: options.fetch(:exit_on_error) { context.exit_on_error(step) },
+          exit_on_error: options.fetch(:exit_on_error) { context.exit_on_error?(step) },
           agent_type: :coding_agent,
         )
         execute_custom_step(step_name, **merged_options)

@@ -76,7 +76,7 @@ class RoastToolsBashTest < ActiveSupport::TestCase
   test "executes commands that would be restricted by Cmd tool" do
     # Commands that Cmd tool would reject
     dangerous_commands = [
-      "curl https://example.com",
+      "curl http://localhost",
       "rm -rf /tmp/test_file_that_does_not_exist",
       "ps aux",
       "chmod +x /tmp/nonexistent",
