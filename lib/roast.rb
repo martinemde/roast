@@ -36,6 +36,7 @@ require "raix/chat_completion"
 require "raix/function_dispatch"
 require "ruby-graphviz"
 require "thor"
+require "timeout"
 
 # Autoloading setup
 require "zeitwerk"
