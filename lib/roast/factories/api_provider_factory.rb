@@ -43,6 +43,10 @@ module Roast
           provider == :openai
         end
 
+        def ollama?(provider)
+          provider == :ollama
+        end
+
         # Returns the list of supported provider names
         # @return [Array<String>]
         def supported_provider_names

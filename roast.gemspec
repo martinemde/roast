@@ -41,6 +41,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency("cli-ui", "2.3.0")
   spec.add_dependency("diff-lcs", "~> 1.5")
   spec.add_dependency("json-schema")
+  spec.add_development_dependency("ollama-ruby")
   spec.add_dependency("open_router", "~> 0.3")
   spec.add_dependency("raix-openai-eight", "~> 1.0")
   spec.add_dependency("ruby-graphviz", "~> 1.2")
