@@ -7,6 +7,7 @@ module Roast
     class InlinePromptConfigurationTest < ActiveSupport::TestCase
       def setup
         @workflow = mock("workflow")
+        @workflow.stubs(:name).returns("test_workflow")
         @workflow.stubs(:output).returns({})
         @transcript = []
         @workflow.stubs(:transcript).returns(@transcript)

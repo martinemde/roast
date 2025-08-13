@@ -7,6 +7,7 @@ module Roast
     class CoerceToConfigurationTest < ActiveSupport::TestCase
       def setup
         @workflow = mock("workflow")
+        @workflow.stubs(:name).returns("test_workflow")
         @workflow.stubs(:output).returns({})
         @workflow.stubs(:metadata).returns({})
         @workflow.stubs(:transcript).returns([])
