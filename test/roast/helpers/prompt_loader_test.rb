@@ -20,16 +20,11 @@ class RoastHelpersPromptLoaderTest < ActiveSupport::TestCase
   end
 
   def build_workflow(workflow_file, test_file)
-    parser = Roast::Workflow::ConfigurationParser.new(workflow_file, [test_file])
-    parser.instance_variable_set(
-      :@current_workflow,
-      Roast::Workflow::BaseWorkflow.new(
-        test_file,
-        name: "workflow",
-        context_path: File.dirname(workflow_file),
-      ),
+    Roast::Workflow::BaseWorkflow.new(
+      test_file,
+      name: "workflow",
+      context_path: File.dirname(workflow_file),
     )
-    parser.current_workflow
   end
 
   test "loads basic prompt file" do

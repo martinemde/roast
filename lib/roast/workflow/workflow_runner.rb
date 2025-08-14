@@ -2,13 +2,49 @@
 
 module Roast
   module Workflow
-    # Handles running workflows for files/targets and orchestrating execution
     class WorkflowRunner
-      def initialize(configuration, options = {})
-        @configuration = configuration
+      attr_reader :configuration, :options, :files
+
+      def initialize(workflow_path, files = [], options = {})
+        @configuration = Configuration.new(workflow_path, options)
         @options = options
+        @files = files
         @output_handler = OutputHandler.new
         @execution_context = WorkflowExecutionContext.new
+
+        initializer = WorkflowInitializer.new(@configuration)
+        initializer.setup
+      end
+
+      def begin!
+        start_time = Time.now
+        $stderr.puts "Starting workflow..."
+        $stderr.puts "Workflow: #{configuration.workflow_path}"
+        $stderr.puts "Options: #{options}"
+
+        ActiveSupport::Notifications.instrument("roast.workflow.start", {
+          workflow_path: configuration.workflow_path,
+          options: options,
+          name: configuration.basename,
+        })
+
+        if files.any?
+          run_for_files(files)
+        elsif configuration.has_target?
+          run_for_targets
+        else
+          run_targetless
+        end
+      rescue Roast::Errors::ExitEarly
+        $stderr.puts "Exiting workflow early."
+      ensure
+        execution_time = Time.now - start_time
+
+        ActiveSupport::Notifications.instrument("roast.workflow.complete", {
+          workflow_path: configuration.workflow_path,
+          success: !$ERROR_INFO,
+          execution_time: execution_time,
+        })
       end
 
       def run_for_files(files)

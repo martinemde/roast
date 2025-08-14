@@ -22,15 +22,6 @@ class RoastWorkflowReplayHandlerTest < ActiveSupport::TestCase
     ActiveSupport::Notifications.unstub(:instrument)
   end
 
-  def capture_stderr
-    old_stderr = $stderr
-    $stderr = StringIO.new
-    yield
-    $stderr.string
-  ensure
-    $stderr = old_stderr
-  end
-
   def test_process_replay_returns_original_steps_when_no_replay_option
     steps = ["step1", "step2", "step3"]
     result = @handler.process_replay(steps, nil)
@@ -63,12 +54,12 @@ class RoastWorkflowReplayHandlerTest < ActiveSupport::TestCase
   def test_process_replay_handles_step_not_found
     steps = ["step1", "step2", "step3"]
 
-    output = capture_stderr do
+    _, err = capture_io do
       result = @handler.process_replay(steps, "nonexistent")
       assert_equal(steps, result)
     end
 
-    assert_match(/Step nonexistent not found in workflow/, output)
+    assert_match(/Step nonexistent not found in workflow/, err)
     assert(@handler.processed)
   end
 
@@ -117,12 +108,12 @@ class RoastWorkflowReplayHandlerTest < ActiveSupport::TestCase
     step_name = "step2"
     @state_repository.expects(:load_state_before_step).returns(false)
 
-    output = capture_stderr do
+    _, err = capture_io do
       result = @handler.load_state_and_restore(step_name)
       refute(result)
     end
 
-    assert_match(/Could not find suitable state data/, output)
+    assert_match(/Could not find suitable state data/, err)
   end
 
   def test_restore_workflow_state_restores_all_properties
