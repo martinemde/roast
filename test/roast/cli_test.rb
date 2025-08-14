@@ -46,7 +46,7 @@ class RoastCLITest < ActiveSupport::TestCase
     File.expects(:directory?).with(expanded_path).returns(true)
 
     # Execute the CLI command and expect an error
-    cli = Roast::CLI.new
+    cli = Roast::CLI.new([], { "verbose" => true })
     assert_raises(Thor::Error) do
       cli.execute(workflow_path)
     end
@@ -151,5 +151,48 @@ class RoastCLITest < ActiveSupport::TestCase
         assert_match(/Run a workflow with: roast execute <workflow_name>/, output)
       end
     end
+  end
+
+  test "execute with verbose mode re-raises errors with full backtrace" do
+    workflow_path = "path/to/workflow.yml"
+    expanded_path = File.expand_path(workflow_path)
+    error_message = "Something went wrong!"
+
+    # Mock the WorkflowRunner to raise an error
+    mock_runner = mock("WorkflowRunner")
+    mock_runner.expects(:begin!).raises(StandardError.new(error_message))
+    Roast::Workflow::WorkflowRunner.expects(:new).with(expanded_path, [], { verbose: true }).returns(mock_runner)
+
+    # Create CLI with verbose option
+    cli = Roast::CLI.new([], { "verbose" => true })
+
+    # In verbose mode, the error should be re-raised
+    error = assert_raises(StandardError) do
+      cli.execute(workflow_path)
+    end
+
+    assert_equal error_message, error.message
+  end
+
+  test "execute without verbose mode only prints error message to stderr" do
+    workflow_path = "path/to/workflow.yml"
+    expanded_path = File.expand_path(workflow_path)
+    error_message = "Something went wrong!"
+
+    # Mock the WorkflowRunner to raise an error
+    mock_runner = mock("WorkflowRunner")
+    mock_runner.expects(:begin!).raises(StandardError.new(error_message))
+    Roast::Workflow::WorkflowRunner.expects(:new).with(expanded_path, [], {}).returns(mock_runner)
+
+    # Create CLI without verbose option
+    cli = Roast::CLI.new
+
+    # Capture stderr output
+    _out, err = capture_io do
+      cli.execute(workflow_path)
+    end
+
+    # In non-verbose mode, only the error message should be printed to stderr
+    assert_equal "#{error_message}\n", err
   end
 end

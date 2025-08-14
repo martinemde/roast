@@ -69,6 +69,12 @@ module Roast
       raise Thor::Error, "Expected a Roast workflow configuration file, got directory: #{expanded_workflow_path}" if File.directory?(expanded_workflow_path)
 
       Roast::Workflow::WorkflowRunner.new(expanded_workflow_path, files, options.transform_keys(&:to_sym)).begin!
+    rescue => e
+      if options[:verbose]
+        raise e
+      else
+        $stderr.puts e.message
+      end
     end
 
     desc "resume WORKFLOW_FILE", "Resume a paused workflow with an event"
