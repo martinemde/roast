@@ -101,8 +101,7 @@ module Roast
         FileUtils.mkdir_p(cleanup_dir)
         File.write(File.join(cleanup_dir, "prompt.md"), "Cleanup step")
 
-        configuration = Configuration.new(@workflow_path)
-        runner = WorkflowRunner.new(configuration)
+        runner = WorkflowRunner.new(@workflow_path)
 
         # Mock the workflow execution to track execution order
         execution_order = []
@@ -143,8 +142,7 @@ module Roast
         FileUtils.mkdir_p(aggregate_dir)
         File.write(File.join(aggregate_dir, "prompt.md"), "Aggregate results")
 
-        configuration = Configuration.new(@workflow_path)
-        runner = WorkflowRunner.new(configuration)
+        runner = WorkflowRunner.new(@workflow_path)
 
         # Track execution by stubbing the workflow executor
         executed_files = []
@@ -223,8 +221,7 @@ module Roast
           ==============================
         ERB
 
-        configuration = Configuration.new(@workflow_path)
-        runner = WorkflowRunner.new(configuration)
+        runner = WorkflowRunner.new(@workflow_path)
 
         # Mock the workflow execution
         WorkflowExecutor.stub(:new, ->(workflow, _config_hash, _context_path, **options) {
@@ -277,8 +274,7 @@ module Roast
         FileUtils.mkdir_p(report_dir)
         File.write(File.join(report_dir, "prompt.md"), "Generate report")
 
-        configuration = Configuration.new(@workflow_path)
-        runner = WorkflowRunner.new(configuration)
+        runner = WorkflowRunner.new(@workflow_path)
 
         # Track execution order
         execution_phases = []
@@ -320,8 +316,8 @@ module Roast
             path: #{rel_path}
         YAML
 
-        configuration = Configuration.new(@workflow_path)
-        loader = StepLoader.new(BaseWorkflow.new(nil, name: "test", context_path: @temp_dir), configuration.config_hash, @temp_dir)
+        runner = WorkflowRunner.new(@workflow_path)
+        loader = StepLoader.new(BaseWorkflow.new(nil, name: "test", context_path: @temp_dir), runner.configuration.config_hash, @temp_dir)
         step = loader.load("rel_step")
         assert_instance_of BaseStep, step
         assert_equal "rel_step", step.name
@@ -344,8 +340,8 @@ module Roast
             path: #{abs_path}
         YAML
 
-        configuration = Configuration.new(@workflow_path)
-        loader = StepLoader.new(BaseWorkflow.new(nil, name: "test", context_path: @temp_dir), configuration.config_hash, @temp_dir)
+        runner = WorkflowRunner.new(@workflow_path)
+        loader = StepLoader.new(BaseWorkflow.new(nil, name: "test", context_path: @temp_dir), runner.configuration.config_hash, @temp_dir)
         step = loader.load("abs_step")
         assert_instance_of BaseStep, step
         assert_equal "abs_step", step.name
@@ -375,8 +371,8 @@ module Roast
             path: #{abs_path}
         YAML
 
-        configuration = Configuration.new(@workflow_path)
-        loader = StepLoader.new(BaseWorkflow.new(nil, name: "test", context_path: @temp_dir), configuration.config_hash, @temp_dir)
+        runner = WorkflowRunner.new(@workflow_path)
+        loader = StepLoader.new(BaseWorkflow.new(nil, name: "test", context_path: @temp_dir), runner.configuration.config_hash, @temp_dir)
         step_a = loader.load("step_a")
         step_b = loader.load("step_b")
         assert_instance_of BaseStep, step_a

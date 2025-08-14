@@ -7,10 +7,10 @@ class RoastCLITest < ActiveSupport::TestCase
     workflow_path = "path/to/workflow.yml"
     expanded_path = File.expand_path(workflow_path)
 
-    # Mock the ConfigurationParser to prevent actual execution
-    mock_parser = mock("ConfigurationParser")
-    mock_parser.expects(:begin!).once
-    Roast::Workflow::ConfigurationParser.expects(:new).with(expanded_path, [], {}).returns(mock_parser)
+    # Mock the WorkflowRunner to prevent actual execution
+    mock_runner = mock("WorkflowRunner")
+    mock_runner.expects(:begin!).once
+    Roast::Workflow::WorkflowRunner.expects(:new).with(expanded_path, [], {}).returns(mock_runner)
 
     # Make sure File.directory? returns false to avoid the directory error
     File.expects(:directory?).with(expanded_path).returns(false)
@@ -25,10 +25,10 @@ class RoastCLITest < ActiveSupport::TestCase
     conventional_path = "roast/#{workflow_name}/workflow.yml"
     expanded_path = File.expand_path(conventional_path)
 
-    # Mock the ConfigurationParser to prevent actual execution
-    mock_parser = mock("ConfigurationParser")
-    mock_parser.expects(:begin!).once
-    Roast::Workflow::ConfigurationParser.expects(:new).with(expanded_path, [], {}).returns(mock_parser)
+    # Mock the WorkflowRunner to prevent actual execution
+    mock_runner = mock("WorkflowRunner")
+    mock_runner.expects(:begin!).once
+    Roast::Workflow::WorkflowRunner.expects(:new).with(expanded_path, [], {}).returns(mock_runner)
 
     # Make sure File.directory? returns false to avoid the directory error
     File.expects(:directory?).with(expanded_path).returns(false)
@@ -57,10 +57,10 @@ class RoastCLITest < ActiveSupport::TestCase
     expanded_path = File.expand_path(workflow_path)
     files = ["file1.rb", "file2.rb"]
 
-    # Mock the ConfigurationParser to prevent actual execution
-    mock_parser = mock("ConfigurationParser")
-    mock_parser.expects(:begin!).once
-    Roast::Workflow::ConfigurationParser.expects(:new).with(expanded_path, files, {}).returns(mock_parser)
+    # Mock the WorkflowRunner to prevent actual execution
+    mock_runner = mock("WorkflowRunner")
+    mock_runner.expects(:begin!).once
+    Roast::Workflow::WorkflowRunner.expects(:new).with(expanded_path, files, {}).returns(mock_runner)
 
     # Make sure File.directory? returns false to avoid the directory error
     File.expects(:directory?).with(expanded_path).returns(false)
@@ -75,10 +75,10 @@ class RoastCLITest < ActiveSupport::TestCase
     expanded_path = File.expand_path(workflow_path)
     options = { "verbose" => true, "concise" => false }
 
-    # Mock the ConfigurationParser to prevent actual execution
-    mock_parser = mock("ConfigurationParser")
-    mock_parser.expects(:begin!).once
-    Roast::Workflow::ConfigurationParser.expects(:new).with(expanded_path, [], options.transform_keys(&:to_sym)).returns(mock_parser)
+    # Mock the WorkflowRunner to prevent actual execution
+    mock_runner = mock("WorkflowRunner")
+    mock_runner.expects(:begin!).once
+    Roast::Workflow::WorkflowRunner.expects(:new).with(expanded_path, [], options.transform_keys(&:to_sym)).returns(mock_runner)
 
     # Make sure File.directory? returns false to avoid the directory error
     File.expects(:directory?).with(expanded_path).returns(false)

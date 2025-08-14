@@ -19,7 +19,7 @@ class RoastWorkflowTargetlessWorkflowTest < ActiveSupport::TestCase
     # Stub the WorkflowInitializer to prevent API client validation
     Roast::Workflow::WorkflowInitializer.any_instance.stubs(:configure_api_client)
 
-    @parser = Roast::Workflow::ConfigurationParser.new(@workflow_path)
+    @runner = Roast::Workflow::WorkflowRunner.new(@workflow_path)
   end
 
   def teardown
@@ -57,13 +57,13 @@ class RoastWorkflowTargetlessWorkflowTest < ActiveSupport::TestCase
         has_entries(name: instance_of(String), context_path: instance_of(String)),
       ).returns(workflow)
 
-      capture_io { @parser.begin! }
+      capture_io { @runner.begin! }
     end
   end
 
   def test_executes_workflow_without_a_target
     # The workflow should execute with nil file for targetless workflows
-    output = capture_io { @parser.begin! }
+    output = capture_io { @runner.begin! }
     assert_match(/Running targetless workflow/, output.join)
   end
 
@@ -77,8 +77,8 @@ class RoastWorkflowTargetlessWorkflowTest < ActiveSupport::TestCase
           - step1: $(echo "Test step")
       YAML
 
-      parser = Roast::Workflow::ConfigurationParser.new(workflow_file)
-      configuration = parser.configuration
+      runner = Roast::Workflow::WorkflowRunner.new(workflow_file)
+      configuration = runner.configuration
 
       # Verify configuration properties
       assert_nil(configuration.target)

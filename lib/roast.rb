@@ -68,7 +68,7 @@ module Roast
 
       raise Thor::Error, "Expected a Roast workflow configuration file, got directory: #{expanded_workflow_path}" if File.directory?(expanded_workflow_path)
 
-      Roast::Workflow::ConfigurationParser.new(expanded_workflow_path, files, options.transform_keys(&:to_sym)).begin!
+      Roast::Workflow::WorkflowRunner.new(expanded_workflow_path, files, options.transform_keys(&:to_sym)).begin!
     end
 
     desc "resume WORKFLOW_FILE", "Resume a paused workflow with an event"
@@ -106,7 +106,7 @@ module Roast
         session_id: session_id,
       )
 
-      Roast::Workflow::ConfigurationParser.new(expanded_workflow_path, [], resume_options).begin!
+      Roast::Workflow::WorkflowRunner.new(expanded_workflow_path, [], resume_options).begin!
     end
 
     desc "version", "Display the current version of Roast"
@@ -336,7 +336,7 @@ module Roast
 
       begin
         # Execute the workflow generator (it will handle user input)
-        Roast::Workflow::ConfigurationParser.new(generator_path, [], {}).begin!
+        Roast::Workflow::WorkflowRunner.new(generator_path, [], {}).begin!
 
         puts
         puts("Workflow generation complete!")

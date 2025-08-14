@@ -5,7 +5,7 @@ require "open_router"
 
 module Roast
   module Workflow
-    class ConfigurationParserOpenRouterTest < ActiveSupport::TestCase
+    class WorkflowRunnerOpenRouterTest < ActiveSupport::TestCase
       def setup
         @workflow_path = File.expand_path("../../fixtures/files/openrouter_workflow.yml", __dir__)
       end
@@ -14,7 +14,7 @@ module Roast
         mock_openrouter_client = mock("OpenRouter::Client")
         OpenRouter::Client.stubs(:new).with({ access_token: "test_openrouter_token" }).returns(mock_openrouter_client)
 
-        assert_nothing_raised { ConfigurationParser.new(@workflow_path) }
+        assert_nothing_raised { WorkflowRunner.new(@workflow_path) }
       end
     end
   end
