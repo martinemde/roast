@@ -87,6 +87,14 @@ module Roast
         @tool_configs[tool_name.to_s] || {}
       end
 
+      def pre_processing?
+        pre_processing.any?
+      end
+
+      def post_processing?
+        post_processing.any?
+      end
+
       private
 
       attr_reader :api_configuration

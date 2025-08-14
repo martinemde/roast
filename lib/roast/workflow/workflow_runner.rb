@@ -8,7 +8,7 @@ module Roast
       def initialize(workflow_path, files = [], options = {})
         @configuration = Configuration.new(workflow_path, options)
         @options = options
-        @files = files
+        @files = files || []
         @output_handler = OutputHandler.new
         @execution_context = WorkflowExecutionContext.new
 
@@ -28,12 +28,24 @@ module Roast
           name: configuration.basename,
         })
 
+        # Execute pre-processing steps once before any targets
+        if @configuration.pre_processing?
+          $stderr.puts "Running pre-processing steps..."
+          run_pre_processing
+        end
+
         if files.any?
           run_for_files(files)
         elsif configuration.has_target?
           run_for_targets
         else
           run_targetless
+        end
+
+        # Execute post-processing steps once after all targets
+        if @configuration.post_processing?
+          $stderr.puts "Running post-processing steps..."
+          run_post_processing
         end
       rescue Roast::Errors::ExitEarly
         $stderr.puts "Exiting workflow early."
@@ -47,73 +59,8 @@ module Roast
         })
       end
 
-      def run_for_files(files)
-        if @configuration.has_target?
-          $stderr.puts "WARNING: Ignoring target parameter because files were provided: #{@configuration.target}"
-        end
+      private
 
-        # Execute pre-processing steps once before any targets
-        if @configuration.pre_processing.any?
-          $stderr.puts "Running pre-processing steps..."
-          run_pre_processing
-        end
-
-        # Execute main workflow for each file
-        files.each do |file|
-          $stderr.puts "Running workflow for file: #{file}"
-          run_single_workflow(file.strip)
-        end
-
-        # Execute post-processing steps once after all targets
-        if @configuration.post_processing.any?
-          $stderr.puts "Running post-processing steps..."
-          run_post_processing
-        end
-      end
-
-      def run_for_targets
-        # Split targets by line and clean up
-        target_lines = @configuration.target.lines.map(&:strip).reject(&:empty?)
-
-        # Execute pre-processing steps once before any targets
-        if @configuration.pre_processing.any?
-          $stderr.puts "Running pre-processing steps..."
-          run_pre_processing
-        end
-
-        # Execute main workflow for each target
-        target_lines.each do |file|
-          $stderr.puts "Running workflow for file: #{file}"
-          run_single_workflow(file)
-        end
-
-        # Execute post-processing steps once after all targets
-        if @configuration.post_processing.any?
-          $stderr.puts "Running post-processing steps..."
-          run_post_processing
-        end
-      end
-
-      def run_targetless
-        $stderr.puts "Running targetless workflow"
-
-        # Execute pre-processing steps
-        if @configuration.pre_processing.any?
-          $stderr.puts "Running pre-processing steps..."
-          run_pre_processing
-        end
-
-        # Execute main workflow
-        run_single_workflow(nil)
-
-        # Execute post-processing steps
-        if @configuration.post_processing.any?
-          $stderr.puts "Running post-processing steps..."
-          run_post_processing
-        end
-      end
-
-      # Public for backward compatibility with tests
       def execute_workflow(workflow)
         steps = @configuration.steps
 
@@ -134,7 +81,34 @@ module Roast
         $stderr.puts "🔥🔥🔥 ROAST COMPLETE! 🔥🔥🔥"
       end
 
-      private
+      def run_for_files(files)
+        if @configuration.has_target?
+          $stderr.puts "WARNING: Ignoring target parameter because files were provided: #{@configuration.target}"
+        end
+
+        # Execute main workflow for each file
+        files.each do |file|
+          $stderr.puts "Running workflow for file: #{file}"
+          run_single_workflow(file.strip)
+        end
+      end
+
+      def run_for_targets
+        # Split targets by line and clean up
+        target_lines = @configuration.target.lines.map(&:strip).reject(&:empty?)
+
+        # Execute main workflow for each target
+        target_lines.each do |file|
+          $stderr.puts "Running workflow for file: #{file}"
+          run_single_workflow(file)
+        end
+      end
+
+      def run_targetless
+        $stderr.puts "Running targetless workflow"
+        # Execute main workflow
+        run_single_workflow(nil)
+      end
 
       def run_single_workflow(file)
         # Pass pre-processing data to target workflows
