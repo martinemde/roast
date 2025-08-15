@@ -70,7 +70,7 @@ module Roast
         @conditional_executor = conditional_executor || ConditionalExecutor.new(workflow, context_path, @state_manager, self)
 
         # Initialize coordinator with dependencies
-        base_coordinator = step_executor_coordinator || StepExecutorCoordinator.new(
+        @step_executor_coordinator = step_executor_coordinator || StepExecutorCoordinator.new(
           context: @context,
           dependencies: {
             workflow_executor: self,
@@ -83,13 +83,6 @@ module Roast
             error_handler: @error_handler,
           },
         )
-
-        # Only wrap with reporting decorator if workflow has token tracking enabled
-        @step_executor_coordinator = if workflow.respond_to?(:context_manager) && workflow.context_manager
-          StepExecutorWithReporting.new(base_coordinator, @context)
-        else
-          base_coordinator
-        end
       end
 
       # Logger interface methods for backward compatibility

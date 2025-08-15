@@ -19,6 +19,7 @@ module Roast
     class StepExecutorCoordinator
       def initialize(context:, dependencies:)
         @context = context
+        @reporter = StepCompletionReporter.new(output: output)
         @dependencies = dependencies
       end
 
@@ -53,13 +54,16 @@ module Roast
       # @param options [Hash] Execution options
       # @return [Object] The result of the step execution
       def execute(step, options = {})
+        # Track tokens before execution
+        tokens_before = @context.workflow.context_manager&.total_tokens || 0
+
         step_type = StepTypeResolver.resolve(step, @context)
         step_name = StepTypeResolver.extract_name(step)
 
         Thread.current[:current_step_name] = step_name if step_name
         Thread.current[:workflow_metadata] = @context.workflow.metadata
 
-        case step_type
+        result = case step_type
         when StepTypeResolver::COMMAND_STEP
           # Command steps should also go through interpolation
           execute_string_step(step, options)
@@ -86,6 +90,14 @@ module Roast
         else
           execute_standard_step(step, options)
         end
+
+        # Report token consumption after successful execution
+        tokens_after = @context.workflow.context_manager&.total_tokens || 0
+        tokens_consumed = tokens_after - tokens_before
+
+        @reporter.report(step_name, tokens_consumed, tokens_after)
+
+        result
       end
 
       private
