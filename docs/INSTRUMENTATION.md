@@ -39,13 +39,13 @@ your-project/
 ### Step Events
 
 - `roast.step.start` - Emitted when a step begins execution
-  - Payload: `{ step_name: }`
+  - Payload: `{ step_name:, resource_type:, workflow_name: }`
   
 - `roast.step.complete` - Emitted when a step completes successfully
-  - Payload: `{ step_name:, success: true, execution_time:, result_size: }`
+  - Payload: `{ step_name:, resource_type:, workflow_name:, success: true, execution_time:, result_size: }`
   
 - `roast.step.error` - Emitted when a step encounters an error
-  - Payload: `{ step_name:, error:, message:, execution_time: }`
+  - Payload: `{ step_name:, resource_type:, workflow_name:, error:, message:, execution_time: }`
 
 ### AI/Chat Completion Events
 

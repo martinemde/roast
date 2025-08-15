@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Workflow name in step event payloads** (#333, #351)
+  - Added `workflow_name` field to all step-related ActiveSupport::Notification events
+  - Enables better tracking of which workflow a step belongs to in monitoring systems
+  - Updated events: `roast.step.start`, `roast.step.complete`, `roast.step.error`
+
 ## [0.4.3] - 2025-07-10
 
 ### Changed

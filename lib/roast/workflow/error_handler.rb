@@ -4,7 +4,8 @@ module Roast
   module Workflow
     # Handles error logging and instrumentation for workflow execution
     class ErrorHandler
-      def initialize
+      def initialize(workflow = nil)
+        @workflow = workflow
         # Use the Roast logger singleton
       end
 
@@ -14,6 +15,7 @@ module Roast
         ActiveSupport::Notifications.instrument("roast.step.start", {
           step_name: step_name,
           resource_type: resource_type,
+          workflow_name: @workflow&.name,
         })
 
         result = yield
@@ -23,6 +25,7 @@ module Roast
         ActiveSupport::Notifications.instrument("roast.step.complete", {
           step_name: step_name,
           resource_type: resource_type,
+          workflow_name: @workflow&.name,
           success: true,
           execution_time: execution_time,
           result_size: result.to_s.length,
@@ -64,6 +67,7 @@ module Roast
         ActiveSupport::Notifications.instrument("roast.step.error", {
           step_name: step_name,
           resource_type: resource_type,
+          workflow_name: @workflow&.name,
           error: error.class.name,
           message: error.message,
           execution_time: execution_time,
@@ -76,6 +80,7 @@ module Roast
         ActiveSupport::Notifications.instrument("roast.step.error", {
           step_name: step_name,
           resource_type: resource_type,
+          workflow_name: @workflow&.name,
           error: error.class.name,
           message: error.message,
           execution_time: execution_time,
