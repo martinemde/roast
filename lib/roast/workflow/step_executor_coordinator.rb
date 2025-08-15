@@ -19,7 +19,7 @@ module Roast
     class StepExecutorCoordinator
       def initialize(context:, dependencies:)
         @context = context
-        @reporter = StepCompletionReporter.new(output: output)
+        @reporter = StepCompletionReporter.new
         @dependencies = dependencies
       end
 

@@ -5,50 +5,14 @@ require "test_helper"
 module Roast
   module Workflow
     class StepExecutorCoordinatorTest < ActiveSupport::TestCase
-      def setup
-        @workflow = mock("workflow")
-        @workflow.stubs(:output).returns({})
-        @workflow.stubs(:verbose).returns(false)
-        @workflow.stubs(:metadata).returns({})
-
-        @config_hash = {}
-
-        @context = mock("context")
-        @context.stubs(:workflow).returns(@workflow)
-        @context.stubs(:has_resource?).returns(false)
-        @context.stubs(:resource_type).returns(nil) # Changed from :file to nil
-        @context.stubs(:config_hash).returns(@config_hash)
-        @context.stubs(:context_path).returns("/test/path")
-        # Default behavior for exit_on_error?
-        @context.stubs(:exit_on_error?).returns(true)
-
-        @dependencies = {
-          workflow_executor: mock("workflow_executor"),
-          interpolator: mock("interpolator"),
-          command_executor: mock("command_executor"),
-          iteration_executor: mock("iteration_executor"),
-          conditional_executor: mock("conditional_executor"),
-          step_loader: mock("step_loader"),
-          state_manager: mock("state_manager"),
-          error_handler: mock("error_handler"),
-        }
-        @coordinator = StepExecutorCoordinator.new(context: @context, dependencies: @dependencies)
+      setup do
+        @coordinator = build_coordinator
       end
 
       def test_executes_command_step
         step = "$(echo hello)"
-        # Now command steps go through interpolation
-        @dependencies[:interpolator].expects(:interpolate).with(step).returns(step)
-        # The error handler wraps the execution
-        @dependencies[:error_handler].expects(:with_error_handling).with(step, resource_type: nil).yields.returns("hello")
-        # CommandExecutor expects the full command and strips it internally
-        @dependencies[:command_executor].expects(:execute).with(step, exit_on_error: true).returns("hello")
-        # Expect transcript interaction (called twice - once to read, once to append)
-        transcript = []
-        @workflow.expects(:transcript).returns(transcript).twice
-
         result = @coordinator.execute(step)
-        assert_equal("hello", result)
+        assert_equal("hello", result.rstrip)
       end
 
       def test_executes_glob_step
@@ -56,14 +20,14 @@ module Roast
         Dir.expects(:glob).with(step).returns(["file1.rb", "file2.rb"])
 
         result = @coordinator.execute(step)
-        assert_equal("file1.rb\nfile2.rb", result)
+        assert_equal("file1.rb\nfile2.rb", result.rstrip)
       end
 
       def test_executes_iteration_step_repeat
-        step = { "repeat" => { "until" => "done" } }
-        @dependencies[:iteration_executor].expects(:execute_repeat).with({ "until" => "done" })
+        step = { "repeat" => { "until" => "done", "steps"=>["$(echo done)"] } }
 
-        @coordinator.execute(step)
+        result = @coordinator.execute(step)
+        assert_equal("done", result.rstrip)
       end
 
       def test_executes_iteration_step_each
@@ -286,6 +250,13 @@ module Roast
         @workflow.expects(:transcript).returns(transcript).twice
 
         @coordinator.execute(step)
+      end
+
+      private
+
+      def build_coordinator(workflow = BaseWorkflow.new, config_hash = {}, context_path = "")
+        @executor = WorkflowExecutor.new(workflow, config_hash, context_path)
+        @executor.step_executor_coordinator
       end
     end
   end

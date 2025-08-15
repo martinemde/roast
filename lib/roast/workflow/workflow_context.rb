@@ -32,7 +32,7 @@ module Roast
       # Check if the workflow has a resource
       # @return [Boolean] true if workflow responds to resource and has one
       def has_resource?
-        workflow.respond_to?(:resource) && workflow.resource
+        workflow.respond_to?(:resource) && !workflow.resource.is_a?(Roast::Resources::NoneResource)
       end
 
       # Get the resource type from the workflow
