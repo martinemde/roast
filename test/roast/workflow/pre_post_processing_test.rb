@@ -109,7 +109,7 @@ module Roast
         runner.stub(:execute_workflow, ->(_workflow) { execution_order << :main_workflow }) do
           runner.stub(:run_pre_processing, -> { execution_order << :pre_processing }) do
             runner.stub(:run_post_processing, -> { execution_order << :post_processing }) do
-              runner.run_targetless
+              runner.begin!
             end
           end
         end
@@ -157,7 +157,7 @@ module Roast
           mock_executor.stubs(:execute_steps)
           mock_executor
         }) do
-          runner.run_for_targets
+          runner.begin!
         end
 
         # Verify workflows were executed for each file
@@ -235,7 +235,7 @@ module Roast
 
           mock_executor
         }) do
-          output = capture_io { runner.run_for_targets }
+          output = capture_io { runner.begin! }
 
           # Check that the template was applied
           assert_match(/=== Post-Processing Summary ===/, output[0])
@@ -285,7 +285,7 @@ module Roast
           mock_executor.stubs(:execute_steps)
           mock_executor
         }) do
-          output = capture_io { runner.run_for_targets }
+          output = capture_io { runner.begin! }
 
           # Verify all phases were executed in order
           assert_equal 3, execution_phases.size

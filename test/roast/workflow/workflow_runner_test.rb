@@ -28,10 +28,10 @@ class RoastWorkflowRunnerTest < ActiveSupport::TestCase
     File.write(file2, "# File 2")
     files = [file1, file2]
 
-    runner = Roast::Workflow::WorkflowRunner.new(@workflow_path)
+    runner = Roast::Workflow::WorkflowRunner.new(@workflow_path, files)
     # Run and verify output
     assert_output(nil, /Running workflow for file: #{Regexp.escape(file1)}.*Running workflow for file: #{Regexp.escape(file2)}.*ROAST COMPLETE!/m) do
-      runner.run_for_files(files)
+      runner.begin!
     end
   end
 
@@ -45,14 +45,14 @@ class RoastWorkflowRunnerTest < ActiveSupport::TestCase
         - step1: $(echo "Step 1")
     YAML
 
-    runner = Roast::Workflow::WorkflowRunner.new(@workflow_path, { output: "/tmp/output.txt", verbose: true })
-
     file1 = File.join(@tmpdir, "file1.rb")
     File.write(file1, "# File 1")
     files = [file1]
 
+    runner = Roast::Workflow::WorkflowRunner.new(@workflow_path, files, { output: "/tmp/output.txt", verbose: true })
+
     assert_output(nil, /WARNING: Ignoring target parameter.*ignored_target\.rb/) do
-      runner.run_for_files(files)
+      runner.begin!
     end
   end
 
@@ -74,7 +74,7 @@ class RoastWorkflowRunnerTest < ActiveSupport::TestCase
 
     runner = Roast::Workflow::WorkflowRunner.new(@workflow_path, @options)
 
-    output = capture_io { runner.run_for_targets }
+    output = capture_io { runner.begin! }
     # The target appears as a single line with both files
     assert_match(/Running workflow for file:/, output.join)
     assert_match(/ROAST COMPLETE!/, output.join)
@@ -83,7 +83,7 @@ class RoastWorkflowRunnerTest < ActiveSupport::TestCase
   def test_run_targetless_creates_workflow_with_nil_file
     runner = Roast::Workflow::WorkflowRunner.new(@workflow_path)
     assert_output(nil, /Running targetless workflow.*ROAST COMPLETE!/m) do
-      runner.run_targetless
+      runner.begin!
     end
   end
 
