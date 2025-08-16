@@ -19,4 +19,7 @@ gem "vcr", require: false
 gem "webmock", require: false
 gem "minitest-rg"
 
+gem "sorbet", require: false
+gem "tapioca", require: false
+
 gem "claude_swarm"
