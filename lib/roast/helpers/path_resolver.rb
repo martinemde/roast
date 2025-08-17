@@ -1,4 +1,4 @@
-# typed: false
+# typed: true
 # frozen_string_literal: true
 
 module Roast
@@ -39,17 +39,14 @@ module Roast
             next if i == 0 # Skip the first segment
 
             # Check if this segment appears earlier in the path
-            next unless path_parts[0...i].include?(part)
+            next unless path_parts[0...i]&.include?(part)
 
             # Create a new path without this segment
             test_parts = path_parts.dup
             test_parts.delete_at(i)
+            test_parts.prepend("/") if original_path.start_with?("/")
 
-            test_path = if original_path.start_with?("/")
-              File.join("/", *test_parts)
-            else
-              File.join(test_parts)
-            end
+            test_path = File.join(test_parts)
 
             # If this path exists, return it
             return test_path if File.exist?(test_path)
@@ -67,12 +64,8 @@ module Roast
             filtered_parts = path_parts.dup
             # Remove from end to beginning to keep indices valid
             duplicate_indices.reverse_each { |idx| filtered_parts.delete_at(idx) }
-
-            test_path = if original_path.start_with?("/")
-              File.join("/", *filtered_parts)
-            else
-              File.join(filtered_parts)
-            end
+            filtered_parts.prepend("/") if original_path.start_with?("/")
+            test_path = File.join(filtered_parts)
 
             return test_path if File.exist?(test_path)
           end
@@ -94,12 +87,8 @@ module Roast
             unique_parts = path_parts.dup
             # Remove from end to beginning to keep indices valid
             duplicate_indices.reverse_each { |i| unique_parts.delete_at(i) }
-
-            test_path = if original_path.start_with?("/")
-              File.join("/", *unique_parts)
-            else
-              File.join(unique_parts)
-            end
+            unique_parts.prepend("/") if original_path.start_with?("/")
+            test_path = File.join(unique_parts)
 
             return test_path if File.exist?(test_path)
           end

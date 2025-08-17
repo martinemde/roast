@@ -1,4 +1,4 @@
-# typed: false
+# typed: true
 # frozen_string_literal: true
 
 module Roast
@@ -55,9 +55,7 @@ module Roast
         private
 
         def find_executor_class(step)
-          # First check exact class matches
-          executor_class = @executors[step.class]
-          return executor_class if executor_class
+          return @executors[step.class] if @executors[step.class]
 
           # Then check custom matchers
           matcher_entry = @type_matchers.find { |entry| entry[:matcher].call(step) }

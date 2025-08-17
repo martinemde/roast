@@ -1,4 +1,4 @@
-# typed: false
+# typed: true
 # frozen_string_literal: true
 
 module Roast
@@ -58,7 +58,7 @@ module Roast
         http.use_ssl = (uri.scheme == "https")
 
         # Use HEAD request to check existence
-        request = Net::HTTP::Head.new(uri.path.empty? ? "/" : uri.path)
+        request = Net::HTTP::Head.new(uri.path&.empty? ? "/" : uri.path)
 
         # Add headers if present in options
         if options["headers"].is_a?(Hash)
@@ -125,8 +125,8 @@ module Roast
       # Replace environment variables in the format ${VAR_NAME}
       def process_env_vars(text)
         text.gsub(/\${([^}]+)}/) do |_match|
-          var_name = ::Regexp.last_match(1).strip
-          ENV.fetch(var_name, "${#{var_name}}")
+          var_name = ::Regexp.last_match(1)&.strip
+          ENV.fetch(var_name, "${#{var_name}}") unless var_name.nil?
         end
       end
     end

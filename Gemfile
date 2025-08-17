@@ -15,7 +15,7 @@ gem "guard-minitest"
 gem "mocha"
 gem "rake", require: false
 gem "rubocop-shopify", require: false
-gem 'rubocop-sorbet', require: false
+gem "rubocop-sorbet", require: false
 gem "vcr", require: false
 gem "webmock", require: false
 gem "minitest-rg"

@@ -1,10 +1,12 @@
-# typed: false
+# typed: true
 # frozen_string_literal: true
 
 module Roast
   module Helpers
     # Intercepts function dispatching to add caching capabilities
     # This module wraps around Raix::FunctionDispatch to provide caching for tool functions
+    # @requires_ancestor: Kernel
+    # @requires_ancestor: Raix::ChatCompletion
     module FunctionCachingInterceptor
       def dispatch_tool_function(function_name, params)
         start_time = Time.now

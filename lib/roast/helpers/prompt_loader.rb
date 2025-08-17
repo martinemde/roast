@@ -1,4 +1,4 @@
-# typed: false
+# typed: true
 # frozen_string_literal: true
 
 module Roast
@@ -59,7 +59,7 @@ module Roast
         glob_pattern = File.join(context_dir, "{#{base_name},prompt}.*+*.md")
         Dir.glob(glob_pattern).each do |combined_path|
           basename = File.basename(combined_path, ".md")
-          combined_exts = basename.split(".", 2)[1].split("+")
+          combined_exts = basename.split(".", 2)[1]&.split("+")
 
           # Return the first matching combined format
           return combined_path if extensions.intersect?(combined_exts)
@@ -78,7 +78,7 @@ module Roast
 
         if file_basename.end_with?(".md") && file_basename.count(".") > 1
           without_md = file_basename[0...-3] # Remove .md
-          without_md.split(".", 2)[1]&.split("+") || []
+          without_md&.split(".", 2)&.[](1)&.split("+") || []
         else
           ext = File.extname(target_file)[1..]
           ext&.empty? ? [] : [ext]

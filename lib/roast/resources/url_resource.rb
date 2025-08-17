@@ -1,4 +1,4 @@
-# typed: false
+# typed: true
 # frozen_string_literal: true
 
 module Roast
@@ -19,7 +19,7 @@ module Roast
           http.use_ssl = (uri.scheme == "https")
 
           # Just check the head to see if the resource exists
-          response = http.request_head(uri.path.empty? ? "/" : uri.path)
+          response = http.request_head(uri.path&.empty? ? "/" : uri.path)
 
           # Consider 2xx and 3xx as success
           response.code.to_i < 400

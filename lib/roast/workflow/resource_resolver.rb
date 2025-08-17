@@ -1,4 +1,4 @@
-# typed: false
+# typed: true
 # frozen_string_literal: true
 
 module Roast
@@ -52,12 +52,7 @@ module Roast
         def process_shell_command(command)
           # If it's a bash command with the $(command) syntax
           if command =~ /^\$\((.*)\)$/
-            return Open3.capture2e({}, ::Regexp.last_match(1)).first.strip
-          end
-
-          # Legacy % prefix for backward compatibility
-          if command.start_with?("% ")
-            return Open3.capture2e({}, *command.split(" ")[1..-1]).first.strip
+            return Open3.capture2e({}, ::Regexp.last_match(1).to_s).first.strip
           end
 
           # Not a shell command, return as is

@@ -1,4 +1,4 @@
-# typed: false
+# typed: true
 # frozen_string_literal: true
 
 module Roast
@@ -75,7 +75,7 @@ module Roast
       when Hash
         process_control_flow(step)
       else
-        ::CLI::Kit.logger.warn("Unexpected step type in workflow diagram: #{step.class} - #{step.inspect}")
+        Roast::Helpers::Logger.warn("Unexpected step type in workflow diagram: #{step.class} - #{step.inspect}")
         nil
       end
     end
@@ -113,7 +113,7 @@ module Roast
       elsif control_flow.key?("case")
         process_case(control_flow)
       else
-        ::CLI::Kit.logger.warn("Unexpected control flow structure in workflow diagram: #{control_flow.keys.join(", ")}")
+        Roast::Helpers::Logger.warn("Unexpected control flow structure in workflow diagram: #{control_flow.keys.join(", ")}")
         nil
       end
     end

@@ -1,4 +1,4 @@
-# typed: false
+# typed: true
 # frozen_string_literal: true
 
 module Roast
@@ -23,9 +23,10 @@ module Roast
         private
 
         def default_type
+          state_storage = ENV["ROAST_STATE_STORAGE"]
           # Check environment variable first (for backwards compatibility)
-          if ENV["ROAST_STATE_STORAGE"]
-            ENV["ROAST_STATE_STORAGE"].downcase
+          if state_storage
+            state_storage.downcase
           else
             # Default to SQLite for better functionality
             "sqlite"
