@@ -1,3 +1,6 @@
+plugins:
+  - rubocop-sorbet
+
 inherit_gem:
   rubocop-shopify: rubocop.yml
 
@@ -10,3 +13,8 @@ AllCops:
   SuggestExtensions: false
   TargetRubyVersion: 3.4
   UseCache: true
+
+Sorbet/FalseSigil:
+  Enabled: true
+  Include:
+    - "lib/**/*.rb"
