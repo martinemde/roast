@@ -1,7 +1,8 @@
-# typed: false
+# typed: true
 # frozen_string_literal: true
 
 module Roast
+  # @requires_ancestor: Kernel
   module Tools
     extend self
 
