@@ -21,8 +21,6 @@ module Roast
         UrlResource.new(target)
       when :api
         ApiResource.new(target)
-      when :command
-        CommandResource.new(target)
       when :none
         NoneResource.new(target)
       else

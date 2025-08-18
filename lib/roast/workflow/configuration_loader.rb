@@ -4,6 +4,8 @@ module Roast
   module Workflow
     # Handles loading and parsing of workflow configuration files
     class ConfigurationLoader
+      class ValidationError < StandardError; end
+
       class << self
         # Load configuration from a YAML file
         # @param workflow_path [String] Path to the workflow YAML file
@@ -187,7 +189,7 @@ module Roast
             message
           end.join("\n")
 
-          raise CLI::Kit::Abort, <<~ERROR
+          raise ValidationError, <<~ERROR
             Workflow validation failed with #{validator.errors.size} error(s):
 
             #{error_messages}
