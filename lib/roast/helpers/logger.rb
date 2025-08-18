@@ -5,25 +5,21 @@ module Roast
   module Helpers
     # Central logger for the Roast application
     class Logger
-      VALID_LOG_LEVELS = ["DEBUG", "INFO", "WARN", "ERROR", "FATAL"].freeze
+      VALID_LOG_LEVELS = ["DEBUG", "INFO", "WARN", "ERROR", "FATAL"].freeze #: Array[String]
 
-      delegate_missing_to :@logger
+      delegate :debug, :info, :warn, :error, :fatal, to: :@logger
 
       attr_reader :logger
 
       class << self
-        delegate_missing_to :instance
+        delegate :debug, :info, :warn, :error, :fatal, to: :instance
 
+        #: -> Roast::Helpers::Logger
         def instance
           @instance ||= new
         end
 
-        # Override Kernel#warn to ensure proper delegation
-        def warn(*args)
-          instance.warn(*args)
-        end
-
-        # For testing purposes
+        #: -> void
         def reset
           @instance = nil
         end

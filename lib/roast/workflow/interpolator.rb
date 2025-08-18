@@ -1,4 +1,4 @@
-# typed: false
+# typed: true
 # frozen_string_literal: true
 
 module Roast
@@ -17,7 +17,7 @@ module Roast
 
         # Replace all {{expression}} with their evaluated values
         text.gsub(/\{\{([^}]+)\}\}/) do |match|
-          expression = Regexp.last_match(1).strip
+          expression = Regexp.last_match(1).to_s.strip
           begin
             # Evaluate the expression in the context
             result = @context.instance_eval(expression).to_s

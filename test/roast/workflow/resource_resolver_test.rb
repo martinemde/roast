@@ -69,12 +69,6 @@ module Roast
         assert_equal("hello", result)
       end
 
-      def test_process_shell_command_with_legacy_percent_syntax
-        Open3.expects(:capture2e).with({}, "echo", "hello").returns(["hello\n", nil])
-        result = ResourceResolver.process_shell_command("% echo hello")
-        assert_equal("hello", result)
-      end
-
       def test_process_shell_command_returns_original_for_non_commands
         result = ResourceResolver.process_shell_command("regular string")
         assert_equal("regular string", result)

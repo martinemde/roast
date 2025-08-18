@@ -14,6 +14,7 @@ require "pathname"
 require "securerandom"
 require "shellwords"
 require "tempfile"
+require "timeout"
 require "uri"
 require "yaml"
 

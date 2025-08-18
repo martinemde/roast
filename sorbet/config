@@ -4,3 +4,5 @@
 --ignore=vendor/
 --ignore=test/
 --ignore=bin/
+--enable-experimental-requires-ancestor
+--enable-experimental-rbs-comments

@@ -1,4 +1,4 @@
-# typed: false
+# typed: true
 # frozen_string_literal: true
 
 module Roast
@@ -54,7 +54,7 @@ module Roast
         state_data = load_state_file(state_file)
 
         # Extract the loaded step name for diagnostics
-        loaded_step = File.basename(state_file).split("_", 3)[2].sub(/\.json$/, "")
+        loaded_step = File.basename(state_file).split("_", 3)[2].to_s.sub(/\.json$/, "")
         $stderr.puts "Found state from step: #{loaded_step} (will replay from here to #{step_name})"
 
         # If no timestamp provided and workflow has no session, copy states to new session

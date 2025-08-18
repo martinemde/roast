@@ -1,8 +1,5 @@
-# typed: false
+# typed: true
 # frozen_string_literal: true
-
-require "timeout"
-require "open3"
 
 module Roast
   module Helpers
@@ -30,8 +27,8 @@ module Roast
         def call(command, timeout: DEFAULT_TIMEOUT, working_directory: Dir.pwd)
           timeout = validate_timeout(timeout)
           output = ""
-          exit_status = nil
-          wait_thr = nil
+          exit_status = nil #: Integer?
+          wait_thr = nil #: Process::Waiter?
 
           begin
             Timeout.timeout(timeout) do
