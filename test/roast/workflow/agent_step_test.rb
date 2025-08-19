@@ -115,7 +115,7 @@ class RoastWorkflowAgentStepTest < ActiveSupport::TestCase
     end
 
     step_loader = mock
-    step_loader.expects(:load).with("my_prompt", exit_on_error: true, step_key: "my_prompt", is_last_step: nil, agent_type: :coding_agent).returns(mock.tap { |m| m.expects(:call).returns("agent result") })
+    step_loader.expects(:load).with("my_prompt", exit_on_error: true, step_key: "my_prompt", is_last_step: nil, agent_type: :coding_agent, retries: 0).returns(mock.tap { |m| m.expects(:call).returns("agent result") })
 
     context = Roast::Workflow::WorkflowContext.new(
       workflow:,
@@ -158,7 +158,7 @@ class RoastWorkflowAgentStepTest < ActiveSupport::TestCase
 
     # The inline prompt should have the ^ prefix stripped
     expected_prompt = "Review the code and identify any code smells"
-    step_loader.expects(:load).with(expected_prompt, step_key: expected_prompt, exit_on_error: true, is_last_step: nil, agent_type: :coding_agent).returns(mock.tap { |m| m.expects(:call).returns("agent result") })
+    step_loader.expects(:load).with(expected_prompt, step_key: expected_prompt, exit_on_error: true, is_last_step: nil, agent_type: :coding_agent, retries: 0).returns(mock.tap { |m| m.expects(:call).returns("agent result") })
 
     context = Roast::Workflow::WorkflowContext.new(
       workflow:,

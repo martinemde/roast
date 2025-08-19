@@ -34,6 +34,7 @@ module Roast
         context = mock("context")
         context.stubs(:workflow).returns(workflow)
         context.stubs(:context_path).returns("/test")
+        context.stubs(:config_hash).returns({})
 
         state_manager = mock("state_manager")
         state_manager.stubs(:save_state)

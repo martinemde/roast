@@ -10,8 +10,9 @@ module Roast
         # Use the Roast logger singleton
       end
 
-      def with_error_handling(step_name, resource_type: nil)
+      def with_error_handling(step_name, resource_type: nil, retries: 0, &block)
         start_time = Time.now
+        maximum_attempts = retries + 1
 
         ActiveSupport::Notifications.instrument("roast.step.start", {
           step_name: step_name,
@@ -19,7 +20,19 @@ module Roast
           workflow_name: @workflow&.name,
         })
 
-        result = yield
+        result = nil #: untyped?
+
+        maximum_attempts.times do |current_attempt|
+          # .times starts at 0 index, the math is easier to reason about if current_attempt matches normal description
+          current_attempt += 1
+          result = block.call
+          break
+        rescue StandardError => e
+          remaining_attempts = maximum_attempts - current_attempt
+          raise e if remaining_attempts == 0
+
+          handle_retry(e, step_name, resource_type, start_time, remaining_attempts)
+        end
 
         execution_time = Time.now - start_time
 
@@ -61,6 +74,23 @@ module Roast
       end
 
       private
+
+      def handle_retry(error, step_name, resource_type, start_time, remaining_attempts)
+        execution_time = Time.now - start_time
+
+        ActiveSupport::Notifications.instrument("roast.step.error.retry", {
+          step_name: step_name,
+          resource_type: resource_type,
+          workflow_name: @workflow&.name,
+          error: error.class.name,
+          message: error.message,
+          execution_time: execution_time,
+          remaining_attempts: remaining_attempts,
+        })
+
+        log_warning("[#{step_name}] failed: #{error.message}")
+        log_warning("Retrying, #{remaining_attempts} attempts left")
+      end
 
       def handle_workflow_error(error, step_name, resource_type, start_time)
         execution_time = Time.now - start_time
