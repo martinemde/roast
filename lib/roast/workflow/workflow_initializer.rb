@@ -29,6 +29,9 @@ module Roast
         # Only check if the workflow has steps that would need API access
         return if @configuration.steps.empty?
 
+        # Strip whitespace from existing Raix clients
+        strip_tokens_from_existing_clients
+
         # Check if Raix has been configured with the appropriate client
         case @configuration.api_provider
         when :openai
@@ -215,7 +218,7 @@ module Roast
 
       def client_options
         {
-          access_token: @configuration.api_token,
+          access_token: @configuration.api_token&.strip,
           uri_base: @configuration.uri_base&.to_s,
         }.compact
       end
@@ -264,6 +267,17 @@ module Roast
           end
         end
         interpolated
+      end
+
+      def strip_tokens_from_existing_clients
+        strip_token_in_client(Raix.configuration.openai_client)
+        strip_token_in_client(Raix.configuration.openrouter_client)
+      end
+
+      def strip_token_in_client(client)
+        return unless client.respond_to?(:access_token)
+
+        client.instance_variable_set(:@access_token, client.access_token&.strip)
       end
     end
   end

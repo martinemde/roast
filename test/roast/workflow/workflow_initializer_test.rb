@@ -276,4 +276,86 @@ class RoastWorkflowInitializerTest < ActiveSupport::TestCase
 
     assert_equal("API authentication failed: No API token provided or token is invalid", error.message)
   end
+
+  def test_strips_whitespace_from_openai_client_token
+    # Create a mock client with whitespace-wrapped token
+    mock_client = mock("OpenAI::Client")
+    mock_client.stubs(:access_token).returns("\n  test-token-with-whitespace  \n")
+    mock_client.expects(:instance_variable_set).with(:@access_token, "test-token-with-whitespace")
+
+    # Stub Raix configuration to return our mock client
+    Raix.configuration.stubs(:openai_client).returns(mock_client)
+    Raix.configuration.stubs(:openrouter_client).returns(nil)
+
+    @configuration.stubs(:steps).returns(["test_step"])
+
+    @initializer.send(:strip_tokens_from_existing_clients)
+  end
+
+  def test_strips_whitespace_from_openrouter_client_token
+    # Create a mock client with whitespace-wrapped token
+    mock_client = mock("OpenRouter::Client")
+    mock_client.stubs(:access_token).returns("\n  test-token-with-whitespace  \n")
+    mock_client.expects(:instance_variable_set).with(:@access_token, "test-token-with-whitespace")
+
+    # Stub Raix configuration to return our mock client
+    Raix.configuration.stubs(:openai_client).returns(nil)
+    Raix.configuration.stubs(:openrouter_client).returns(mock_client)
+
+    @configuration.stubs(:steps).returns(["test_step"])
+
+    @initializer.send(:strip_tokens_from_existing_clients)
+  end
+
+  def test_does_not_modify_token_without_whitespace
+    # Create a mock client with clean token
+    mock_client = mock("OpenAI::Client")
+    mock_client.stubs(:access_token).returns("clean-token")
+    # Current implementation calls strip on all tokens, but since "clean-token".strip == "clean-token",
+    # it still gets called with the same value
+    mock_client.expects(:instance_variable_set).with(:@access_token, "clean-token")
+
+    # Stub Raix configuration to return our mock client
+    Raix.configuration.stubs(:openai_client).returns(mock_client)
+    Raix.configuration.stubs(:openrouter_client).returns(nil)
+
+    @configuration.stubs(:steps).returns(["test_step"])
+
+    @initializer.send(:strip_tokens_from_existing_clients)
+    assert_equal("clean-token", mock_client.access_token)
+  end
+
+  def test_handles_nil_tokens_gracefully
+    # Create a mock client with nil token
+    mock_client = mock("OpenAI::Client")
+    mock_client.stubs(:access_token).returns(nil)
+    # nil.strip is nil, so it gets set to nil
+    mock_client.expects(:instance_variable_set).with(:@access_token, nil)
+
+    # Stub Raix configuration to return our mock client
+    Raix.configuration.stubs(:openai_client).returns(mock_client)
+    Raix.configuration.stubs(:openrouter_client).returns(nil)
+
+    @configuration.stubs(:steps).returns(["test_step"])
+
+    assert_nothing_raised do
+      @initializer.send(:strip_tokens_from_existing_clients)
+    end
+  end
+
+  def test_handles_clients_without_access_token_method
+    # Create a mock client without access_token method
+    mock_client = mock("SomeOtherClient")
+
+    # Stub Raix configuration to return our mock client
+    Raix.configuration.stubs(:openai_client).returns(mock_client)
+    Raix.configuration.stubs(:openrouter_client).returns(nil)
+
+    @configuration.stubs(:steps).returns(["test_step"])
+
+    # Should not raise error
+    assert_nothing_raised do
+      @initializer.send(:strip_tokens_from_existing_clients)
+    end
+  end
 end
