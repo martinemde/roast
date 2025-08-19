@@ -5,13 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.5]
 
 ### Added
+- **Sorbet static type checking** (#359, #360, #362)
+  - Initial setup of Sorbet for static type analysis
+  - Added `bin/srb tc` command for type checking
+  - Gradually adding type signatures to improve code safety and navigation
+  - Fixed invalid constants that were undefined and never reached
+  - Added to CI pipeline for continuous type checking
 - **Workflow name in step event payloads** (#333, #351)
   - Added `workflow_name` field to all step-related ActiveSupport::Notification events
   - Enables better tracking of which workflow a step belongs to in monitoring systems
   - Updated events: `roast.step.start`, `roast.step.complete`, `roast.step.error`
+
+### Changed
+- **Improved error output formatting** (#358)
+  - Error messages now show concise output by default (just the error message)
+  - Full exception details and stack traces only shown in verbose mode (`-v`)
+  - Makes error output cleaner and more user-friendly
+- **Consolidated workflow runner architecture** (#355)
+  - Merged ConfigurationParser functionality into WorkflowRunner for better cohesion
+  - Simplified the codebase by removing redundant abstraction layers
+
+### Fixed
+- **Removed duplicated pre/post processing code** (#357)
+  - Extracted common pre/post processing logic from individual step executors
+  - Eliminated code duplication across different step types
+  - Improved maintainability and consistency
 
 ## [0.4.3] - 2025-07-10
 
