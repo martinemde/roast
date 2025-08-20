@@ -60,6 +60,10 @@ module Roast
         Thread.current[:current_step_name] = step_name if step_name
         Thread.current[:workflow_metadata] = @context.workflow.metadata
 
+        unless options[:retries]
+          options[:retries] = @context.config_hash[step_name]&.fetch("retries", 0) || 0
+        end
+
         case step_type
         when StepTypeResolver::COMMAND_STEP
           # Command steps should also go through interpolation
@@ -148,8 +152,9 @@ module Roast
         resource_type = @context.resource_type
         step_key = options[:step_key]
         display_name = step_key || step
+        retries = options.fetch(:retries, 0)
 
-        error_handler.with_error_handling(display_name, resource_type: resource_type) do
+        error_handler.with_error_handling(display_name, resource_type: resource_type, retries:) do
           $stderr.puts "Executing: #{display_name} (Resource type: #{resource_type || "unknown"})"
 
           begin
@@ -263,7 +268,8 @@ module Roast
           # Command step - execute directly, preserving any passed options including step_key
           exit_on_error = options.fetch(:exit_on_error, true)
           step_key = options[:step_key]
-          execute_command_step(interpolated_step, { exit_on_error:, step_key: })
+          retries = options[:retries] || 0
+          execute_command_step(interpolated_step, { exit_on_error:, step_key:, retries: })
         else
           exit_on_error = options.fetch(:exit_on_error, context.exit_on_error?(step))
           execute_standard_step(interpolated_step, options.merge(exit_on_error:))
@@ -286,8 +292,9 @@ module Roast
 
       def execute_custom_step(name, step_key: nil, **options)
         resource_type = @context.workflow.respond_to?(:resource) ? @context.workflow.resource&.type : nil
+        retries = options[:retries] || 0
 
-        error_handler.with_error_handling(name, resource_type: resource_type) do
+        error_handler.with_error_handling(name, resource_type: resource_type, retries:) do
           $stderr.puts "Executing: #{name} (Resource type: #{resource_type || "unknown"})"
 
           # Use step_key for loading if provided, otherwise use name

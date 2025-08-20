@@ -40,7 +40,7 @@ module Roast
         # Now command steps go through interpolation
         @dependencies[:interpolator].expects(:interpolate).with(step).returns(step)
         # The error handler wraps the execution
-        @dependencies[:error_handler].expects(:with_error_handling).with(step, resource_type: nil).yields.returns("hello")
+        @dependencies[:error_handler].expects(:with_error_handling).with(step, resource_type: nil, retries: 0).yields.returns("hello")
         # CommandExecutor expects the full command and strips it internally
         @dependencies[:command_executor].expects(:execute).with(step, exit_on_error: true).returns("hello")
         # Expect transcript interaction (called twice - once to read, once to append)
@@ -96,7 +96,7 @@ module Roast
         @dependencies[:interpolator].expects(:interpolate).with("command").returns("command")
         # And then the string step handler will also interpolate
         @dependencies[:interpolator].expects(:interpolate).with("command").returns("command")
-        @dependencies[:error_handler].expects(:with_error_handling).with("command", resource_type: nil).yields.returns("result")
+        @dependencies[:error_handler].expects(:with_error_handling).with("command", resource_type: nil, retries: 0).yields.returns("result")
         step_object = mock("step")
         step_object.expects(:call).returns("result")
         @dependencies[:step_loader].expects(:load).with("command", exit_on_error: true, step_key: "nested", is_last_step: true).returns(step_object)
@@ -116,7 +116,7 @@ module Roast
         @dependencies[:interpolator].expects(:interpolate).with("command1").returns("command1")
         # The string step handler will also try to interpolate, so expect it twice
         @dependencies[:interpolator].expects(:interpolate).with("command1").returns("command1")
-        @dependencies[:error_handler].expects(:with_error_handling).with("command1", resource_type: nil).yields.returns("result")
+        @dependencies[:error_handler].expects(:with_error_handling).with("command1", resource_type: nil, retries: 0).yields.returns("result")
         step_object = mock("step")
         step_object.expects(:call).returns("result")
         @dependencies[:step_loader].expects(:load).with("command1", exit_on_error: true, step_key: "var1", is_last_step: nil).returns(step_object)
@@ -143,8 +143,8 @@ module Roast
         @workflow.stubs(:pause_step_name).returns(nil)
         @dependencies[:interpolator].expects(:interpolate).with("step1").returns("step1")
         @dependencies[:interpolator].expects(:interpolate).with("step2").returns("step2")
-        @dependencies[:error_handler].expects(:with_error_handling).with("step1", resource_type: nil).yields
-        @dependencies[:error_handler].expects(:with_error_handling).with("step2", resource_type: nil).yields
+        @dependencies[:error_handler].expects(:with_error_handling).with("step1", resource_type: nil, retries: 0).yields
+        @dependencies[:error_handler].expects(:with_error_handling).with("step2", resource_type: nil, retries: 0).yields
         step_object1 = mock("step1")
         step_object1.expects(:call).returns("result1")
         step_object2 = mock("step2")
@@ -163,7 +163,7 @@ module Roast
         step = "$(echo test)"
         # Command steps now go through interpolation first
         @dependencies[:interpolator].expects(:interpolate).with(step).returns(step)
-        @dependencies[:error_handler].expects(:with_error_handling).with(step, resource_type: nil).yields
+        @dependencies[:error_handler].expects(:with_error_handling).with(step, resource_type: nil, retries: 0).yields
         @dependencies[:command_executor].expects(:execute).with(step, exit_on_error: true).returns("test")
         # Expect transcript interaction (called twice - once to read, once to append)
         transcript = []
@@ -178,7 +178,7 @@ module Roast
         @context.stubs(:exit_on_error?).with("regular_step").returns(false)
 
         @dependencies[:interpolator].expects(:interpolate).with(step).returns(step)
-        @dependencies[:error_handler].expects(:with_error_handling).with(step, resource_type: nil).yields
+        @dependencies[:error_handler].expects(:with_error_handling).with(step, resource_type: nil, retries: 0).yields
         step_object = mock("step")
         step_object.expects(:call).returns("result")
         @dependencies[:step_loader].expects(:load).with(step, exit_on_error: false, step_key: step, is_last_step: nil).returns(step_object)
@@ -190,7 +190,7 @@ module Roast
 
       def test_executes_standard_step_as_fallback
         step = mock("unknown_step")
-        @dependencies[:error_handler].expects(:with_error_handling).with(step, resource_type: nil).yields
+        @dependencies[:error_handler].expects(:with_error_handling).with(step, resource_type: nil, retries: 0).yields
         step_object = mock("step")
         step_object.expects(:call).returns("result")
         @dependencies[:step_loader].expects(:load).with(step, exit_on_error: true, step_key: step, is_last_step: nil).returns(step_object)
@@ -227,7 +227,7 @@ module Roast
         @dependencies[:interpolator].expects(:interpolate).with(command).returns(command)
 
         # The important part: error_handler should receive "clear_files" as the display name
-        @dependencies[:error_handler].expects(:with_error_handling).with("clear_files", resource_type: nil).yields
+        @dependencies[:error_handler].expects(:with_error_handling).with("clear_files", resource_type: nil, retries: 0).yields
 
         # Command executor still gets the actual command
         @dependencies[:command_executor].expects(:execute).with(command, exit_on_error: true).returns(nil)
@@ -254,7 +254,7 @@ module Roast
         @dependencies[:interpolator].expects(:interpolate).with(command).returns(command)
 
         # Error handler should receive "failing_step" as the display name
-        @dependencies[:error_handler].expects(:with_error_handling).with("failing_step", resource_type: nil).yields
+        @dependencies[:error_handler].expects(:with_error_handling).with("failing_step", resource_type: nil, retries: 0).yields
 
         # Command executor raises an error
         error = CommandExecutor::CommandExecutionError.new(
@@ -277,7 +277,7 @@ module Roast
         @dependencies[:interpolator].expects(:interpolate).with(step).returns(step)
 
         # For direct command steps without a name, the command itself is displayed
-        @dependencies[:error_handler].expects(:with_error_handling).with(step, resource_type: nil).yields
+        @dependencies[:error_handler].expects(:with_error_handling).with(step, resource_type: nil, retries: 0).yields
 
         @dependencies[:command_executor].expects(:execute).with(step, exit_on_error: true).returns("test")
 
