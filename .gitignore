@@ -16,3 +16,4 @@
 gemfiles/*.lock
 bin/claude-swarm
 *.gem
+coverage
