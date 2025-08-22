@@ -1,21 +1,48 @@
 # frozen_string_literal: true
 
 class FunctionalTest < ActiveSupport::TestCase
-  class ExecutionResult
-    attr_reader :output
-    attr_reader :error
+  def roast(*args)
+    # debug=true allows us to capture error messages in tests
+    Roast::CLI.start(args, { debug: true })
+  end
 
-    def initialize(output, error)
-      @output = output
-      @error = error
+  # Set up a roast directory structure.
+  # with_workflow will create the workflow defined in Workflows.:name
+  def in_sandbox(with_workflow: nil)
+    Dir.mktmpdir do |dir|
+      Dir.chdir(dir) do |dir|
+        roastdir = File.join(dir, "roast")
+        Dir.mkdir(roastdir)
+
+        Dir.chdir(roastdir) do
+          Workflows.build(with_workflow, roastdir) if with_workflow
+        end
+
+        yield
+      end
     end
   end
 
-  def roast(args = [])
-    output, err = capture_io do
-      Roast::CLI.start(args)
-    end
+  def assert_cli_error(match, &block)
+    assert_raises(Thor::Error, match:, &block)
+  end
 
-    ExecutionResult.new(output, err)
+  # Set up workflow files and paths
+  class Workflows
+    class << self
+      def build(name, path)
+        Dir.mkdir(name.to_s)
+        File.write(File.join(path, name.to_s, "workflow.yml"), send(name))
+      end
+
+      def simple
+        <<~YAML
+          name: Basic Command Functions
+
+          steps:
+            - print_dir: "$(pwd)"
+        YAML
+      end
+    end
   end
 end
