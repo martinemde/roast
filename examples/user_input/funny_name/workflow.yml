@@ -1,6 +1,5 @@
 name: funny_name_backstory
 description: Create a humorous backstory based on your name
-model: anthropic:claude-3-5-sonnet
 
 steps:
   # Collect user's name
@@ -8,7 +7,7 @@ steps:
       prompt: "What's your name?"
       name: user_name
       required: true
-  
+
   # Ask for preferences
   - input:
       prompt: "Pick a genre for your backstory:"
@@ -21,6 +20,6 @@ steps:
         - "Victorian-Era Vampire Hunter"
         - "Professional Cat Whisperer"
       name: genre
-  
+
   # Generate the backstory
   - create_backstory
