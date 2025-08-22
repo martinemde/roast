@@ -3,6 +3,9 @@
 # Load path setup
 $LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
 
+require "simplecov"
+SimpleCov.start
+
 # Project requires
 require "roast"
 
@@ -20,6 +23,7 @@ require "webmock/minitest"
 # Test support files
 require "support/fixture_helpers"
 require "support/improved_assertions"
+require "support/functional_test"
 
 # Turn on color during CI since GitHub Actions supports it
 if ENV["CI"]
