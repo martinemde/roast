@@ -3,7 +3,6 @@
 
 require "English"
 require "roast/helpers/logger"
-require "roast/helpers/timeout_handler"
 
 module Roast
   module Tools
@@ -33,13 +32,14 @@ module Roast
           Roast::Helpers::Logger.warn("⚠️  WARNING: Unrestricted bash execution - use with caution!\n")
         end
 
-        result, exit_status = Roast::Helpers::TimeoutHandler.call(
+        timeout = Roast::Helpers::CmdRunner.normalize_timeout(timeout)
+
+        result, status = Roast::Helpers::CmdRunner.capture2e(
           "#{command} 2>&1",
           timeout: timeout,
-          working_directory: Dir.pwd,
         )
 
-        format_output(command, result, exit_status)
+        format_output(command, result, status.exitstatus)
       rescue Timeout::Error => e
         Roast::Helpers::Logger.error(e.message + "\n")
         e.message

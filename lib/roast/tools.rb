@@ -1,6 +1,8 @@
 # typed: true
 # frozen_string_literal: true
 
+require "roast/helpers/cmd_runner"
+
 module Roast
   # @requires_ancestor: Kernel
   module Tools
@@ -33,7 +35,14 @@ module Roast
       Signal.trap("INT") do
         puts "\n\nCaught CTRL-C! Printing before exiting:\n"
         puts JSON.pretty_generate(object_to_inspect)
-        exit(1)
+
+        begin
+          Roast::Helpers::CmdRunner.cleanup_all_children
+        rescue => e
+          puts "Error interrupting tracked child processes: #{e.message}"
+        end
+
+        exit(130)
       end
     end
 

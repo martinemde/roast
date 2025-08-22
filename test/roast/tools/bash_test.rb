@@ -178,8 +178,8 @@ class RoastToolsBashTest < ActiveSupport::TestCase
     assert_match(/timed out after 1 seconds/, result)
   end
 
-  test "timeout validation uses TimeoutHandler defaults" do
-    # Test that invalid timeout values are handled by TimeoutHandler validation
+  test "timeout validation uses CmdRunner defaults" do
+    # Test that invalid timeout values are handled by CmdRunner validation
     output = Roast::Tools::Bash.call("echo 'test'", timeout: 0)
 
     assert_includes output, "test"
@@ -214,7 +214,7 @@ class RoastToolsBashTest < ActiveSupport::TestCase
   end
 
   test "timeout with zero disables timeout" do
-    # TimeoutHandler should convert 0 to default timeout
+    # CmdRunner should convert 0 to default timeout
     start_time = Time.now
 
     result = Roast::Tools::Bash.call("echo 'validated'", timeout: 0)
@@ -225,8 +225,8 @@ class RoastToolsBashTest < ActiveSupport::TestCase
     assert_match(/validated/, result)
   end
 
-  test "timeout with large value is capped by TimeoutHandler" do
-    # TimeoutHandler should cap at MAX_TIMEOUT (300)
+  test "timeout with large value is capped by CmdRunner" do
+    # CmdRunner should cap at MAX_TIMEOUT (3600)
     start_time = Time.now
 
     result = Roast::Tools::Bash.call("echo 'capped'", timeout: 500)

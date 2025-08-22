@@ -3,7 +3,6 @@
 
 require "English"
 require "roast/helpers/logger"
-require "roast/helpers/timeout_handler"
 
 module Roast
   module Tools
@@ -140,7 +139,7 @@ module Roast
       end
 
       def execute_command(command, command_prefix, timeout)
-        timeout = Roast::Helpers::TimeoutHandler.validate_timeout(timeout)
+        timeout = Roast::Helpers::CmdRunner.normalize_timeout(timeout)
 
         full_command = if command_prefix == "dev"
           "bash -l -c '#{command.gsub("'", "\\'")}'"
@@ -148,13 +147,12 @@ module Roast
           command
         end
 
-        result, exit_status = Roast::Helpers::TimeoutHandler.call(
+        result, status = Roast::Helpers::CmdRunner.capture2e(
           full_command,
           timeout: timeout,
-          working_directory: Dir.pwd,
         )
 
-        format_output(command, result, exit_status)
+        format_output(command, result, status.exitstatus)
       rescue Timeout::Error => e
         Roast::Helpers::Logger.error(e.message + "\n")
         e.message
