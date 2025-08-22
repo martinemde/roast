@@ -237,7 +237,7 @@ module Roast
         mock_wait_thread3.expects(:value).returns(mock_status3)
 
         # Expect exactly 3 calls (1 initial + 2 retries)
-        Open3.expects(:popen3).times(3).with { |cmd| cmd =~ /cat .* \| claude --output-format stream-json$/ }
+        Roast::Helpers::CmdRunner.expects(:popen3).times(3).with { |cmd| cmd =~ /cat .* \| claude --output-format stream-json$/ }
           .yields(mock_stdin1, mock_stdout1, mock_stderr1, mock_wait_thread1)
           .then.yields(mock_stdin2, mock_stdout2, mock_stderr2, mock_wait_thread2)
           .then.yields(mock_stdin3, mock_stdout3, mock_stderr3, mock_wait_thread3)
@@ -281,7 +281,7 @@ module Roast
         mock_status2.expects(:success?).returns(true)
         mock_wait_thread2.expects(:value).returns(mock_status2)
 
-        Open3.expects(:popen3).twice.with { |cmd| cmd =~ /cat .* \| claude --output-format stream-json$/ }
+        Roast::Helpers::CmdRunner.expects(:popen3).twice.with { |cmd| cmd =~ /cat .* \| claude --output-format stream-json$/ }
           .yields(mock_stdin1, mock_stdout1, mock_stderr1, mock_wait_thread1)
           .then.yields(mock_stdin2, mock_stdout2, mock_stderr2, mock_wait_thread2)
 
@@ -306,7 +306,7 @@ module Roast
           mock_status.expects(:success?).returns(false)
           mock_wait_thread.expects(:value).returns(mock_status)
 
-          Open3.expects(:popen3).with { |cmd| cmd =~ /cat .* \| claude --output-format stream-json$/ }
+          Roast::Helpers::CmdRunner.expects(:popen3).with { |cmd| cmd =~ /cat .* \| claude --output-format stream-json$/ }
             .yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
         end
 
@@ -332,7 +332,7 @@ module Roast
         mock_wait_thread.expects(:value).returns(mock_status)
 
         # Expect only ONE call (no retries)
-        Open3.expects(:popen3).once.with { |cmd| cmd =~ /cat .* \| claude --output-format stream-json$/ }
+        Roast::Helpers::CmdRunner.expects(:popen3).once.with { |cmd| cmd =~ /cat .* \| claude --output-format stream-json$/ }
           .yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
 
         # Should fail immediately without retrying

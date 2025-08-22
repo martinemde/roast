@@ -39,10 +39,9 @@ module Roast
         def test_processes_shell_command_target
           workflow_path = fixture_file("workflow_with_shell_target.yml")
           # Simulate shell command output for $(echo test.rb)
-          Open3.stub(:capture2e, ["test.rb\n", Minitest::Mock.new.expect(:success?, true)]) do
-            configuration = Roast::Workflow::Configuration.new(workflow_path, @options)
-            assert_equal(File.expand_path("test.rb"), configuration.target)
-          end
+          Roast::Helpers::CmdRunner.expects(:capture2e).with({}, "echo test.rb").returns(["test.rb\n", Minitest::Mock.new.expect(:success?, true)])
+          configuration = Roast::Workflow::Configuration.new(workflow_path, @options)
+          assert_equal("test.rb", configuration.target)
         end
 
         def test_expands_glob_patterns
@@ -80,10 +79,9 @@ module Roast
 
         def test_processes_shell_command_to_get_api_token
           # Simulate shell command output for $(echo test_token)
-          Open3.stub(:capture2e, ["test_token\n", Minitest::Mock.new.expect(:success?, true)]) do
-            configuration = Roast::Workflow::Configuration.new(@workflow_path, @options)
-            assert_equal("test_token", configuration.api_token)
-          end
+          Roast::Helpers::CmdRunner.expects(:capture2e).with({}, "echo test_token").returns(["test_token\n", Minitest::Mock.new.expect(:success?, true)])
+          configuration = Roast::Workflow::Configuration.new(@workflow_path, @options)
+          assert_equal("test_token", configuration.api_token)
         end
       end
 
