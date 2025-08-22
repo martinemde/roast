@@ -7,7 +7,7 @@ module Roast
       def config_root(starting_path = Dir.pwd, ending_path = File.dirname(Dir.home))
         paths = []
         candidate = starting_path
-        while candidate != ending_path
+        while candidate != ending_path && candidate != "/"
           paths << File.join(candidate, ".roast")
           candidate = File.dirname(candidate)
         end
