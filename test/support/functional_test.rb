@@ -8,17 +8,21 @@ class FunctionalTest < ActiveSupport::TestCase
 
   # Set up a roast directory structure.
   # with_workflow will create the workflow defined in Workflows.:name
+  # Returns an array of strings [stdio_output, stderr_output]
   def in_sandbox(with_workflow: nil)
-    Dir.mktmpdir do |dir|
-      Dir.chdir(dir) do |dir|
-        roastdir = File.join(dir, "roast")
-        Dir.mkdir(roastdir)
+    capture_io do
+      Dir.mktmpdir do |dir|
+        Dir.chdir(dir) do |dir|
+          Dir.mkdir(".roast")
+          roastdir = File.join(dir, "roast")
+          Dir.mkdir(roastdir)
 
-        Dir.chdir(roastdir) do
-          Workflows.build(with_workflow, roastdir) if with_workflow
+          Dir.chdir(roastdir) do
+            Workflows.build(with_workflow, roastdir) if with_workflow
+          end
+
+          yield
         end
-
-        yield
       end
     end
   end
@@ -37,10 +41,14 @@ class FunctionalTest < ActiveSupport::TestCase
 
       def simple
         <<~YAML
-          name: Basic Command Functions
+          name: Simple workflow
 
           steps:
-            - print_dir: "$(pwd)"
+            - hello_world: >
+                $(echo 'Hello world! I am roast!' > step_output.txt)
+
+          hello_world:
+            print_response: true
         YAML
       end
     end

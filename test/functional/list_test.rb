@@ -4,11 +4,11 @@ require "test_helper"
 
 class ListTest < FunctionalTest
   test "lists workflows visible to roast" do
-    in_sandbox(with_workflow: :simple) do
-      assert_output Regexp.new(Regexp.escape("simple (from project)")) do
-        roast("list")
-      end
+    output, _ = in_sandbox(with_workflow: :simple) do
+      roast("list")
     end
+
+    assert_match Regexp.new(Regexp.escape("simple (from project)")), output
   end
 
   test "outputs error if no roast directory found" do
