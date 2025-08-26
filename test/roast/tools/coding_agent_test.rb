@@ -30,7 +30,7 @@ module Roast
         original_env = ENV["CLAUDE_CODE_COMMAND"]
         ENV.delete("CLAUDE_CODE_COMMAND")
 
-        # Mock Open3.popen3 to prevent actual command execution
+        # Mock CmdRunner.popen3 to prevent actual command execution
         mock_stdin = mock
         mock_stdout = StringIO.new('{"type":"result","subtype":"success","result":"AI response"}')
         mock_stderr = StringIO.new("")
@@ -40,7 +40,7 @@ module Roast
         mock_status.expects(:success?).returns(true)
         mock_wait_thread.expects(:value).returns(mock_status)
 
-        Open3.expects(:popen3).with { |cmd| cmd =~ /cat .* \| claude -p --verbose --output-format stream-json --dangerously-skip-permissions$/ }.yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
+        Roast::Helpers::CmdRunner.expects(:popen3).with { |cmd| cmd =~ /cat .* \| claude -p --verbose --output-format stream-json --dangerously-skip-permissions$/ }.yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
 
         result = Roast::Tools::CodingAgent.call("Test prompt")
         assert_equal("AI response", result)
@@ -52,7 +52,7 @@ module Roast
         original_env = ENV["CLAUDE_CODE_COMMAND"]
         ENV["CLAUDE_CODE_COMMAND"] = "claude --model opus"
 
-        # Mock Open3.popen3
+        # Mock CmdRunner.popen3
         mock_stdin = mock
         mock_stdout = StringIO.new("AI response")
         mock_stderr = StringIO.new("")
@@ -62,7 +62,7 @@ module Roast
         mock_status.expects(:success?).returns(true)
         mock_wait_thread.expects(:value).returns(mock_status)
 
-        Open3.expects(:popen3).with { |cmd| cmd =~ /cat .* \| claude --model opus$/ }.yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
+        Roast::Helpers::CmdRunner.expects(:popen3).with { |cmd| cmd =~ /cat .* \| claude --model opus$/ }.yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
 
         result = Roast::Tools::CodingAgent.call("Test prompt")
         assert_equal("AI response", result)
@@ -81,7 +81,7 @@ module Roast
         config = { "coding_agent_command" => "claude --model opus -p --allowedTools \"Bash, Batch, Glob, Grep, LS, Read\"" }
         Roast::Tools::CodingAgent.post_configuration_setup(DummyBaseClass, config)
 
-        # Mock Open3.popen3
+        # Mock CmdRunner.popen3
         mock_stdin = mock
         mock_stdout = StringIO.new("AI response with custom config")
         mock_stderr = StringIO.new("")
@@ -92,7 +92,7 @@ module Roast
         mock_wait_thread.expects(:value).returns(mock_status)
 
         expected_command = /cat .* \| claude --model opus -p --allowedTools "Bash, Batch, Glob, Grep, LS, Read"$/
-        Open3.expects(:popen3).with { |cmd| cmd =~ expected_command }.yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
+        Roast::Helpers::CmdRunner.expects(:popen3).with { |cmd| cmd =~ expected_command }.yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
 
         result = Roast::Tools::CodingAgent.call("Test prompt")
         assert_equal "AI response with custom config", result
@@ -105,7 +105,7 @@ module Roast
         config = { "coding_agent_command" => "claude --model opus" }
         Roast::Tools::CodingAgent.post_configuration_setup(DummyBaseClass, config)
 
-        # Mock Open3.popen3
+        # Mock CmdRunner.popen3
         mock_stdin = mock
         mock_stdout = StringIO.new("AI response")
         mock_stderr = StringIO.new("")
@@ -116,7 +116,7 @@ module Roast
         mock_wait_thread.expects(:value).returns(mock_status)
 
         # Should use configured command, not environment variable
-        Open3.expects(:popen3).with { |cmd| cmd =~ /cat .* \| claude --model opus$/ }.yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
+        Roast::Helpers::CmdRunner.expects(:popen3).with { |cmd| cmd =~ /cat .* \| claude --model opus$/ }.yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
 
         result = Roast::Tools::CodingAgent.call("Test prompt")
         assert_equal("AI response", result)
@@ -125,7 +125,7 @@ module Roast
       end
 
       test "handles command execution errors gracefully" do
-        # Mock Open3.popen3
+        # Mock CmdRunner.popen3
         mock_stdin = mock
         mock_stdout = StringIO.new("")
         mock_stderr = StringIO.new("Command not found: claude")
@@ -135,7 +135,7 @@ module Roast
         mock_status.expects(:success?).returns(false)
         mock_wait_thread.expects(:value).returns(mock_status)
 
-        Open3.expects(:popen3).yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
+        Roast::Helpers::CmdRunner.expects(:popen3).yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
 
         result = Roast::Tools::CodingAgent.call("Test prompt")
         assert_equal "🤖 Error running CodingAgent: Command not found: claude", result
@@ -143,7 +143,7 @@ module Roast
 
       test "cleans up temporary files even on error" do
         # Force an error during command execution
-        Open3.expects(:popen3).raises(StandardError, "Execution failed")
+        Roast::Helpers::CmdRunner.expects(:popen3).raises(StandardError, "Execution failed")
 
         # Track temp file creation and deletion
         tempfile_deleted = false
@@ -308,7 +308,7 @@ module Roast
         mock_wait_thread.expects(:value).returns(mock_status)
 
         # Expect command with --resume flag
-        Open3.expects(:popen3).with { |cmd| cmd =~ /claude --resume existing-session-456 --output-format stream-json$/ }
+        Roast::Helpers::CmdRunner.expects(:popen3).with { |cmd| cmd =~ /claude --resume existing-session-456 --output-format stream-json$/ }
           .yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
 
         result = Roast::Tools::CodingAgent.send(:run_claude_code, "Test prompt", include_context_summary: false, continue: true)
@@ -334,7 +334,7 @@ module Roast
         mock_status.expects(:success?).returns(true)
         mock_wait_thread.expects(:value).returns(mock_status)
 
-        Open3.expects(:popen3).yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
+        Roast::Helpers::CmdRunner.expects(:popen3).yields(mock_stdin, mock_stdout, mock_stderr, mock_wait_thread)
 
         result = Roast::Tools::CodingAgent.send(:run_claude_code, "Test prompt", include_context_summary: false, continue: false)
         assert_equal("Plain text response", result)
