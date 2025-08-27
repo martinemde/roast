@@ -17,41 +17,35 @@ require "active_support/test_case"
 require "minitest/autorun"
 require "minitest/rg"
 require "mocha/minitest"
-require "vcr"
-require "webmock/minitest"
-
 # Test support files
 require "support/fixture_helpers"
 require "support/improved_assertions"
 require "support/functional_test"
+require "vcr"
+require "webmock"
 
 # Turn on color during CI since GitHub Actions supports it
 if ENV["CI"]
   Minitest::RG.rg!(color: true)
 end
 
-# Block all real HTTP requests in tests
-WebMock.disable_net_connect!(allow_localhost: true)
-
 VCR.configure do |config|
   config.cassette_library_dir = "test/fixtures/vcr_cassettes"
-  config.hook_into(:webmock)
-  config.ignore_localhost = true
-  config.allow_http_connections_when_no_cassette = true
-  config.default_cassette_options = {
-    match_requests_on: [:method, :host],
-  }
-end
+  config.hook_into :webmock
 
-# Helper method to create a properly stubbed mock workflow
-def create_mock_workflow(options = {})
-  workflow = mock("workflow")
-  default_stubs = {
-    output: {},
-    pause_step_name: nil,
-    verbose: false,
-    storage_type: nil, # This is the key fix for test failures
-  }
-  workflow.stubs(default_stubs.merge(options))
-  workflow
+  config.filter_sensitive_data("http://mytestingproxy.local/v1/chat/completions") do |interaction|
+    interaction.request.uri
+  end
+
+  config.filter_sensitive_data("my-token") do |interaction|
+    interaction.request.headers["Authorization"].first
+  end
+
+  config.filter_sensitive_data("<FILTERED>") do |interaction|
+    interaction.request.headers["Set-Cookie"]
+  end
+
+  config.filter_sensitive_data("<FILTERED>") do |interaction|
+    interaction.response.headers["Set-Cookie"]
+  end
 end
